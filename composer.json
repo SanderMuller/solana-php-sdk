@@ -1,0 +1,96 @@
+{
+    "name": "attestto/solana-php-sdk",
+    "version": "0.6.1",
+    "description": "Solana PHP SDK for interacting with the Solana blockchain",
+    "keywords": [
+        "attestto",
+        "solana-php-sdk",
+        "blockchain",
+        "solana",
+        "sol",
+        "sdk",
+        "php"
+    ],
+    "homepage": "https://github.com/Attestto-com/solana-php-sdk",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Matt Stauffer",
+            "homepage": "https://packagist.org/packages/tightenco/solana-php-sdk",
+            "role": "Original Creator Developer [Legacy] "
+        },
+        {
+            "name": "Zach Vander Velden",
+            "homepage": "https://github.com/exzachlyvv",
+            "role": "Developer - Metadata [Legacy]"
+        },
+        {
+            "name": "Eduardo Chongkan",
+            "email": "eduardo@attestto.com",
+            "homepage": "https://github.com/chongkan",
+            "role": "Developer - [Current Maintainer]"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "ext-sodium": "*",
+        "guzzlehttp/guzzle": "^7.3",
+        "paragonie/sodium_compat": "^2.0",
+        "stephenhill/base58": "^1.1",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.19",
+        "mockery/mockery": "^1.4",
+        "orchestra/testbench": "^9.0",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpstan/phpstan-mockery": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^11.5",
+        "rector/swiss-knife": "^2.1",
+        "rector/type-perfect": "^2.0",
+        "roave/security-advisories": "dev-latest",
+        "spaze/phpstan-disallowed-calls": "^4.1",
+        "symplify/phpstan-extensions": "^12.0.1",
+        "tomasvotruba/cognitive-complexity": "^1.0",
+        "tomasvotruba/type-coverage": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Attestto\\SolanaPhpSdk\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Attestto\\SolanaPhpSdk\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "format": "vendor/bin/pint",
+        "phpstan": "vendor/bin/phpstan analyse --memory-limit=2G",
+        "phpstan-simplified": "vendor/bin/phpstan analyse --memory-limit=2G --error-format symplify",
+        "phpstan-clear-cache": "vendor/bin/phpstan clear-result-cache",
+        "rector": "vendor/bin/rector process",
+        "fix": [
+            "@composer format",
+            "vendor/bin/swiss-knife finalize-classes app",
+            "vendor/bin/swiss-knife privatize-constants app",
+            "vendor/bin/swiss-knife namespace-to-psr-4 app --namespace-root \"App\\\\\"",
+            "@composer rector"
+        ]
+    },
+    "config": {
+        "platform": {
+            "php": "8.2.0"
+        },
+        "sort-packages": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
