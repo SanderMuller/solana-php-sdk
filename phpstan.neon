@@ -13,10 +13,8 @@ parameters:
     tmpDir: .cache/phpstan
 
     paths:
-        - app
-        - bootstrap
-        - config
-        - routes
+        - src
+        - tests
 
     type_coverage:
         return: 100
@@ -41,7 +39,6 @@ parameters:
     level: max
 
     reportUnmatchedIgnoredErrors: false
-    noEnvCallsOutsideOfConfig: true
     reportMaybesInPropertyPhpDocTypes: false
     treatPhpDocTypesAsCertain: false
 

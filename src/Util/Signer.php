@@ -1,19 +1,12 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Util;
+namespace Collectiq\SolanaPhpSdk\Util;
 
-use Attestto\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\PublicKey;
 
-class Signer implements HasPublicKey, HasSecretKey
+final readonly class Signer implements HasPublicKey, HasSecretKey
 {
-    protected PublicKey $publicKey;
-    protected Buffer $secretKey;
-
-    public function __construct(PublicKey $publicKey, Buffer $secretKey)
-    {
-        $this->publicKey = $publicKey;
-        $this->secretKey = $secretKey;
-    }
+    public function __construct(private PublicKey $publicKey, private Buffer $secretKey) {}
 
     public function getPublicKey(): PublicKey
     {

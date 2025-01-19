@@ -1,8 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Exceptions;
+namespace Collectiq\SolanaPhpSdk\Exceptions;
 
-class InputValidationException extends BaseSolanaPhpSdkException
+final class InputValidationException extends SolanaPhpSdkException
 {
-
+    //
 }

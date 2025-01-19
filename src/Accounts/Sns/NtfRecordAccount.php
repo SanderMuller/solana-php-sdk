@@ -1,24 +1,18 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Accounts;
+namespace Collectiq\SolanaPhpSdk\Accounts;
 
-use Attestto\SolanaPhpSdk\Accounts\Did\VerificationMethodStruct;
-use Attestto\SolanaPhpSdk\Accounts\Did\ServiceStruct;
-use Attestto\SolanaPhpSdk\Borsh\Borsh;
-use Attestto\SolanaPhpSdk\Borsh\BorshDeserializable;
-use Attestto\SolanaPhpSdk\Connection;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\Exceptions\SNSError;
-use Attestto\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\Borsh\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh\IsBorshDeserializable;
+use Collectiq\SolanaPhpSdk\Connection;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
 
-
-class NtfRecordAccount
+final class NtfRecordAccount
 {
+    use IsBorshDeserializable;
 
-    use BorshDeserializable;
-
-
-    public const SCHEMA = [
+    private const array SCHEMA = [
         self::class => [
             'kind' => 'struct',
             'fields' => [
@@ -39,21 +33,24 @@ class NtfRecordAccount
     public static function retrieve(Connection $connection, PublicKey $key): self
     {
         $accountInfo = $connection->getAccountInfo($key);
-        if (!$accountInfo || !$accountInfo['data']) {
-            throw new \Exception("NFT record not found");
+        if (! $accountInfo || ! $accountInfo['data']) {
+            throw new \Exception('NFT record not found');
         }
-        $base64String = base64_decode($accountInfo['data']);
+
+        $base64String = base64_decode((string) $accountInfo['data']);
         $uint8Array = array_values(unpack('C*', $base64String));
+
         return self::deserialize($uint8Array);
     }
 
-    public static function findKey(PublicKey $nameAccount, PublicKey $programId)
+    public static function findKey(PublicKey $nameAccount, PublicKey $programId): array
     {
         return PublicKey::findProgramAddress(
-            [Buffer::from("nft_record"), $nameAccount->toBuffer()],
+            [
+                Buffer::fromString('nft_record'),
+                $nameAccount,
+            ],
             $programId
         );
     }
-
 }
-

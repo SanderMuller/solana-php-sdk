@@ -1,21 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Util;
+namespace Collectiq\SolanaPhpSdk\Util;
 
-class MessageHeader
+final class MessageHeader
 {
-    public int $numRequiredSignature;
-    public int $numReadonlySignedAccounts;
-    public int $numReadonlyUnsignedAccounts;
-
-    public function __construct(
-        int $numRequiredSignature,
-        int $numReadonlySignedAccounts,
-        int $numReadonlyUnsignedAccounts
-    )
-    {
-        $this->numRequiredSignature = $numRequiredSignature;
-        $this->numReadonlySignedAccounts = $numReadonlySignedAccounts;
-        $this->numReadonlyUnsignedAccounts = $numReadonlyUnsignedAccounts;
-    }
+    public function __construct(public int $numRequiredSignature, public int $numReadonlySignedAccounts, public int $numReadonlyUnsignedAccounts) {}
 }

@@ -1,34 +1,20 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Accounts;
+namespace Collectiq\SolanaPhpSdk\Accounts;
 
-use Attestto\SolanaPhpSdk\Accounts\Did\VerificationMethodStruct;
-use Attestto\SolanaPhpSdk\Accounts\Did\ServiceStruct;
-use Attestto\SolanaPhpSdk\Borsh\Borsh;
-use Attestto\SolanaPhpSdk\Borsh\BorshDeserializable;
-use Attestto\SolanaPhpSdk\Borsh\BorshObject;
+use Collectiq\SolanaPhpSdk\Accounts\Did\ServiceStruct;
+use Collectiq\SolanaPhpSdk\Accounts\Did\VerificationMethodStruct;
+use Collectiq\SolanaPhpSdk\Borsh\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
+use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
 
-/**
- * Class DidData
- * 
- * This class represents a Decentralized Identifier (DID) account.
- * It provides methods for creating and managing DID accounts, signing and verifying messages, and other related operations.
- * @version 1.0
- * @package Attestto\SolanaPhpSdk\Accounts
- * @license MIT
- * @author Eduardo Chongkan
- * @link https://chongkan.com
- * @see https://github.com/identity-com/sol-did/tree/develop/sol-did/client/packages/idl
- * @see https://explorer.solana.com/address/didso1Dpqpm4CsiCjzP766BGY89CAdD6ZBL68cRhFPc/anchor-program?cluster=devnet
- */
-
-class DidData
+final class DidData implements BorshSerializable
 {
+    use IsBorshObject;
 
-    use BorshObject;
     public $keyData;
 
-    public const SCHEMA = [
+    private const array SCHEMA = [
         VerificationMethodStruct::class => VerificationMethodStruct::SCHEMA[VerificationMethodStruct::class],
         ServiceStruct::class => ServiceStruct::SCHEMA[ServiceStruct::class],
         self::class => [

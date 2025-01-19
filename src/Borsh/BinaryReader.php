@@ -1,143 +1,100 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Borsh;
+namespace Collectiq\SolanaPhpSdk\Borsh;
 
-use Attestto\SolanaPhpSdk\Exceptions\TodoException;
-use Attestto\SolanaPhpSdk\Util\Buffer;
-use Attestto\SolanaPhpSdk\PublicKey;
 use Closure;
+use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferType;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
 
-class BinaryReader
+final class BinaryReader
 {
-    protected Buffer $buffer;
-    protected int $offset;
+    private int $offset = 0;
 
-    public function __construct(Buffer $buffer)
-    {
-        $this->buffer = $buffer;
-        $this->offset = 0;
-    }
+    public function __construct(private readonly Buffer $buffer) {}
 
-    /**
-     * @return int
-     */
     public function readU8(): int
     {
-        return $this->readUnsignedInt(1, Buffer::TYPE_BYTE);
+        return $this->readUnsignedInt(1, BufferType::BYTE);
     }
 
-    /**
-     * @return int
-     */
     public function readU16(): int
     {
-        return $this->readUnsignedInt(2, Buffer::TYPE_SHORT);
+        return $this->readUnsignedInt(2, BufferType::SHORT);
     }
 
-    /**
-     * @return int
-     */
     public function readU32(): int
     {
-        return $this->readUnsignedInt(4, Buffer::TYPE_INT);
+        return $this->readUnsignedInt(4, BufferType::INT);
     }
 
-    /**
-     * @return int
-     */
     public function readU64(): int
     {
-        return $this->readUnsignedInt(8, Buffer::TYPE_LONG);
+        return $this->readUnsignedInt(8, BufferType::LONG);
     }
 
-    /**
-     * @return int
-     */
     public function readI8(): int
     {
-        return $this->readSignedInt(1, Buffer::TYPE_BYTE);
+        return $this->readSignedInt(1, BufferType::BYTE);
     }
 
-    /**
-     * @return int
-     */
     public function readI16(): int
     {
-        return $this->readSignedInt(2, Buffer::TYPE_SHORT);
+        return $this->readSignedInt(2, BufferType::SHORT);
     }
 
-    /**
-     * @return int
-     */
     public function readI32(): int
     {
-        return $this->readSignedInt(4, Buffer::TYPE_INT);
+        return $this->readSignedInt(4, BufferType::INT);
     }
 
-    /**
-     * @return int
-     */
     public function readI64(): int
     {
-        return $this->readSignedInt(8, Buffer::TYPE_LONG);
+        return $this->readSignedInt(8, BufferType::LONG);
     }
 
-    /**
-     * @param $length
-     * @return int
-     */
-    protected function readUnsignedInt($length, $datatype): int
+    private function readUnsignedInt(?int $length, ?BufferType $datatype): int
     {
         $value = $this->buffer->slice($this->offset, $length, $datatype, false)->value();
         $this->offset += $length;
+
         return $value;
     }
 
-    /**
-     * @param $length
-     * @return int
-     */
-    protected function readSignedInt($length, $datatype): int
+    private function readSignedInt(?int $length, ?BufferType $datatype): int
     {
         $value = $this->buffer->slice($this->offset, $length, $datatype, true)->value();
         $this->offset += $length;
+
         return $value;
     }
 
-    /**
-     * @return float
-     */
     public function readF32(): float
     {
-        $value = $this->buffer->slice($this->offset, 4, Buffer::TYPE_FLOAT, true)->value();
+        $value = $this->buffer->slice($this->offset, 4, BufferType::FLOAT, true)->value();
         $this->offset += 4;
+
         return $value;
     }
 
-    /**
-     * @return float
-     */
     public function readF64(): float
     {
-        $value = $this->buffer->slice($this->offset, 8, Buffer::TYPE_FLOAT, true)->value();
+        $value = $this->buffer->slice($this->offset, 8, BufferType::FLOAT, true)->value();
         $this->offset += 8;
+
         return $value;
     }
 
     /**
-     * @return string
      * @throws BorshException
      */
     public function readString(): string
     {
         $length = $this->readU32();
-        return $this->readBuffer($length);
+
+        return $this->readBuffer($length)->toString();
     }
 
-    /**
-     * @param int $length
-     * @return array
-     */
     public function readFixedArray(int $length): array
     {
         return $this->readBuffer($length)->toArray();
@@ -145,7 +102,7 @@ class BinaryReader
 
     public function readPubKey(): PublicKey
     {
-        return new PublicKey($this->readFixedArray(32));
+        return PublicKey::fromArray($this->readFixedArray(32));
     }
 
     public function readPubKeyAsString(): string
@@ -153,33 +110,29 @@ class BinaryReader
         return $this->readPubKey()->toBase58();
     }
 
-    /**
-     * @return array
-     */
     public function readArray(Closure $readEachItem): array
     {
         $length = $this->readU32();
         $array = [];
         for ($i = 0; $i < $length; $i++) {
-            array_push($array, $readEachItem());
+            $array[] = $readEachItem();
         }
+
         return $array;
     }
 
     /**
-     * @param $length
-     * @return Buffer
      * @throws BorshException
      */
-    protected function readBuffer($length): Buffer
+    private function readBuffer(int $length): Buffer
     {
-        if ($this->offset + $length > sizeof($this->buffer)) {
+        if ($this->offset + $length > $this->buffer->length()) {
             throw new BorshException("Expected buffer length {$length} isn't within bounds");
         }
 
         $buffer = $this->buffer->slice($this->offset, $length);
         $this->offset += $length;
+
         return $buffer;
     }
-
 }

@@ -1,29 +1,26 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Programs\SNS;
+namespace Collectiq\SolanaPhpSdk\Programs\SNS;
 
-use Attestto\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Attestto\SolanaPhpSdk\Programs\SNS\State\NameRegistryStateAccount;
-use Attestto\SolanaPhpSdk\Connection;
-use Attestto\SolanaPhpSdk\Exceptions\InputValidationException;
-use Attestto\SolanaPhpSdk\Exceptions\SNSError;
-
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\Connection;
+use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
+use Collectiq\SolanaPhpSdk\Exceptions\SNSError;
+use Collectiq\SolanaPhpSdk\Programs\SNS\State\NameRegistryStateAccount;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
 
 trait Utils
 {
-
     // config.json file should be in the same directory as this file
     public mixed $config;
 
-
-
     // Constructor
 
-    private function loadConstants()
+    private function loadConstants(): mixed
     {
         $jsonFilePath = dirname(__DIR__) . '/SNS/Constants/config.json';
+
         return json_decode(file_get_contents($jsonFilePath), true);
     }
 
@@ -31,41 +28,34 @@ trait Utils
     {
         $input = $this->config['HASH_PREFIX'] . $name;
         $hashed = hash('sha256', Buffer::from($input), true);
+
         return Buffer::from($hashed);
     }
 
     /**
-     * @param Buffer $hashed_name
      * @param PublicKey|null $nameClass The name class public key
      * @param PublicKey|null $nameParent The name parent public key
      * @return PublicKey The public key of the name account
      * @throws InputValidationException
-     *
      */
     public function getNameAccountKeySync(
-        Buffer $hashed_name,
-        PublicKey $nameClass = null,
-        PublicKey $nameParent = null
+        Buffer     $hashed_name,
+        ?PublicKey $nameClass = null,
+        ?PublicKey $nameParent = null
     ): PublicKey {
         $seeds = [$hashed_name];
-        $programIdPublicKey = new PublicKey($this->config['NAME_PROGRAM_ID']);
-        if ($nameClass) {
-            $seeds[] = $nameClass->toBuffer();
-        } else {
-            $seeds[] = Buffer::alloc(32);
-        }
-        if ($nameParent) {
-            $seeds[] = $nameParent->toBuffer();
-        } else {
-            $seeds[] = Buffer::alloc(32);
-        }
+        $programIdPublicKey = PublicKey::fromString($this->config['NAME_PROGRAM_ID']);
+        $seeds[] = $nameClass instanceof PublicKey ? $nameClass : Buffer::alloc(32);
+
+        $seeds[] = $nameParent instanceof PublicKey ? $nameParent : Buffer::alloc(32);
+
         [$nameAccountKey] = PublicKey::findProgramAddressSync(
             $seeds,
             $programIdPublicKey
         );
+
         return $nameAccountKey;
     }
-
 
     /**
      * This function can be used to perform a reverse look up
@@ -79,7 +69,7 @@ trait Utils
         $reverseLookupAccount = $this->getNameAccountKeySync($hashedReverseLookup, $this->config->REVERSE_LOOKUP_CLASS);
 
         $registry = NameRegistryStateAccount::retrieve($connection, $reverseLookupAccount);
-        if (!$registry['data']) {
+        if (! $registry['data']) {
             throw new SNSError(SNSError::NoAccountData);
         }
 
@@ -89,56 +79,100 @@ trait Utils
     public function deserializeReverse(
         $data
     ): ?string {
-        if (!$data) {
+        if (! $data) {
             return null;
         }
-        $nameLength = unpack('V', substr($data, 0, 4))[1];
-        return substr($data, 4, $nameLength);
-    }
 
+        $nameLength = unpack('V', substr((string) $data, 0, 4))[1];
+
+        return substr((string) $data, 4, $nameLength);
+    }
 
     /**
      * This function can be used to compute the public key of a domain or subdomain
      * @param string $domain The domain to compute the public key for (e.g `bonfida.sol`, `dex.bonfida.sol`)
      * @param string|null $record Optional parameter: If the domain being resolved is a record
-     * @return array
+     * @return array{
+     *     pubkey: PublicKey,
+     *     hashed: Buffer,
+     *     isSub: bool,
+     *     parent: PublicKey|null,
+     *     isSubRecord: bool,
+     * }
      */
-    function getDomainKeySync(string $domain, ?string $record = null): array {
-        if (substr($domain, -4) === ".sol") {
+    public function getDomainKeySync(string $domain, ?string $record = null): array
+    {
+        if (str_ends_with($domain, '.sol')) {
             $domain = substr($domain, 0, -4);
         }
-        $recordClass = $record === 'V2' ? $this->centralStateSNSRecords : null;
-        $splitted = explode(".", $domain);
+
+        $recordClass = $record === 'V2'
+            ? $this->centralStateSNSRecords
+            : null;
+
+        $splitted = explode('.', $domain);
         if (count($splitted) === 2) {
-            $prefix = $record ? $record : "\x00";
-            $sub = $prefix . $splitted[0];
+            $prefix = $record ?: "\x00";
             $parentKey = $this->_deriveSync($splitted[1])['pubkey'];
-            $result = $this->_deriveSync($sub, $parentKey, $recordClass);
+            $result = $this->_deriveSync(
+                name: $prefix . $splitted[0],
+                parent: $parentKey,
+                classKey: $recordClass,
+            );
+
             return array_merge($result, ['isSub' => true, 'parent' => $parentKey]);
-        } else if (count($splitted) === 3 && $record) {
+        }
+
+        if (count($splitted) === 3 && $record) {
             // Parent key
             $parentKey = $this->_deriveSync($splitted[2])['pubkey'];
+
             // Sub domain
-            $subKey = $this->_deriveSync("\0" . $splitted[1], new PublicKey($parentKey))['pubkey'];
+            $subKey = $this->_deriveSync(
+                name: "\0" . $splitted[1],
+                parent: $parentKey,
+            )['pubkey'];
+
             // Sub record
             $recordPrefix = $record === 'V2' ? "\x02" : "\x01";
-            $result = $this->_deriveSync($recordPrefix . $splitted[0], new PublicKey($subKey), new PublicKey($recordClass));
+
+            $result = $this->_deriveSync(
+                name: $recordPrefix . $splitted[0],
+                parent: $subKey,
+                classKey: PublicKey::from($recordClass),
+            );
+
             return array_merge($result, ['isSub' => true, 'parent' => $parentKey, 'isSubRecord' => true]);
-        } else if (count($splitted) >= 3) {
+        }
+
+        if (count($splitted) >= 3) {
             throw new SNSError(SNSError::InvalidInput);
         }
-        $result = $this->_deriveSync($domain, new PublicKey($this->config['ROOT_DOMAIN_ACCOUNT']));
+
+        $result = $this->_deriveSync(
+            name: $domain,
+            parent: PublicKey::fromString($this->config['ROOT_DOMAIN_ACCOUNT']),
+        );
+
         return array_merge($result, ['isSub' => false, 'parent' => null]);
     }
 
-    function _deriveSync(string $name, PublicKey $parent = null, PublicKey $classKey = null): array
+    /**
+     * @return array{pubkey: PublicKey, hashed: Buffer}
+     */
+    public function _deriveSync(string $name, ?PublicKey $parent = null, ?PublicKey $classKey = null): array
     {
-        // Assuming these functions exist elsewhere in your codebase
         $hashedDomainName = $this->getHashedNameSync($name);
-        $pubkey = $this->getNameAccountKeySync($hashedDomainName, $classKey, $parent ?: new PublicKey($this->config['ROOT_DOMAIN_ACCOUNT']));
-        return ['pubkey' => $pubkey, 'hashed' => $hashedDomainName];
-    }
 
+        return [
+            'pubkey' => $this->getNameAccountKeySync(
+                hashed_name: $hashedDomainName,
+                nameClass: $classKey,
+                nameParent: $parent ?: PublicKey::fromString($this->config['ROOT_DOMAIN_ACCOUNT']),
+            ),
+            'hashed' => $hashedDomainName,
+        ];
+    }
 
     /**
      * This function can be used to get the key of the reverse account
@@ -150,15 +184,16 @@ trait Utils
      * @throws SNSError
      * @throws InputValidationException
      */
-    public function getReverseKeySync(string $domain, bool $isSub = null): PublicKey {
+    public function getReverseKeySync(string $domain, ?bool $isSub = null): PublicKey
+    {
         $domainKeySync = $this->getDomainKeySync($domain);
         $pubkey = $domainKeySync['pubkey'];
-        $parent = $domainKeySync['parent'];
         $hashedReverseLookup = $this->getHashedNameSync($pubkey->toBase58());
+
         return $this->getNameAccountKeySync(
-            $hashedReverseLookup,
-            new PublicKey($this->config['REVERSE_LOOKUP_CLASS']),
-            $isSub ? $parent : null
+            hashed_name: $hashedReverseLookup,
+            nameClass: PublicKey::fromString($this->config['REVERSE_LOOKUP_CLASS']),
+            nameParent: $isSub ? $domainKeySync['parent'] : null,
         );
     }
 
@@ -171,5 +206,4 @@ trait Utils
         return NameRegistryStateAccount::retrieve($connection, $parentNameKey);
 
     }
-
 }

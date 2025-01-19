@@ -1,54 +1,31 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests;
+namespace Collectiq\SolanaPhpSdk\Tests;
 
-use Attestto\SolanaPhpSdk\SolanaRpcClient;
-use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Response;
+use Collectiq\SolanaPhpSdk\Bootstrap;
+use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use DG\BypassFinals;
 use Orchestra\Testbench\TestCase as Orchestra;
-use PHPUnit\Framework\MockObject\Exception;
-use Psr\Http\Message\RequestFactoryInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\StreamFactoryInterface;
+use Tempest\Container\Container;
 
-class TestCase extends Orchestra
+abstract class TestCase extends Orchestra
 {
-    public mixed $config; // Holds the SDK config
-    public string $endpoint = SolanaRpcClient::DEVNET_ENDPOINT;
+    public Container $container;
 
-    public function setUp(): void
+    public mixed $config;
+
+    protected function setUp(): void
     {
+        BypassFinals::enable(bypassReadOnly: false);
+
+        $this->container = Bootstrap::createContainer(__DIR__ . '/../config/solana-php-sdk.php');
+
         $jsonFilePath = dirname(__DIR__) . '/src/Programs/SNS/Constants/config.json';
         $this->config = json_decode(file_get_contents($jsonFilePath), true);
     }
 
     public function assembleClient(string $rpc_method, array $rpc_params): SolanaRpcClient
     {
-        $client = new SolanaRpcClient(
-            endpoint: $this->endpoint
-        );
-        $rpc1 = $client->buildRpc($rpc_method, $rpc_params);
-        $mockHandler = new MockHandler([
-            new Response(
-                200,
-                [],
-                json_encode($rpc1)
-            ),
-        ]);
-
-        $requestFactory = $this->createMock(RequestFactoryInterface::class);
-
-        $requestFactory->method('createRequest')
-            ->willReturn($this->createMock(RequestInterface::class));
-
-        // Create an instance of SolanaRpcClient with the mocked dependencies
-        return new SolanaRpcClient(
-            endpoint: $this->endpoint,
-            httpClient: new GuzzleClient(['handler' => HandlerStack::create($mockHandler)]),
-            requestFactory: $requestFactory,
-            streamFactory: $this->createMock(StreamFactoryInterface::class),
-        );
+        return $this->container->get(SolanaRpcClient::class);
     }
 }

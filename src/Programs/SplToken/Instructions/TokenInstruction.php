@@ -1,46 +1,48 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Programs\SplToken\Instructions;
-class TokenInstruction
+namespace Collectiq\SolanaPhpSdk\Programs\SplToken\Instructions;
+
+final class TokenInstruction
 {
-    const InitializeMint = 0;
-    const InitializeAccount = 1;
-    const InitializeMultisig = 2;
-    const Transfer = 3;
-    const Approve = 4;
-    const Revoke = 5;
-    const SetAuthority = 6;
-    const MintTo = 7;
-    const Burn = 8;
-    const CloseAccount = 9;
-    const FreezeAccount = 10;
-    const ThawAccount = 11;
-    const TransferChecked = 12;
-    const ApproveChecked = 13;
-    const MintToChecked = 14;
-    const BurnChecked = 15;
-    const InitializeAccount2 = 16;
-    const SyncNative = 17;
-    const InitializeAccount3 = 18;
-    const InitializeMultisig2 = 19;
-    const InitializeMint2 = 20;
-    const GetAccountDataSize = 21;
-    const InitializeImmutableOwner = 22;
-    const AmountToUiAmount = 23;
-    const UiAmountToAmount = 24;
-    const InitializeMintCloseAuthority = 25;
-    const TransferFeeExtension = 26;
-    const ConfidentialTransferExtension = 27;
-    const DefaultAccountStateExtension = 28;
-    const Reallocate = 29;
-    const MemoTransferExtension = 30;
-    const CreateNativeMint = 31;
-    const InitializeNonTransferableMint = 32;
-    const InterestBearingMintExtension = 33;
-    const CpiGuardExtension = 34;
-    const InitializePermanentDelegate = 35;
-    const TransferHookExtension = 36;
-    const MetadataPointerExtension = 39;
-    const GroupPointerExtension = 40;
-    const GroupMemberPointerExtension = 41;
+    public const int
+        InitializeMint = 0,
+        InitializeAccount = 1,
+        InitializeMultisig = 2,
+        Transfer = 3,
+        Approve = 4,
+        Revoke = 5,
+        SetAuthority = 6,
+        MintTo = 7,
+        Burn = 8,
+        CloseAccount = 9,
+        FreezeAccount = 10,
+        ThawAccount = 11,
+        TransferChecked = 12,
+        ApproveChecked = 13,
+        MintToChecked = 14,
+        BurnChecked = 15,
+        InitializeAccount2 = 16,
+        SyncNative = 17,
+        InitializeAccount3 = 18,
+        InitializeMultisig2 = 19,
+        InitializeMint2 = 20,
+        GetAccountDataSize = 21,
+        InitializeImmutableOwner = 22,
+        AmountToUiAmount = 23,
+        UiAmountToAmount = 24,
+        InitializeMintCloseAuthority = 25,
+        TransferFeeExtension = 26,
+        ConfidentialTransferExtension = 27,
+        DefaultAccountStateExtension = 28,
+        Reallocate = 29,
+        MemoTransferExtension = 30,
+        CreateNativeMint = 31,
+        InitializeNonTransferableMint = 32,
+        InterestBearingMintExtension = 33,
+        CpiGuardExtension = 34,
+        InitializePermanentDelegate = 35,
+        TransferHookExtension = 36,
+        MetadataPointerExtension = 39,
+        GroupPointerExtension = 40,
+        GroupMemberPointerExtension = 41;
 }

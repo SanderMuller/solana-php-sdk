@@ -1,30 +1,30 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests\Unit;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 
-use Attestto\SolanaPhpSdk\Exceptions\MethodNotFoundException;
-use Attestto\SolanaPhpSdk\SolanaRpcClient;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\Exceptions\MethodNotFoundException;
+use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-class SolanaRpcClientTest extends TestCase
+final class SolanaRpcClientTest extends TestCase
 {
     #[Test]
-    public function test_it_generates_random_key()
+    public function generates_random_key(): void
     {
         $client = $this->assembleClient('POST', ['error' => [
             'code' => SolanaRpcClient::ERROR_CODE_METHOD_NOT_FOUND,
-            'message' => 'ANYTHING'
+            'message' => 'ANYTHING',
         ]]);
 
         $rpc1 = $client->buildRpc('doStuff', []);
         $rpc2 = $client->buildRpc('doStuff', []);
 
         $client = $this->assembleClient('POST', ['result' => [
-            'data' => 'SOMEDATABASE64ORJSON'
+            'data' => 'SOMEDATABASE64ORJSON',
         ]]);
 
-        $rpc3= $client->buildRpc('doStuff', []);
+        $rpc3 = $client->buildRpc('doStuff', []);
         $rpc4 = $client->buildRpc('doStuff', []);
 
         $this->assertEquals($rpc1['id'], $rpc2['id']);
@@ -33,11 +33,11 @@ class SolanaRpcClientTest extends TestCase
     }
 
     #[Test]
-    public function test_it_throws_exception_for_invalid_methods()
+    public function throws_exception_for_invalid_methods(): void
     {
         $client = $this->assembleClient('POST', ['error' => [
             'code' => SolanaRpcClient::ERROR_CODE_METHOD_NOT_FOUND,
-            'message' => 'Method not found'
+            'message' => 'Method not found',
         ]]);
 
 //        $solana = new SystemProgram($client);
@@ -61,7 +61,7 @@ class SolanaRpcClientTest extends TestCase
 //            ),
 //        ]);
 
-        //$client = $this->assembleClient($mockHandler);
+        // $client = $this->assembleClient($mockHandler);
 
         // Assert that the correct exception is thrown for an invalid method
         $this->expectException(MethodNotFoundException::class);

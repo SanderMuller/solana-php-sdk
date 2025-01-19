@@ -1,39 +1,33 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Programs\SNS\State;
+namespace Collectiq\SolanaPhpSdk\Programs\SNS\State;
 
-use Attestto\SolanaPhpSdk\Accounts\Did\VerificationMethodStruct;
-use Attestto\SolanaPhpSdk\Accounts\Did\ServiceStruct;
-use Attestto\SolanaPhpSdk\Accounts\DidData;
-use Attestto\SolanaPhpSdk\Borsh\Borsh;
-use Attestto\SolanaPhpSdk\Borsh\BorshDeserializable;
-use Attestto\SolanaPhpSdk\Borsh\BorshObject;
-use Attestto\SolanaPhpSdk\Connection;
-use Attestto\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\Exceptions\SNSError;
-use Attestto\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\Borsh\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
+use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
+use Collectiq\SolanaPhpSdk\Connection;
+use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use Collectiq\SolanaPhpSdk\Exceptions\SNSError;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
 
-
-class NameRegistryStateAccount
+final class NameRegistryStateAccount implements BorshSerializable
 {
+    use IsBorshObject;
 
-    use BorshObject;
+    public Buffer $data;
 
-    public $data;
-
-
-    public const SCHEMA = [
+    private const array SCHEMA = [
         self::class => [
             'kind' => 'struct',
             'fields' => [
                 ['parentName', 'pubkey'],
                 ['owner', 'pubkey'],
-                ['class', 'pubkey']
+                ['class', 'pubkey'],
             ],
         ],
     ];
-    const SOL_RECORD_SIG_LEN = 96; // HEADER_LEN
+
+    public const int SOL_RECORD_SIG_LEN = 96; // HEADER_LENGTH
 
     /**
      * @throws SNSError
@@ -42,28 +36,33 @@ class NameRegistryStateAccount
     public static function retrieve(Connection $connection, string $nameAccountKey): array
     {
         $nameAccount = $connection->getAccountInfo($nameAccountKey);
-        if (!$nameAccount) {
+
+        if ($nameAccount === []) {
             throw new SNSError(SNSError::AccountDoesNotExist);
         }
 
-        $base64String = base64_decode($nameAccount['data'][0]);
-        $uint8Array = array_values(unpack('C*', $base64String));
-        $dataBuffer = Buffer::from($base64String);
+        $base64String = base64_decode((string) $nameAccount['data'][0]);
+        $dataBuffer = Buffer::fromString($base64String);
 
-        $res = NameRegistryStateAccount::deserialize($dataBuffer->toArray());
+        $registry = self::deserialize($dataBuffer);
 
-        $res->data = $dataBuffer->slice(self::SOL_RECORD_SIG_LEN);
+        $registry->data = $dataBuffer->slice(self::SOL_RECORD_SIG_LEN);
         // TODO: Implement retrieveNftOwner
-        //$nftOwner = retrieveNftOwner($connection, $nameAccountKey);
+        // $nftOwner = retrieveNftOwner($connection, $nameAccountKey);
 
-        return ['registry' => $res, 'nftOwner' => false, 'nameAccountKey' => $nameAccountKey];
+        return [
+            'registry' => $registry,
+            'nftOwner' => false,
+            'nameAccountKey' => $nameAccountKey,
+        ];
     }
 
-    public static function deserialize(array $buffer): self
+    public static function deserialize(Buffer $buffer): self
     {
-        return Borsh::deserialize(self::SCHEMA, self::class, $buffer);
+        return Borsh::deserialize(
+            schema: self::SCHEMA,
+            class: self::class,
+            buffer: $buffer,
+        );
     }
 }
-
-
-

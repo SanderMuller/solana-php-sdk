@@ -7,24 +7,18 @@ use Rector\CodingStyle\Rector\Encapsed\EncapsedStringsToSprintfRector;
 use Rector\CodingStyle\Rector\PostInc\PostIncDecToPreIncDecRector;
 use Rector\CodingStyle\Rector\Use_\SeparateMultiUseImportsRector;
 use Rector\Config\RectorConfig;
-use Rector\DeadCode\Rector\PropertyProperty\RemoveNullPropertyInitializationRector;
+use Rector\DeadCode\Rector\Stmt\RemoveUnreachableStatementRector;
 use Rector\EarlyReturn\Rector\If_\ChangeOrIfContinueToMultiContinueRector;
 use Rector\EarlyReturn\Rector\Return_\ReturnBinaryOrToEarlyReturnRector;
-use Rector\Php70\Rector\StaticCall\StaticCallOnNonStaticToInstanceCallRector;
 use Rector\Php74\Rector\Closure\ClosureToArrowFunctionRector;
 use Rector\Php74\Rector\Property\RestoreDefaultNullToNullableTypePropertyRector;
 use Rector\Php74\Rector\Ternary\ParenthesizeNestedTernaryRector;
 use Rector\Php81\Rector\Array_\FirstClassCallableRector;
-use Rector\Php81\Rector\Property\ReadOnlyPropertyRector;
-use Rector\Php82\Rector\Class_\ReadOnlyClassRector;
 use Rector\Php82\Rector\Param\AddSensitiveParameterAttributeRector;
 use Rector\Php83\Rector\ClassMethod\AddOverrideAttributeToOverriddenMethodsRector;
 use Rector\Php84\Rector\Param\ExplicitNullableParamTypeRector;
+use Rector\PHPUnit\Set\PHPUnitSetList;
 use Rector\Privatization\Rector\Property\PrivatizeFinalClassPropertyRector;
-use RectorLaravel\Rector\Class_\ModelCastsPropertyToCastsMethodRector;
-use RectorLaravel\Rector\Coalesce\ApplyDefaultInsteadOfNullCoalesceRector;
-use RectorLaravel\Rector\MethodCall\ReplaceServiceContainerCallArgRector;
-use RectorLaravel\Set\LaravelSetList;
 
 /**
  * @see https://github.com/rectorphp/rector/blob/main/docs/rector_rules_overview.md
@@ -37,15 +31,13 @@ return RectorConfig::configure()
         containerCacheDirectory: './.cache/rectorContainer',
     )
     ->withPaths([
-        __DIR__ . '/app',
-        __DIR__ . '/config',
-        __DIR__ . '/routes',
+        __DIR__ . '/src',
         __DIR__ . '/tests',
-        __DIR__ . '/bootstrap',
     ])
     ->withRules([
         ExplicitNullableParamTypeRector::class,
         ParenthesizeNestedTernaryRector::class,
+        RemoveUnreachableStatementRector::class,
         PrivatizeFinalClassPropertyRector::class,
     ])
     ->withConfiguredRule(AddSensitiveParameterAttributeRector::class, [
@@ -65,43 +57,20 @@ return RectorConfig::configure()
     ])
     ->withSkip([
         AddOverrideAttributeToOverriddenMethodsRector::class,
-        ApplyDefaultInsteadOfNullCoalesceRector::class,
         ArgumentAdderRector::class,
         ChangeOrIfContinueToMultiContinueRector::class,
-        SplitGroupedClassConstantsRector::class,
         ClosureToArrowFunctionRector::class,
-        SeparateMultiUseImportsRector::class,
         EncapsedStringsToSprintfRector::class,
-        FirstClassCallableRector::class => [
-            __DIR__ . '/routes',
-        ],
-        ModelCastsPropertyToCastsMethodRector::class,
+        FirstClassCallableRector::class,
         PostIncDecToPreIncDecRector::class,
-        ReadOnlyClassRector::class => [
-            __DIR__ . '/app/Events/*',
-            __DIR__ . '/app/Jobs/*',
-        ],
-        ReadOnlyPropertyRector::class => [
-            __DIR__ . '/app/Events/*',
-            __DIR__ . '/app/Jobs/*',
-        ],
-        RemoveNullPropertyInitializationRector::class => [
-            __DIR__ . '/app/Http/Resources/*',
-        ],
-        ReplaceServiceContainerCallArgRector::class,
         RestoreDefaultNullToNullableTypePropertyRector::class,
         ReturnBinaryOrToEarlyReturnRector::class,
-        StaticCallOnNonStaticToInstanceCallRector::class,
-        __DIR__ . '/app/Macros/*',
-        __DIR__ . '/bootstrap/cache',
+        SeparateMultiUseImportsRector::class,
+        SplitGroupedClassConstantsRector::class,
     ])
     ->withSets([
-        LaravelSetList::LARAVEL_110,
-        LaravelSetList::LARAVEL_CODE_QUALITY,
-        LaravelSetList::LARAVEL_ARRAYACCESS_TO_METHOD_CALL,
-        LaravelSetList::LARAVEL_COLLECTION,
-        LaravelSetList::LARAVEL_CONTAINER_STRING_TO_FULLY_QUALIFIED_NAME,
-        LaravelSetList::LARAVEL_FACADE_ALIASES_TO_FULL_NAMES,
+        PHPUnitSetList::PHPUNIT_110,
+        PHPUnitSetList::ANNOTATIONS_TO_ATTRIBUTES,
     ])
     ->withParallel(300, 15, 15)
     // here we can define, what prepared sets of rules will be applied
@@ -113,10 +82,9 @@ return RectorConfig::configure()
         privatization: true,
         instanceOf: true,
         earlyReturn: true,
-        strictBooleans: false,
         carbon: true,
         rectorPreset: true,
         phpunitCodeQuality: true,
     )
     ->withMemoryLimit('3G')
-    ->withPhpSets(php83: true);
+    ->withPhpSets(php84: true);

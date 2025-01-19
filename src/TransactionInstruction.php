@@ -1,23 +1,22 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk;
+namespace Collectiq\SolanaPhpSdk;
 
-use Attestto\SolanaPhpSdk\Util\AccountMeta;
-use Attestto\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\Util\AccountMeta;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
 
-class TransactionInstruction
+final class TransactionInstruction
 {
-    /**
-     * @var array<AccountMeta>
-     */
-    public array $keys;
-    public PublicKey $programId;
     public Buffer $data;
 
-    public function __construct(PublicKey $programId, array $keys, $data = null)
-    {
-        $this->programId = $programId;
-        $this->keys = $keys;
+    public function __construct(
+        public PublicKey   $programId,
+        /**
+         * @var AccountMeta[]
+         */
+        public array       $keys,
+        Buffer|string|null|array $data = null,
+    ) {
         $this->data = Buffer::from($data);
     }
 }

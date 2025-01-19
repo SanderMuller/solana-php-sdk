@@ -1,27 +1,24 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests\Unit;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 
-use Attestto\SolanaPhpSdk\Account;
-use Attestto\SolanaPhpSdk\Keypair;
-use Attestto\SolanaPhpSdk\Programs\SplTokenProgram;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\SolanaRpcClient;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\Account;
+use Collectiq\SolanaPhpSdk\Keypair;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-class AccountTest extends TestCase
+final class AccountTest extends TestCase
 {
     #[Test]
-    public function test_it_generate_new_account()
+    public function generate_new_account(): void
     {
         $account = new Account();
 
-        $this->assertEquals(64, count($account->getSecretKey()));
+        $this->assertCount(64, $account->getSecretKey());
     }
 
     #[Test]
-    public function test_it_account_from_secret_key()
+    public function account_from_secret_key(): void
     {
         $secretKey = [
             153, 218, 149, 89, 225, 94, 145, 62, 233, 171, 46, 83, 227, 223, 173, 87,
@@ -32,18 +29,18 @@ class AccountTest extends TestCase
 
         $account = new Account($secretKey);
 
-        $this->assertEquals('2q7pyhPwAwZ3QMfZrnAbDhnh9mDUqycszcpf86VgQxhF', $account->getPublicKey()->toBase58());
+        $this->assertSame('2q7pyhPwAwZ3QMfZrnAbDhnh9mDUqycszcpf86VgQxhF', $account->getPublicKey()->toBase58());
     }
 
     #[Test]
-    public function test_it_account_keypair()
+    public function account_keypair(): void
     {
         $expectedAccount = new Account();
+
         $keypair = Keypair::fromSecretKey($expectedAccount->getSecretKey());
 
         $derivedAccount = new Account($keypair->getSecretKey());
         $this->assertEquals($expectedAccount->getPublicKey(), $derivedAccount->getPublicKey());
         $this->assertEquals($expectedAccount->getSecretKey(), $derivedAccount->getSecretKey());
     }
-
 }

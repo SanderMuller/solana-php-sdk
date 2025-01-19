@@ -1,45 +1,30 @@
 {
-    "name": "attestto/solana-php-sdk",
-    "version": "0.6.1",
-    "description": "Solana PHP SDK for interacting with the Solana blockchain",
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "collectiq/solana-php-sdk",
+    "version": "0.1.0",
+    "description": "PHP SDK for Solana",
     "keywords": [
-        "attestto",
-        "solana-php-sdk",
         "blockchain",
-        "solana",
-        "sol",
+        "php",
         "sdk",
-        "php"
+        "sol",
+        "solana"
     ],
-    "homepage": "https://github.com/Attestto-com/solana-php-sdk",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Matt Stauffer",
-            "homepage": "https://packagist.org/packages/tightenco/solana-php-sdk",
-            "role": "Original Creator Developer [Legacy] "
-        },
-        {
-            "name": "Zach Vander Velden",
-            "homepage": "https://github.com/exzachlyvv",
-            "role": "Developer - Metadata [Legacy]"
-        },
-        {
-            "name": "Eduardo Chongkan",
-            "email": "eduardo@attestto.com",
-            "homepage": "https://github.com/chongkan",
-            "role": "Developer - [Current Maintainer]"
-        }
-    ],
+    "homepage": "https://github.com/collectiq/solana-php-sdk",
+    "license": "proprietary",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "ext-sodium": "*",
-        "guzzlehttp/guzzle": "^7.3",
-        "paragonie/sodium_compat": "^2.0",
+        "illuminate/collections": "^11.31",
+        "illuminate/http": "^11.31",
+        "illuminate/support": "^11.31",
+        "paragonie/sodium_compat": "^2.1",
         "stephenhill/base58": "^1.1",
+        "tempest/container": "v1.0.0-alpha.4",
         "vlucas/phpdotenv": "^5.6"
     },
     "require-dev": {
+        "dg/bypass-finals": "^1.8",
         "laravel/pint": "^1.19",
         "mockery/mockery": "^1.4",
         "orchestra/testbench": "^9.0",
@@ -50,6 +35,7 @@
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^11.5",
+        "rector/rector": "^2.0",
         "rector/swiss-knife": "^2.1",
         "rector/type-perfect": "^2.0",
         "roave/security-advisories": "dev-latest",
@@ -60,12 +46,15 @@
     },
     "autoload": {
         "psr-4": {
-            "Attestto\\SolanaPhpSdk\\": "src"
-        }
+            "Collectiq\\SolanaPhpSdk\\": "src"
+        },
+        "files": [
+            "src/Bootstrap.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
-            "Attestto\\SolanaPhpSdk\\Tests\\": "tests"
+            "Collectiq\\SolanaPhpSdk\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -74,17 +63,18 @@
         "phpstan-simplified": "vendor/bin/phpstan analyse --memory-limit=2G --error-format symplify",
         "phpstan-clear-cache": "vendor/bin/phpstan clear-result-cache",
         "rector": "vendor/bin/rector process",
+        "rector-dry-run": "vendor/bin/rector process --dry-run",
         "fix": [
             "@composer format",
-            "vendor/bin/swiss-knife finalize-classes app",
-            "vendor/bin/swiss-knife privatize-constants app",
-            "vendor/bin/swiss-knife namespace-to-psr-4 app --namespace-root \"App\\\\\"",
+            "vendor/bin/swiss-knife finalize-classes src",
+            "vendor/bin/swiss-knife privatize-constants src",
+            "vendor/bin/swiss-knife namespace-to-psr-4 src --namespace-root \"Collectiq\\SolanaPhpSdk\\\"",
             "@composer rector"
         ]
     },
     "config": {
         "platform": {
-            "php": "8.2.0"
+            "php": "8.4.1"
         },
         "sort-packages": true,
         "allow-plugins": {

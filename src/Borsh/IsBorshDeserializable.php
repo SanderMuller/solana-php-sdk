@@ -1,7 +1,10 @@
-<?php
-namespace Attestto\SolanaPhpSdk\Borsh;
+<?php declare(strict_types=1);
+
+namespace Collectiq\SolanaPhpSdk\Borsh;
+
 use ReflectionClass;
-trait BorshDeserializable
+
+trait IsBorshDeserializable
 {
     /**
      * Create a new instance of this object.
@@ -10,21 +13,18 @@ trait BorshDeserializable
      *
      * @return $this
      */
-    public static function borshConstructor()
+    public static function borshConstructor(): static
     {
         return new static();
     }
 
     /**
      * Magic setter to dynamically set properties.
-     *
-     * @param string $name
-     * @param mixed $value
      */
-    public function __set(string $name, mixed $value)
+    public function __set(string $name, mixed $value): void
     {
         // Set the value in the dynamic properties if it's not private
-        if (!$this->isPrivateProperty($name)) {
+        if (! $this->isPrivateProperty($name)) {
             $this->fields[$name] = $value;
         }
 
@@ -38,39 +38,20 @@ trait BorshDeserializable
         }
     }
 
-    /**
-     * Magic isset to check if dynamically set property is set.
-     *
-     * @param string $name
-     *
-     * @return bool
-     */
-    public function __isset(string $name)
+    public function __isset(string $name): bool
     {
         return isset($this->fields[$name]) || isset($this->private[$name]);
     }
 
-    /**
-     * Magic unset to unset dynamically set property.
-     *
-     * @param string $name
-     */
-    public function __unset(string $name)
+    public function __unset(string $name): void
     {
         if (isset($this->fields[$name])) {
             unset($this->fields[$name]);
-        } elseif ( isset($this->private[$name])) {
+        } elseif (isset($this->private[$name])) {
             unset($this->privateProperties[$name]);
         }
     }
 
-    /**
-     * Determine if a property is considered private.
-     *
-     * @param string $name
-     *
-     * @return bool
-     */
     private function isPrivateProperty(string $name): bool
     {
         // Get the class name ( whatever class is implementing this trait, e.g. Any Schema/Struct based object

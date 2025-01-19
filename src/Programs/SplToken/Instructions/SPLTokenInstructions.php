@@ -1,106 +1,65 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Programs\SplToken\Instructions;
+namespace Collectiq\SolanaPhpSdk\Programs\SplToken\Instructions;
 
-use Attestto\SolanaPhpSdk\Exceptions\InputValidationException;
-use Attestto\SolanaPhpSdk\Programs\SystemProgram;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\TransactionInstruction;
-use Attestto\SolanaPhpSdk\Util\AccountMeta;
-use Attestto\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\TransactionInstruction;
+use Collectiq\SolanaPhpSdk\Util\AccountMeta;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
 
 trait SPLTokenInstructions
 {
-
-    /**
-     * @param PublicKey $payer
-     * @param PublicKey $associatedToken
-     * @param PublicKey $owner
-     * @param PublicKey $mint
-     * @param null $programId
-     * @param null $associatedTokenProgramId
-     * @return TransactionInstruction
-     * @throws InputValidationException
-     */
     public function createAssociatedTokenAccountInstruction(
-        PublicKey $payer,
-        PublicKey $associatedToken,
-        PublicKey $owner,
-        PublicKey $mint,
-                  $programId = null,
-                  $associatedTokenProgramId = null
-    ): TransactionInstruction
-    {
-        if (!$programId) {
-            $programId = $this->SOLANA_TOKEN_PROGRAM_ID;
-        }
-        if (!$associatedTokenProgramId) {
-            $associatedTokenProgramId = $this->SOLANA_TOKEN_PROGRAM_ID;
-        }
-
+        PublicKey  $payer,
+        PublicKey  $associatedToken,
+        PublicKey  $owner,
+        PublicKey  $mint,
+        ?PublicKey $programId = null,
+        ?PublicKey $associatedTokenProgramId = null,
+    ): TransactionInstruction {
         return $this->buildAssociatedTokenAccountInstruction(
-            $payer,
-            $associatedToken,
-            $owner,
-            $mint,
-            new Buffer([]),
-            $programId,
-            $associatedTokenProgramId
+            payer: $payer,
+            associatedToken: $associatedToken,
+            owner: $owner,
+            mint: $mint,
+            instructionData: Buffer::empty(),
+            programId: $programId ?? PublicKey::fromString(self::TOKEN_PROGRAM_ID),
+            associatedTokenProgramId: $associatedTokenProgramId ?? PublicKey::fromString(self::ASSOCIATED_TOKEN_PROGRAM_ID),
         );
     }
 
-    /**
-     * @param PublicKey $payer
-     * @param PublicKey $associatedToken
-     * @param PublicKey $owner
-     * @param PublicKey $mint
-     * @param Buffer $instructionData
-     * @param string|PublicKey|null $programId
-     * @param string|PublicKey|null $associatedTokenProgramId
-     * @return TransactionInstruction
-     */
     public function buildAssociatedTokenAccountInstruction(
-        PublicKey             $payer,
-        PublicKey             $associatedToken,
-        PublicKey             $owner,
-        PublicKey             $mint,
-        Buffer                $instructionData,
-        string|PublicKey|null $programId = new PublicKey(self::TOKEN_PROGRAM_ID),
-        string|PublicKey|null $associatedTokenProgramId = new PublicKey(self::ASSOCIATED_TOKEN_PROGRAM_ID)
-    ): TransactionInstruction
-    {
-
-        $keys = [
-            new AccountMeta($payer, true, true),
-            new AccountMeta($associatedToken, false, true),
-            new AccountMeta($owner, false, false),
-            new AccountMeta($mint, false, false),
-            new AccountMeta(SystemProgram::programId(), false, false),
-            new AccountMeta($programId, false, false),
-        ];
-
-
+        PublicKey  $payer,
+        PublicKey  $associatedToken,
+        PublicKey  $owner,
+        PublicKey  $mint,
+        Buffer     $instructionData,
+        ?PublicKey $programId = null,
+        ?PublicKey $associatedTokenProgramId = null,
+    ): TransactionInstruction {
         return new TransactionInstruction(
-            $associatedTokenProgramId,
-            $keys,
-            $instructionData
+            programId: $associatedTokenProgramId ?? PublicKey::fromString(self::ASSOCIATED_TOKEN_PROGRAM_ID),
+            keys: [
+                new AccountMeta($payer, true, true),
+                new AccountMeta($associatedToken, false, true),
+                new AccountMeta($owner, false, false),
+                new AccountMeta($mint, false, false),
+                new AccountMeta(SystemProgram::programId(), false, false),
+                new AccountMeta($programId ?? PublicKey::fromString(self::TOKEN_PROGRAM_ID), false, false),
+            ],
+            data: $instructionData,
         );
     }
 
-
-    /**
-     * @throws InputValidationException
-     */
-    function createSyncNativeInstruction(PublicKey $owner, string $programId = self::TOKEN_PROGRAM_ID): TransactionInstruction
+    public function createSyncNativeInstruction(PublicKey $owner, string $programId = self::TOKEN_PROGRAM_ID): TransactionInstruction
     {
-        $keys = [
-            new AccountMeta($owner, false, true),
-        ];
-        $data = str_repeat("\0", TokenInstruction::SyncNative);
         return new TransactionInstruction(
-            new PublicKey($programId),
-            $keys,
-            $data
+            programId: PublicKey::fromString($programId),
+            keys: [
+                new AccountMeta(publicKey: $owner, isSigner: false, isWritable: true),
+            ],
+            data: str_repeat("\0", TokenInstruction::SyncNative),
         );
     }
 }

@@ -1,163 +1,174 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Borsh;
+namespace Collectiq\SolanaPhpSdk\Borsh;
 
-use Attestto\SolanaPhpSdk\Exceptions\TodoException;
-use Attestto\SolanaPhpSdk\Util\Buffer;
 use Closure;
+use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferType;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
 
-class BinaryWriter
+final class BinaryWriter
 {
-    protected Buffer $buffer;
-    protected int $length;
+    private readonly Buffer $buffer;
+
+    private int $length = 0;
 
     public function __construct()
     {
-        $this->buffer = Buffer::from();
-        $this->length = 0;
+        $this->buffer = Buffer::empty();
     }
 
     /**
-     * @param int $value
      * @return $this
      */
-    public function writeU8(int $value)
+    public function writeU8(int $value): self
     {
-        return $this->writeBuffer(Buffer::from($value, Buffer::TYPE_BYTE, false));
+        return $this->writeBuffer(
+            Buffer::fromInt($value, BufferType::BYTE, false)
+        );
     }
 
     /**
-     * @param int $value
      * @return $this
      */
-    public function writeU16(int $value)
+    public function writeU16(int $value): self
     {
-        return $this->writeBuffer(Buffer::from($value, Buffer::TYPE_SHORT, false));
+        return $this->writeBuffer(
+            Buffer::fromInt($value, BufferType::SHORT, false)
+        );
     }
 
     /**
-     * @param int $value
      * @return $this
      */
-    public function writeU32(int $value)
+    public function writeU32(int $value): self
     {
-        return $this->writeBuffer(Buffer::from($value, Buffer::TYPE_INT, false));
+        return $this->writeBuffer(
+            Buffer::fromInt($value, BufferType::INT, false)
+        );
     }
 
     /**
-     * @param int $value
      * @return $this
      */
-    public function writeU64(int $value)
+    public function writeU64(int $value): self
     {
-        return $this->writeBuffer(Buffer::from($value, Buffer::TYPE_LONG, false));
+        return $this->writeBuffer(
+            Buffer::fromInt($value, BufferType::LONG, false)
+        );
     }
 
     /**
-     * @param int $value
      * @return $this
      */
-    public function writeI8(int $value)
+    public function writeI8(int $value): self
     {
-        return $this->writeBuffer(Buffer::from($value, Buffer::TYPE_BYTE, true));
+        return $this->writeBuffer(
+            Buffer::fromInt($value, BufferType::BYTE, true)
+        );
     }
 
     /**
-     * @param int $value
      * @return $this
      */
-    public function writeI16(int $value)
+    public function writeI16(int $value): self
     {
-        return $this->writeBuffer(Buffer::from($value, Buffer::TYPE_SHORT, true));
+        return $this->writeBuffer(
+            Buffer::fromInt($value, BufferType::SHORT, true)
+        );
     }
 
     /**
-     * @param int $value
      * @return $this
      */
-    public function writeI32(int $value)
+    public function writeI32(int $value): self
     {
-        return $this->writeBuffer(Buffer::from($value, Buffer::TYPE_INT, true));
+        return $this->writeBuffer(
+            Buffer::fromInt($value, BufferType::INT, true)
+        );
     }
 
     /**
-     * @param int $value
      * @return $this
      */
-    public function writeI64(int $value)
+    public function writeI64(int $value): self
     {
-        return $this->writeBuffer(Buffer::from($value, Buffer::TYPE_LONG, true));
+        return $this->writeBuffer(
+            Buffer::fromInt($value, BufferType::LONG, true)
+        );
     }
 
     /**
-     * @param float $value
      * @return $this
      */
-    public function writeF32(float $value)
+    public function writeF32(float $value): self
     {
-        return $this->writeBuffer(Buffer::from($value, Buffer::TYPE_FLOAT, true)->fixed(4));
+        return $this->writeBuffer(
+            Buffer::fromFloat($value, BufferType::FLOAT, true)
+                ->fixed(4)
+        );
     }
 
     /**
-     * @param float $value
      * @return $this
      */
-    public function writeF64(float $value)
+    public function writeF64(float $value): self
     {
-        return $this->writeBuffer(Buffer::from($value, Buffer::TYPE_FLOAT, true)->fixed(8));
+        return $this->writeBuffer(
+            Buffer::fromFloat($value, BufferType::FLOAT, true)
+                ->fixed(8)
+        );
     }
 
     /**
-     * @param string $value
      * @return $this
      */
-    public function writeString(string $value)
+    public function writeString(string $value): self
     {
-        $valueBuffer = Buffer::from($value);
-        $this->writeU32(sizeof($valueBuffer));
-        $this->writeBuffer($valueBuffer);
-        return $this;
+        $valueBuffer = Buffer::fromString($value, BufferType::STRING);
+
+        return $this
+            ->writeU32($valueBuffer->length())
+            ->writeBuffer($valueBuffer);
     }
 
     /**
-     * @param array $array
      * @return $this
      */
-    public function writeFixedArray(array $array)
+    public function writeFixedArray(array $array): self
     {
-        $this->writeBuffer(Buffer::from($array));
-        return $this;
+        return $this->writeBuffer(Buffer::fromArray($array));
     }
 
     /**
-     * @param array $array
      * @return $this
      */
-    public function writeArray(array $array, Closure $writeFn)
+    public function writeArray(array $array, Closure $writeFn): self
     {
-        $this->writeU32(sizeof($array));
+        $this->writeU32(count($array));
+
         foreach ($array as $item) {
             $writeFn($item);
         }
+
         return $this;
     }
 
     /**
-     * @param Buffer $buffer
      * @return $this
      */
-    protected function writeBuffer(Buffer $buffer)
+    private function writeBuffer(Buffer $buffer): self
     {
         $this->buffer->push($buffer);
-        $this->length += sizeof($buffer);
+
+        $this->length += $this->buffer->length();
+
         return $this;
     }
 
-    /**
-     * @return array
-     */
-    public function toArray()
+    public function toArray(): array
     {
-        return $this->buffer->slice(0, $this->length)->toArray();
+        return $this->buffer
+            ->slice(0, $this->length)
+            ->toArray();
     }
 }

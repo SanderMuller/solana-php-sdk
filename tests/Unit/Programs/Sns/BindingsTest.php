@@ -1,77 +1,60 @@
-<?php
-namespace Attestto\SolanaPhpSdk\Tests\Unit\Programs\SNS;
+<?php declare(strict_types=1);
 
-use Attestto\SolanaPhpSdk\Connection;
-use Attestto\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Attestto\SolanaPhpSdk\Exceptions\InputValidationException;
-use Attestto\SolanaPhpSdk\Exceptions\SNSError;
-use Attestto\SolanaPhpSdk\Programs\SnsProgram;
-use Attestto\SolanaPhpSdk\SolanaRpcClient;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\TransactionInstruction;
-use Attestto\SolanaPhpSdk\Util\Buffer;
-use PHPUnit\Framework\MockObject\Exception;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs\SNS;
 
-class BindingsTest extends TestCase
+use Collectiq\SolanaPhpSdk\Connection;
+use Collectiq\SolanaPhpSdk\Enum\Network;
+use Collectiq\SolanaPhpSdk\Programs\SnsProgram;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\TransactionInstruction;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
+use PHPUnit\Framework\Attributes\Test;
+
+final class BindingsTest extends TestCase
 {
-    /**
-     * @throws InputValidationException
-     * @throws Exception
-     */
     #[Test]
-    public function testCreateSubDomainFast()
+    public function create_sub_domain_fast(): void
     {
-        // Arrange
+        $nameOwnerKey = PublicKey::fromString('6V3DAZhWgATw8hrmMh7DnvLgaVpHLuMafZZPTVnyUs6Y');
 
-        $nameOwnerKey = new PublicKey('6V3DAZhWgATw8hrmMh7DnvLgaVpHLuMafZZPTVnyUs6Y');
+        config(['solana-php-sdk.network' => Network::MAINNET]);
 
-
-        $rpcClient = new SolanaRpcClient('https://api.mainnet-beta.solana.com');
-        $connection = new Connection($rpcClient);
-        $sns = new SnsProgram($rpcClient);
+        $connection = $this->container->get(Connection::class);
+        $sns = new SnsProgram();
 
         $instruction = $sns->createSubdomainFast(
                 $connection,
                 'subdomain.chongkan.sol',
-                new PublicKey('57vj6H1omWUvrQypM8esx4q67WNRZhTW3ZHZ97unkSTb'), // f.chongkan.sol
-                new PublicKey('34MxBdMJYgugd9ZzmZN338kL1vMqkhPqtnZG5qmWnfn1'),
+                PublicKey::fromString('57vj6H1omWUvrQypM8esx4q67WNRZhTW3ZHZ97unkSTb'), // f.chongkan.sol
+                PublicKey::fromString('34MxBdMJYgugd9ZzmZN338kL1vMqkhPqtnZG5qmWnfn1'),
                 $nameOwnerKey,
                 1_000,
                 $nameOwnerKey
             );
 
-
-        // Assert
         $this->assertInstanceOf(TransactionInstruction::class, $instruction[1][0]);
-        // TODO Assert IX keys and data
 
+        // TODO Assert IX keys and data
     }
 
     #[Test]
-    public function test_createNameRegistry()
+    public function createNameRegistry(): void
     {
-        // Arrange
-        $nameOwnerSigner = new PublicKey(Buffer::alloc(32));
+        $nameOwnerSigner = PublicKey::fromBuffer(Buffer::alloc(32));
 
-        $client = $this->createMock(SolanaRpcClient::class);
-        $connection = $this->createMock(Connection::class);
-        $sns = new SnsProgram($client);
+        $connection = $this->container->get(SolanaRpcClient::class);
+        $snsProgram = $this->container->get(SnsProgram::class);
 
-
-        $instruction = $sns->createNameRegistry(
-            $connection,
-            'domain',
-            2000,
-            $nameOwnerSigner,
-            $nameOwnerSigner, // could be someone else
-            null, null, null
+        $instruction = $snsProgram->createNameRegistry(
+            connection: $connection,
+            name: 'domain',
+            space: 2000,
+            payerKey: $nameOwnerSigner,
+            nameOwner: $nameOwnerSigner, // could be someone else
         );
 
-        // Assert
-        $this->assertInstanceOf(TransactionInstruction::class, $instruction);
         $this->assertEquals(0, $instruction->data->toArray()[0]);
     }
-
-
 }

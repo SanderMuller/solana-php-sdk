@@ -1,8 +1,10 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Util;
+namespace Collectiq\SolanaPhpSdk\Util;
+
+use Collectiq\SolanaPhpSdk\SecretKey;
 
 interface HasSecretKey
 {
-    public function getSecretKey(): Buffer;
+    public function getSecretKey(): SecretKey;
 }

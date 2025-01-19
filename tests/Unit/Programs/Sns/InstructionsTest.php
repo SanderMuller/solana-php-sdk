@@ -1,55 +1,34 @@
-<?php
-namespace Attestto\SolanaPhpSdk\Tests\Unit\Programs\SNS;
+<?php declare(strict_types=1);
 
-use Attestto\SolanaPhpSdk\Exceptions\InputValidationException;
-use Attestto\SolanaPhpSdk\Programs\SnsProgram;
-use Attestto\SolanaPhpSdk\SolanaRpcClient;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\TransactionInstruction;
-use Attestto\SolanaPhpSdk\Util\Buffer;
-use PHPUnit\Framework\MockObject\Exception;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs\SNS;
 
-class InstructionsTest extends TestCase
+use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferType;
+use Collectiq\SolanaPhpSdk\Programs\SnsProgram;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\TransactionInstruction;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
+use PHPUnit\Framework\Attributes\Test;
+
+final class InstructionsTest extends TestCase
 {
-    /**
-     * @throws InputValidationException
-     * @throws Exception
-     */
     #[Test]
-    public function testCreateInstruction()
+    public function create_instruction(): void
     {
-        // Arrange
-        $nameProgramId = new PublicKey(Buffer::alloc(32));
-        $systemProgramId = new PublicKey(Buffer::alloc(32));
-        $nameKey = new PublicKey(Buffer::alloc(32));
-        $nameOwnerKey = new PublicKey(Buffer::alloc(32));
-        $payerKey = new PublicKey(Buffer::alloc(32));
-        $hashed_name = new Buffer(32, Buffer::TYPE_INT, false);
-        $lamports = new Buffer(1000000, Buffer::TYPE_INT, false);
-        $space = new Buffer(2000, Buffer::TYPE_INT, false);
-        $nameClassKey = new PublicKey(Buffer::alloc(32));
-        $nameParent = new PublicKey(Buffer::alloc(32));
-        $nameParentOwner = new PublicKey(Buffer::alloc(32));
-
-        $client = $this->createMock(SolanaRpcClient::class);
-
-        $sns = new SnsProgram($client);
-        $instruction = $sns->createInstruction(
-            $nameProgramId,
-            $systemProgramId,
-            $nameKey,
-            $nameOwnerKey,
-            $payerKey,
-            $hashed_name,
-            $lamports,
-            $space,
-            $nameClassKey,
-            $nameParent,
-            $nameParentOwner
+        $instruction = $this->container->get(SnsProgram::class)->createInstruction(
+            NAME_PROGRAM_ID: PublicKey::fromBuffer(Buffer::alloc(32)),
+            programId: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameAccountKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameOwner: PublicKey::fromBuffer(Buffer::alloc(32)),
+            payerKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+            hashed_name: Buffer::fromInt(32, BufferType::INT, false),
+            param: Buffer::fromInt(1000000, BufferType::INT, false),
+            param1: Buffer::fromInt(2000, BufferType::INT, false),
+            nameClass: PublicKey::fromBuffer(Buffer::alloc(32)),
+            parentName: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameParentOwner: PublicKey::fromBuffer(Buffer::alloc(32)),
         );
 
-        // Assert
         $this->assertInstanceOf(TransactionInstruction::class, $instruction);
         $this->assertEquals(0, $instruction->data->toArray()[0]);
 
@@ -57,107 +36,65 @@ class InstructionsTest extends TestCase
     }
 
     #[Test]
-    public function test_updateInstruction()
+    public function updateInstruction(): void
     {
-        // Arrange
-        $nameProgramId = new PublicKey(Buffer::alloc(32));
-        $nameAccountKey = new PublicKey(Buffer::alloc(32));
-        $offset = new Buffer(96, Buffer::TYPE_INT, false);
-        $inputData = new Buffer('INPUT DATA', );
-        $nameUpdateSigner = new PublicKey(Buffer::alloc(32));
-
-        $client = $this->createMock(SolanaRpcClient::class);
-
-        $sns = new SnsProgram($client);
-        $instruction = $sns->updateInstruction(
-            $nameProgramId,
-            $nameAccountKey,
-            $offset,
-            $inputData,
-            $nameUpdateSigner
+        $instruction = $this->container->get(SnsProgram::class)->updateInstruction(
+            nameProgramId: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameAccountKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+            offset: Buffer::fromInt(96, BufferType::INT, false),
+            input_data: Buffer::fromString('INPUT DATA'),
+            nameUpdateSigner: PublicKey::fromBuffer(Buffer::alloc(32)),
         );
 
-        // Assert
-        $this->assertInstanceOf(TransactionInstruction::class, $instruction);
         $this->assertEquals(1, $instruction->data->toArray()[0]);
     }
 
     #[Test]
-    public function test_transferInstruction()
+    public function transferInstruction(): void
     {
-        // Arrange
-        $nameProgramId = new PublicKey(Buffer::alloc(32));
-        $nameAccountKey = new PublicKey(Buffer::alloc(32));
-        $newOwnerKey = new PublicKey(Buffer::alloc(32));
-        $currentNameOwnerKey = new PublicKey(Buffer::alloc(32));
-
-
-        $client = $this->createMock(SolanaRpcClient::class);
-
-        $sns = new SnsProgram($client);
-        $instruction = $sns->transferInstruction(
-            $nameProgramId,
-            $nameAccountKey,
-            $newOwnerKey,
-            $currentNameOwnerKey,
-            null, null, null
+        $instruction = $this->container->get(SnsProgram::class)->transferInstruction(
+            NAME_PROGRAM_ID: PublicKey::fromBuffer(Buffer::alloc(32)),
+            pubkey: PublicKey::fromBuffer(Buffer::alloc(32)),
+            newOwner: PublicKey::fromBuffer(Buffer::alloc(32)),
+            owner: PublicKey::fromBuffer(Buffer::alloc(32)),
+            null: null,
+            nameParent: null,
+            nameParentOwner: null,
         );
 
-        // Assert
         $this->assertInstanceOf(TransactionInstruction::class, $instruction);
         $this->assertEquals(2, $instruction->data->toArray()[0]);
     }
 
     #[Test]
-    public function test_reallocInstruction()
+    public function reallocInstruction(): void
     {
-        // Arrange
-        $nameProgramId = new PublicKey(Buffer::alloc(32));
-        $systemProgramId = new PublicKey(Buffer::alloc(32));
-        $nameAccountKey = new PublicKey(Buffer::alloc(32));
-        $currentNameOwnerKey = new PublicKey(Buffer::alloc(32));
-        $space = new Buffer(2000, Buffer::TYPE_INT, false);
+        $currentNameOwnerKey = PublicKey::fromBuffer(Buffer::alloc(32));
 
-        $client = $this->createMock(SolanaRpcClient::class);
-
-        $sns = new SnsProgram($client);
-        $instruction = $sns->reallocInstruction(
-            $nameProgramId,
-            $systemProgramId,
-            $currentNameOwnerKey, // Payer
-            $nameAccountKey,
-            $currentNameOwnerKey,
-            $space
+        $instruction = $this->container->get(SnsProgram::class)->reallocInstruction(
+            nameProgramId: PublicKey::fromBuffer(Buffer::alloc(32)),
+            systemProgramId: PublicKey::fromBuffer(Buffer::alloc(32)),
+            payerKey: $currentNameOwnerKey,
+            nameAccountKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameOwnerKey: $currentNameOwnerKey,
+            space: Buffer::fromInt(2000, BufferType::INT, false),
         );
 
-        // Assert
-        $this->assertInstanceOf(TransactionInstruction::class, $instruction);
         $this->assertEquals(4, $instruction->data->toArray()[0]);
     }
 
     #[Test]
-    public function test_deleteInstruction()
+    public function deleteInstruction(): void
     {
-        // Arrange
-        $nameProgramId = new PublicKey(Buffer::alloc(32));
+        $currentNameOwnerKey = PublicKey::fromBuffer(Buffer::alloc(32));
 
-        $nameAccountKey = new PublicKey(Buffer::alloc(32));
-        $currentNameOwnerKey = new PublicKey(Buffer::alloc(32));
-
-
-        $client = $this->createMock(SolanaRpcClient::class);
-
-        $sns = new SnsProgram($client);
-        $instruction = $sns->deleteInstruction(
-            $nameProgramId,
-            $nameAccountKey,
-            $currentNameOwnerKey, // Refund Target
-            $currentNameOwnerKey
+        $instruction = $this->container->get(SnsProgram::class)->deleteInstruction(
+            nameProgramId: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameAccountKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+            refundTargetKey: $currentNameOwnerKey,
+            nameOwnerKey: $currentNameOwnerKey
         );
 
-        // Assert
-        $this->assertInstanceOf(TransactionInstruction::class, $instruction);
         $this->assertEquals(3, $instruction->data->toArray()[0]);
     }
-
 }

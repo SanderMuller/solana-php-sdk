@@ -1,20 +1,19 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Util;
+namespace Collectiq\SolanaPhpSdk\Util;
 
-class ShortVec
+final class ShortVec
 {
     /**
-     * @param $buffer
      * @return array list($length, $size)
      */
-    public static function decodeLength($buffer): array
+    public static function decodeLength(array|Buffer $buffer): array
     {
         $buffer = Buffer::from($buffer)->toArray();
 
         $len = 0;
         $size = 0;
-        while ($size < sizeof($buffer)) {
+        while ($size < count($buffer)) {
             $elem = $buffer[$size];
             $len |= ($elem & 0x7F) << ($size * 7);
             $size++;
@@ -22,6 +21,7 @@ class ShortVec
                 break;
             }
         }
+
         return [$len, $size];
     }
 
@@ -30,15 +30,16 @@ class ShortVec
         $elems = [];
         $rem_len = $length;
 
-        for (;;) {
-            $elem = $rem_len & 0x7f;
+        for (; ;) {
+            $elem = $rem_len & 0x7F;
             $rem_len >>= 7;
-            if (! $rem_len) {
-                array_push($elems, $elem);
+            if ($rem_len === 0) {
+                $elems[] = $elem;
                 break;
             }
+
             $elem |= 0x80;
-            array_push($elems, $elem);
+            $elems[] = $elem;
         }
 
         return $elems;

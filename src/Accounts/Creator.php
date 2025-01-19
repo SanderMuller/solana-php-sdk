@@ -1,14 +1,14 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Accounts;
+namespace Collectiq\SolanaPhpSdk\Accounts;
 
-use Attestto\SolanaPhpSdk\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh;
 
-class Creator
+final class Creator
 {
-    use Borsh\BorshDeserializable;
+    use Borsh\IsBorshDeserializable;
 
-    public const SCHEMA = [
+    public const array SCHEMA = [
         self::class => [
             'kind' => 'struct',
             'fields' => [

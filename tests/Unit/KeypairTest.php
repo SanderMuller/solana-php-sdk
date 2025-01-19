@@ -1,49 +1,49 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests\Unit;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 
-use Attestto\SolanaPhpSdk\Keypair;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
-use Attestto\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\Keypair;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
+use PHPUnit\Framework\Attributes\Test;
 
-class KeypairTest extends TestCase
+final class KeypairTest extends TestCase
 {
     /**
      * Seeded from
      * https://github.com/solana-labs/solana-web3.js/blob/master/test/keypair.test.ts
      * on Oct 2, 2021
      */
-
     #[Test]
-    public function test_it_new_keypair()
+    public function inew_keypair(): void
     {
         $keypair = new Keypair();
 
-        $this->assertEquals(64, sizeof($keypair->getSecretKey()));
-        $this->assertEquals(32, sizeof($keypair->getPublicKey()->toBytes()));
+        $this->assertCount(64, $keypair->getSecretKey());
+        $this->assertCount(32, $keypair->getPublicKey()->toBytes());
     }
 
     #[Test]
-    public function test_it_generate_new_keypair()
+    public function igenerate_new_keypair(): void
     {
         $keypair = Keypair::generate();
 
-        $this->assertEquals(64, sizeof($keypair->getSecretKey()));
-        $this->assertEquals(32, sizeof($keypair->getPublicKey()->toBytes()));
+        $this->assertCount(64, $keypair->getSecretKey());
+        $this->assertCount(32, $keypair->getPublicKey()->toBytes());
     }
 
     #[Test]
-    public function test_it_keypair_from_secret_key()
+    public function ikeypair_from_secret_key(): void
     {
         $secretKey = sodium_base642bin('mdqVWeFekT7pqy5T49+tV12jO0m+ESW7ki4zSU9JiCgbL0kJbj5dvQ/PqcDAzZLZqzshVEs01d1KZdmLh4uZIg==', SODIUM_BASE64_VARIANT_ORIGINAL);
 
         $keypair = Keypair::fromSecretKey($secretKey);
 
-        $this->assertEquals('2q7pyhPwAwZ3QMfZrnAbDhnh9mDUqycszcpf86VgQxhF', $keypair->getPublicKey()->toBase58());
+        $this->assertSame('2q7pyhPwAwZ3QMfZrnAbDhnh9mDUqycszcpf86VgQxhF', $keypair->getPublicKey()->toBase58());
     }
 
     #[Test]
-    public function test_it_generate_keypair_from_seed()
+    public function igenerate_keypair_from_seed(): void
     {
         $byteArray = array_fill(0, 32, 8);
 
@@ -51,11 +51,11 @@ class KeypairTest extends TestCase
 
         $keypair = Keypair::fromSeed($seedString);
 
-        $this->assertEquals('2KW2XRd9kwqet15Aha2oK3tYvd3nWbTFH1MBiRAv1BE1', $keypair->getPublicKey()->toBase58());
+        $this->assertSame('2KW2XRd9kwqet15Aha2oK3tYvd3nWbTFH1MBiRAv1BE1', $keypair->getPublicKey()->toBase58());
     }
 
     #[Test]
-    public function test_it_bin2array_and_array2bin_are_equivalent()
+    public function ibin2array_and_array2bin_are_equivalent(): void
     {
         $keypair = sodium_crypto_sign_keypair();
         $publicKey = sodium_crypto_sign_publickey($keypair);
@@ -63,6 +63,6 @@ class KeypairTest extends TestCase
         $valueAsArray = Buffer::from($publicKey)->toArray();
         $valueAsString = Buffer::from($valueAsArray)->toString();
 
-        $this->assertEquals($publicKey, $valueAsString);
+        $this->assertSame($publicKey, $valueAsString);
     }
 }

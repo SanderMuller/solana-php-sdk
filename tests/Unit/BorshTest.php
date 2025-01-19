@@ -1,51 +1,62 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests\Unit;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 
-use Attestto\SolanaPhpSdk\Borsh\Borsh;
-use Attestto\SolanaPhpSdk\Borsh\BorshObject;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\Borsh\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
+use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
-class TestObject {
-    use BorshObject;
+class TestObject implements BorshSerializable
+{
+    use IsBorshObject;
 }
 
-class TestWithPrivateVariable {
-    use BorshObject;
+class TestWithPrivateVariable implements BorshSerializable
+{
+    use IsBorshObject;
 
     private $m;
 
-    public function setM($m) {$this->m = $m;}
-    public function getM() {return $this->m;}
-}
-
-class TestWithConstructorParameters {
-    use BorshObject;
-
-    private $m;
-
-    public function __construct($m)
+    public function setM($m): void
     {
-        $this->m = $m;
+    $this->m = $m;
     }
 
-    public function getM() {return $this->m;}
+    public function getM()
+    {
+    return $this->m;
+    }
+}
 
-    public static function borshConstructor()
+class TestWithConstructorParameters implements BorshSerializable
+{
+    use IsBorshObject;
+
+    public function __construct(private $m) {}
+
+    public function getM()
+    {
+    return $this->m;
+    }
+
+    public static function borshConstructor(): static
     {
         return new static(null);
     }
 }
 
-class BorshTest extends TestCase
+final class BorshTest extends TestCase
 {
     #[Test]
-    public function test_it_serialize_object()
+    public function serialize_object(): void
     {
         $value = new TestObject();
         $value->fields['x'] = 255;
         $value->fields['y'] = 20;
         $value->fields['z'] = '123';
+        $value->fields['zz'] = 'a123';
         $value->fields['a'] = 12.987;
         $value->fields['b'] = -121;
         $value->fields['c'] = -20;
@@ -58,6 +69,7 @@ class BorshTest extends TestCase
                     ['x', 'u8'],
                     ['y', 'u64'],
                     ['z', 'string'],
+                    ['zz', 'string'],
                     ['a', 'f64'],
                     ['b', 'i32'],
                     ['c', 'i8'],
@@ -72,14 +84,16 @@ class BorshTest extends TestCase
         $this->assertInstanceOf(TestObject::class, $newValue);
         $this->assertEquals(255, $newValue->fields['x']);
         $this->assertEquals(20, $newValue->fields['y']);
+        $this->assertEquals('a123', $newValue->fields['zz']);
         $this->assertEquals('123', $newValue->fields['z']);
-        $this->assertEquals(12.987, $newValue->fields['a']);
+        $this->assertEqualsWithDelta(12.987, $newValue->fields['a'], PHP_FLOAT_EPSILON);
         $this->assertEquals(-121, $newValue->fields['b']);
         $this->assertEquals(-20, $newValue->fields['c']);
         $this->assertEquals([1, 2, 3], $newValue->fields['q']);
     }
+
     #[Test]
-    public function test_it_serialize_optional_field()
+    public function iserialize_optional_field(): void
     {
         $schema = [
             TestObject::class => [
@@ -107,7 +121,7 @@ class BorshTest extends TestCase
     }
 
     #[Test]
-    public function test_it_serialize_deserialize_fixed_array()
+    public function iserialize_deserialize_fixed_array(): void
     {
         $schema = [
             TestObject::class => [
@@ -124,13 +138,13 @@ class BorshTest extends TestCase
         $buffer = Borsh::serialize($schema, $value);
         $newValue = Borsh::deserialize($schema, TestObject::class, $buffer);
 
-        $this->assertEquals([5, 0, 0, 0, 104, 101, 108, 108, 111, 5, 0, 0, 0, 119, 111, 114, 108, 100], $buffer);
+        $this->assertSame([5, 0, 0, 0, 104, 101, 108, 108, 111, 5, 0, 0, 0, 119, 111, 114, 108, 100], $buffer);
         // Note, asserts TRUE because of the magic getter __get()
         $this->assertEquals(['hello', 'world'], $newValue->x);
     }
 
     #[Test]
-    public function test_it_serialize_deserialize_invisible_properties()
+    public function iserialize_deserialize_invisible_properties(): void
     {
         $value = new TestWithPrivateVariable();
         $value->setM(255);
@@ -152,7 +166,7 @@ class BorshTest extends TestCase
     }
 
     #[Test]
-    public function test_it_serialize_deserialize_handles_constructor_with_parameters()
+    public function iserialize_deserialize_handles_constructor_with_parameters(): void
     {
         $value = new TestWithConstructorParameters(255);
 

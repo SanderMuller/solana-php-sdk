@@ -1,14 +1,15 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Accounts;
+namespace Collectiq\SolanaPhpSdk\Accounts;
 
-use Attestto\SolanaPhpSdk\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
 
-class MetadataData
+final class MetadataData implements BorshSerializable
 {
-    use Borsh\BorshObject;
+    use Borsh\IsBorshObject;
 
-    public const SCHEMA = [
+    public const array SCHEMA = [
         Creator::class => Creator::SCHEMA[Creator::class],
         self::class => [
             'kind' => 'struct',
@@ -19,8 +20,8 @@ class MetadataData
                 ['sellerFeeBasisPoints', 'u16'],
                 ['creators', [
                     'kind' => 'option',
-                    'type' => [Creator::class]
-                ]]
+                    'type' => [Creator::class],
+                ]],
             ],
         ],
     ];

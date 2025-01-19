@@ -1,21 +1,17 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests\Unit\Programs\SNS;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs\SNS;
 
+use Collectiq\SolanaPhpSdk\Connection;
+use Collectiq\SolanaPhpSdk\Enum\Network;
+use Collectiq\SolanaPhpSdk\Programs\SnsProgram;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
-use Attestto\SolanaPhpSdk\Connection;
-use Attestto\SolanaPhpSdk\Exceptions\InputValidationException;
-
-use Attestto\SolanaPhpSdk\Exceptions\SNSError;
-use Attestto\SolanaPhpSdk\Programs\SnsProgram;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
-use Attestto\SolanaPhpSdk\SolanaRpcClient;
-use PHPUnit\Framework\MockObject\Exception;
-
-class DerivationTest extends TestCase
+final class DerivationTest extends TestCase
 {
-
     private array $items = [
         [
             'domain' => 'bonfida',
@@ -35,35 +31,29 @@ class DerivationTest extends TestCase
         ],
     ];
 
-    public function setUp(): void
-    {
-        parent::setUp();
-    }
-
     #[Test]
-    public function test_getHashedNameSync(){
+    public function getHashedNameSync(): void
+    {
         $client = $this->createMock(SolanaRpcClient::class);
         $sns = new SnsProgram($client);
         $hashedName = $sns->getHashedNameSync('bonfida');
         $bs58HashedName = $hashedName->toBase58String();
-        $this->assertEquals('AcmVjPtaDyNboWGSKjYHxea1QDgN648T4Je3HUpkHecf', $bs58HashedName);
+        $this->assertSame('AcmVjPtaDyNboWGSKjYHxea1QDgN648T4Je3HUpkHecf', $bs58HashedName);
     }
 
-    /**
-     * @throws InputValidationException
-     */
     #[Test]
-    public function test_deriveSynch(){
+    public function deriveSynch(): void
+    {
         $client = $this->createMock(SolanaRpcClient::class);
         $sns = new SnsProgram($client);
         $hashedName = $sns->_deriveSync('bonfida');
         $nameAccountKey = $sns->getNameAccountKeySync($hashedName['hashed']);
         $nameAccountKeyBs58 = $nameAccountKey->toBase58();
-        $this->assertEquals('85v6oF1VnGNeT4oV2fH8HpVBj3k3U4m6uNnWYT8AcA5H',$nameAccountKeyBs58 );
+        $this->assertSame('85v6oF1VnGNeT4oV2fH8HpVBj3k3U4m6uNnWYT8AcA5H', $nameAccountKeyBs58);
     }
 
     #[Test]
-    public function test_getDomainKeySync()
+    public function getDomainKeySync(): void
     {
         $client = $this->createMock(SolanaRpcClient::class);
         $sns = new SnsProgram($client);
@@ -74,13 +64,8 @@ class DerivationTest extends TestCase
         }
     }
 
-    /**
-     * @throws SNSError
-     * @throws Exception
-     * @throws InputValidationException
-     */
     #[Test]
-    public function test_getReverseKeySync()
+    public function getReverseKeySync(): void
     {
         $client = $this->createMock(SolanaRpcClient::class);
         $sns = new SnsProgram($client);
@@ -95,18 +80,18 @@ class DerivationTest extends TestCase
     }
 
     #[Test]
-    public function test_getNameOwner()
+    public function getNameOwner(): void
     {
-        $client = new SolanaRpcClient('https://api.mainnet-beta.solana.com');
-        $connection = new Connection($client);
-        $sns = new SnsProgram($client);
+        config(['solana-php-sdk.network' => Network::MAINNET]);
+
+        $connection = $this->container->get(Connection::class);
+        $sns = new SnsProgram();
         $nameAccountKey = 'HoFfFXqFHAC8RP3duuQNzag1ieUwJRBv1HtRNiWFq4Qu';
         $result = $sns->getNameOwner($connection, $nameAccountKey);
         $owner = $result['registry']->owner;
         $parent = $result['registry']->parentName;
         $this->assertInstanceOf(PublicKey::class, $owner);
-        $this->assertEquals('CnNHzcp7L4jKiA2Rsca3hZyVwSmoqXaT8wGwzS8WvvB2', $owner->toBase58());
+        $this->assertSame('CnNHzcp7L4jKiA2Rsca3hZyVwSmoqXaT8wGwzS8WvvB2', $owner->toBase58());
         $this->assertEquals('Crf8hzfthWGbGbLTVCiqRqV5MVnbpHB1L9KQMd6gsinb', $parent->toBase58());
     }
-
 }

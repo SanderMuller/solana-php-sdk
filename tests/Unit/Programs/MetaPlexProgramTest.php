@@ -1,38 +1,20 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests\Unit\Programs;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs;
 
-use Attestto\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Attestto\SolanaPhpSdk\Programs\SystemProgram;
-use Attestto\SolanaPhpSdk\SolanaRpcClient;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-
-class MetaPlexProgramTest extends TestCase
+final class MetaPlexProgramTest extends TestCase
 {
-
-    private SystemProgram $program;
-
-
-
-
-
-    /**
-     * @throws AccountNotFoundException
-     */
     #[Test]
-    public function test_it_getsProgramAccounts(): void
+    public function getsProgramAccounts(): void
     {
-
-        $client = $this->assembleClient('POST', []);
-
-        $solana = new SystemProgram($client);
-
         $this->expectException(AccountNotFoundException::class);
-        $solana->getAccountInfo('abc123');
+
+        $this->container->get(SystemProgram::class)
+            ->getAccountInfo('abc123');
     }
-
-
-
 }

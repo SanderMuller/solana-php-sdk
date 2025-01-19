@@ -1,17 +1,15 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Util;
+namespace Collectiq\SolanaPhpSdk\Util;
 
-use Attestto\SolanaPhpSdk\TransactionInstruction;
+use Collectiq\SolanaPhpSdk\TransactionInstruction;
 
-class NonceInformation
+final class NonceInformation
 {
-    public string $nonce;
-    public TransactionInstruction $nonceInstruction;
-
-    public function __construct(string $nonce, TransactionInstruction $nonceInstruction)
-    {
-        $this->nonce = $nonce;
-        $this->nonceInstruction = $nonceInstruction;
+    public function __construct(
+        public string                 $nonce,
+        public TransactionInstruction $nonceInstruction,
+    ) {
+        //
     }
 }

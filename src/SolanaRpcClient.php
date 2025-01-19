@@ -1,58 +1,38 @@
 <?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk;
+namespace Collectiq\SolanaPhpSdk;
 
-use GuzzleHttp\Psr7\Message;
-
+use Collectiq\SolanaPhpSdk\Enum\Network;
+use Collectiq\SolanaPhpSdk\Exceptions\GenericException;
+use Collectiq\SolanaPhpSdk\Exceptions\InvalidIdResponseException;
+use Collectiq\SolanaPhpSdk\Exceptions\MethodNotFoundException;
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Psr7\HttpFactory;
+use Illuminate\Support\Str;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
-use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Psr7\HttpFactory;
-
-
-use Attestto\SolanaPhpSdk\Exceptions\GenericException;
-use Attestto\SolanaPhpSdk\Exceptions\InvalidIdResponseException;
-use Attestto\SolanaPhpSdk\Exceptions\MethodNotFoundException;
-use Psr\Http\Message\StreamFactoryInterface;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * @see https://docs.solana.com/developing/clients/jsonrpc-api
  */
-class SolanaRpcClient
+final readonly class SolanaRpcClient
 {
-    public const LOCAL_ENDPOINT = 'http://localhost:8899';
-    public const DEVNET_ENDPOINT = 'https://api.devnet.solana.com';
-    public const TESTNET_ENDPOINT = 'https://api.testnet.solana.com';
-    public const MAINNET_ENDPOINT = 'https://api.mainnet-beta.solana.com';
-
-    /**
-     * Per: https://www.jsonrpc.org/specification
-     */
-    // Invalid JSON was received by the server.
-    // An error occurred on the server while parsing the JSON text.
-    public const ERROR_CODE_PARSE_ERROR = -32700;
-    // The JSON sent is not a valid Request object.
-    public const ERROR_CODE_INVALID_REQUEST = -32600;
     // The method does not exist / is not available.
-    public const ERROR_CODE_METHOD_NOT_FOUND = -32601;
-    // Invalid method parameter(s).
-    public const ERROR_CODE_INVALID_PARAMETERS = -32602;
-    // Internal JSON-RPC error.
-    public const ERROR_CODE_INTERNAL_ERROR = -32603;
+    public const int ERROR_CODE_METHOD_NOT_FOUND = -32601;
+
     // Reserved for implementation-defined server-errors.
     // -32000 to -32099 is server error - no const.
 
-    public readonly int $randomKey;
+    public UuidInterface $nonce;
 
     public function __construct(
-        public readonly string                              $endpoint = self::DEVNET_ENDPOINT,
-        public readonly ClientInterface                     $httpClient = new GuzzleClient(),
-        public readonly RequestFactoryInterface             $requestFactory = new HttpFactory(),
-        public readonly StreamFactoryInterface|Message|null $streamFactory = null,
-    )
-    {
-        $this->randomKey = random_int(0, 99999999);
+        public Network                 $network = Network::DEVNET,
+        public ClientInterface         $httpClient = new GuzzleClient(),
+        public RequestFactoryInterface $requestFactory = new HttpFactory(),
+    ) {
+        $this->nonce = Str::uuid();
     }
 
     /**
@@ -71,10 +51,10 @@ class SolanaRpcClient
             'body' => $body,
         ];
 
-        $response = $this->httpClient->request('POST', $this->endpoint, $options);
+        $response = $this->httpClient->request('POST', $this->network->rpcEndpoint(), $options);
 
         $resp_body = $response->getBody()->getContents();
-        $resp_object = json_decode($resp_body, true);
+        $resp_object = json_decode((string) $resp_body, true);
 
         $this->validateResponse($resp_object, $method);
 
@@ -85,7 +65,7 @@ class SolanaRpcClient
     {
         return [
             'jsonrpc' => '2.0',
-            'id' => $this->randomKey,
+            'id' => $this->nonce->toString(),
             'method' => $method,
             'params' => $params,
         ];
@@ -96,21 +76,21 @@ class SolanaRpcClient
      * @throws InvalidIdResponseException
      * @throws MethodNotFoundException
      */
-    protected function validateResponse(array $body, string $method): void
+    private function validateResponse(array $body, string $method): void
     {
         // If response contains an 'error' key, handle it
         if (isset($body['params']['error']) || isset($body['error'])) {
             $error = $body['params']['error'] ?: $body['error'];
             if ($error['code'] === self::ERROR_CODE_METHOD_NOT_FOUND) {
-                throw new MethodNotFoundException("API Error: Method $method not found.");
+                throw new MethodNotFoundException("API Error: Method {$method} not found.");
             }
 
             throw new GenericException($error['message']);
         }
 
         // If 'id' doesn't match the expected value, throw an exception
-        if ($body['id'] !== $this->randomKey) {
-            throw new InvalidIdResponseException((string) $this->randomKey);
+        if ($body['id'] !== $this->nonce->toString()) {
+            throw new InvalidIdResponseException($this->nonce->toString());
         }
     }
 }

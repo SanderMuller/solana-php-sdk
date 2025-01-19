@@ -1,29 +1,20 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests\Unit;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 
-use Attestto\SolanaPhpSdk\Connection;
-use Attestto\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Attestto\SolanaPhpSdk\Exceptions\GenericException;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
-use Attestto\SolanaPhpSdk\SolanaRpcClient;
-use Attestto\SolanaPhpSdk\Transaction;
-use Attestto\SolanaPhpSdk\Keypair;
-use Attestto\SolanaPhpSdk\Programs\SystemProgram;
-use PHPUnit\Framework\MockObject\Exception;
-use SodiumException;
+use Collectiq\SolanaPhpSdk\Connection;
+use Collectiq\SolanaPhpSdk\Keypair;
+use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
+use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\Transaction;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
 
-
-class ConnectionTest extends TestCase
+final class ConnectionTest extends TestCase
 {
-
-
-
-    /**
-     * @throws GenericException
-     * @throws SodiumException
-     */
-    public function testSimulateTransaction()
+    #[Test]
+    public function simulate_transaction(): void
     {
         $account1 = Keypair::generate();
         $account2 = Keypair::generate();
@@ -33,20 +24,24 @@ class ConnectionTest extends TestCase
         $transfer2 = SystemProgram::transfer($account2->getPublicKey(), $account1->getPublicKey(), 123);
 
         $orgTransaction = new Transaction($recentBlockhash);
-        $orgTransaction->add($transfer1, $transfer2);
+        $orgTransaction->addInstructions($transfer1, $transfer2);
         $orgTransaction->sign($account1, $account2);
 
-        $newTransaction = new Transaction($orgTransaction->recentBlockhash, null, null, $orgTransaction->signatures);
-        $newTransaction->add($transfer1, $transfer2);
+        $newTransaction = new Transaction(
+            recentBlockhash: $orgTransaction->recentBlockhash,
+            nonceInformation: null,
+            feePayer: null,
+            signatures: $orgTransaction->signatures,
+        );
+        $newTransaction->addInstructions($transfer1, $transfer2);
 
         // TODO - Fix this test, call the method and compare the transactions
 
         $this->assertEquals($orgTransaction, $newTransaction);
-
     }
 
     #[Test]
-    public function testGetBalance()
+    public function get_balance(): void
     {
         $pubKey = '3Wnd5Df69KitZfUoPYZU438eFRNwGHkhLnSAWL65PxJX';
         $balance = 100;
@@ -57,19 +52,12 @@ class ConnectionTest extends TestCase
             ->with('getBalance', [$pubKey])
             ->willReturn(['value' => $balance]);
 
-        $connection = new Connection($clientMock);
+        $this->container->register(SolanaRpcClient::class, fn (): MockObject => $clientMock);
+
+        $connection = $this->container->get(Connection::class);
 
         $result = $connection->getBalance($pubKey);
+
         $this->assertEquals($balance, $result);
     }
-
-
-
-
-
-
-
-
-
-
 }

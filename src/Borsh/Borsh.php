@@ -1,136 +1,177 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Borsh;
+namespace Collectiq\SolanaPhpSdk\Borsh;
 
-use Attestto\SolanaPhpSdk\Exceptions\TodoException;
-use Attestto\SolanaPhpSdk\Util\Buffer;
+use ArrayAccess;
+use Collectiq\SolanaPhpSdk\Exceptions\NotImplementedException;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
 
-class Borsh
+final class Borsh
 {
-    /**
-     * @param array $schema
-     * @param $object
-     * @return array
-     */
     public static function serialize(
-        array $schema,
-        $object
-    ) : array
-    {
+        array  $schema,
+        $object,
+    ): array {
         $writer = new BinaryWriter();
-        static::serializeObject($schema, $object, $writer);
+
+        self::serializeObject(
+            schema: $schema,
+            object: $object,
+            writer: $writer,
+        );
+
         return $writer->toArray();
     }
 
-    /**
-     * @param array $schema
-     * @param $object
-     * @param BinaryWriter $writer
-     */
-    protected static function serializeObject(
-        array $schema,
-        $object,
+    private static function serializeObject(
+        array        $schema,
+              $object,
         BinaryWriter $writer
-    ) {
-        $objectSchema = $schema[get_class($object)] ?? null;
+    ): void {
+        $objectSchema = $schema[$object::class] ?? null;
         if (! $objectSchema) {
-            $class = get_class($object);
+            $class = $object::class;
             throw new BorshException("Class {$class} is missing in schema");
         }
 
         if ($objectSchema['kind'] === 'struct') {
-            foreach ($objectSchema['fields'] as list($fieldName, $fieldType)) {
-                static::serializeField($schema, $fieldName, $object->{$fieldName}, $fieldType, $writer);
+            foreach ($objectSchema['fields'] as [$fieldName, $fieldType]) {
+                self::serializeField(
+                    schema: $schema,
+                    value: $object->{$fieldName},
+                    fieldType: $fieldType,
+                    writer: $writer,
+                );
             }
         } elseif ($objectSchema['kind'] === 'enum') {
-            throw new TodoException("TODO: Enums don't exist in PHP yet???");
+            dd($objectSchema);
+            throw new NotImplementedException("TODO: Enums don't exist in PHP yet???");
         } else {
             $kind = $objectSchema['kind'];
-            $class = get_class($object);
+            $class = $object::class;
             throw new BorshException("Unexpected schema kind: {$kind} for {$class}");
         }
     }
 
-    /**
-     * @param array $schema
-     * @param $fieldName
-     * @param $value
-     * @param $fieldType
-     * @param BinaryWriter $writer
-     */
-    protected static function serializeField(
-        array $schema,
-        $fieldName,
-        $value,
-        $fieldType,
-        BinaryWriter $writer
-    ) {
+    private static function serializeField(
+        array                    $schema,
+        mixed                    $value,
+        string|array|ArrayAccess $fieldType,
+        BinaryWriter             $writer,
+    ): void {
         if (is_string($fieldType)) {
-            $writer->{'write' . ucfirst($fieldType)}($value);
-        } elseif (is_array($fieldType) && isset($fieldType[0])) { // sequential array
+            match ($fieldType) {
+                'u8' => $writer->writeU8($value),
+                'u16' => $writer->writeU16($value),
+                'u32' => $writer->writeU32($value),
+                'u64' => $writer->writeU64($value),
+                'i8' => $writer->writeI8($value),
+                'i16' => $writer->writeI16($value),
+                'i32' => $writer->writeI32($value),
+                'i64' => $writer->writeI64($value),
+                'f32' => $writer->writeF32($value),
+                'f64' => $writer->writeF64($value),
+                'string' => $writer->writeString($value),
+                default => throw new BorshException("FieldType {$fieldType} unrecognized"),
+            };
+
+            return;
+        }
+
+        if (is_array($fieldType) && isset($fieldType[0])) { // list
             if (is_int($fieldType[0])) {
-                if (sizeof($value) !== $fieldType[0]) {
-                    $sizeOf = sizeof($value);
+                if (count($value) !== $fieldType[0]) {
+                    $sizeOf = count($value);
                     throw new BorshException("Expecting byte array of length {{$fieldType[0]}}, but got {{$sizeOf}} bytes");
-
                 }
-                $writer->writeFixedArray($value);
-            } elseif (sizeof($fieldType) === 2 && is_int($fieldType[1])) {
-                if (sizeof($value) !== $fieldType[1]) {
-                    $sizeOf = sizeof($value);
-                    throw new BorshException("Expecting byte array of length {{$fieldType[1]}}, but got {{$sizeOf}} bytes");
 
+                $writer->writeFixedArray($value);
+            } elseif (count($fieldType) === 2 && is_int($fieldType[1])) {
+                if (count($value) !== $fieldType[1]) {
+                    $sizeOf = count($value);
+                    throw new BorshException("Expecting byte array of length {{$fieldType[1]}}, but got {{$sizeOf}} bytes");
                 }
 
                 for ($i = 0; $i < $fieldType[1]; $i++) {
-                    static::serializeField($schema, null, $value[$i], $fieldType[0], $writer);
+                    self::serializeField(
+                        schema: $schema,
+                        value: $value[$i],
+                        fieldType: $fieldType[0],
+                        writer: $writer,
+                    );
                 }
             } else {
-                $writer->writeArray($value, fn ($item) => static::serializeField($schema, $fieldName, $item, $fieldType[0], $writer));
+                $writer->writeArray($value, function (mixed $item) use ($schema, $fieldType, $writer): void {
+                    self::serializeField(
+                        schema: $schema,
+                        value: $item,
+                        fieldType: $fieldType[0],
+                        writer: $writer,
+                    );
+                });
             }
-        } elseif (isset($fieldType['kind'])) { // associative array
-            switch ($fieldType['kind']) {
-                case 'option':
-                    if ($value) {
-                        $writer->writeU8(1);
-                        static::serializeField($schema, $fieldName, $value, $fieldType['type'], $writer);
-                    } else {
-                        $writer->writeU8(0);
-                    }
-                    break;
-                default:
-                    throw new BorshException("FieldType {{$fieldType['kind']}} unrecognized");
-            }
-        } else {
-            static::serializeObject($schema, $value, $writer);
+
+            return;
         }
+
+        if (isset($fieldType['kind'])) { // associative array
+            $fieldKind = $fieldType['kind'];
+
+            if ($fieldKind !== 'option' && $fieldKind !== 'struct') {
+                throw new BorshException("FieldType {{$fieldType['kind']}} unrecognized");
+            }
+
+            if (! $value) {
+                $writer->writeU8(0);
+
+                return;
+            }
+
+            $writer->writeU8(1);
+
+            self::serializeField(
+                schema: $schema,
+                value: $value,
+                fieldType: $fieldType['type'],
+                writer: $writer,
+            );
+
+            return;
+        }
+
+        self::serializeObject(
+            schema: $schema,
+            object: $value,
+            writer: $writer,
+        );
     }
 
     /**
-     * @param array $schema
-     * @param string $class
-     * @param array $buffer
+     * @template TClass of BorshSerializable
      */
     public static function deserialize(
-        array $schema,
-        string $class,
-        array $buffer
-    )
-    {
-        $reader = new BinaryReader(Buffer::from($buffer));
-        return static::deserializeObject($schema, $class, $reader);
+        array        $schema,
+        /** @var class-string<TClass> $class */
+        string       $class,
+        Buffer|array $buffer,
+    ): mixed {
+        return self::deserializeObject(
+            schema: $schema,
+            class: $class,
+            reader: new BinaryReader(Buffer::from($buffer)),
+        );
     }
 
     /**
-     * @param array $schema
-     * @param string $class
-     * @param BinaryReader $reader
+     * @template TClass of BorshSerializable
+     * @return TClass
      */
-    protected static function deserializeObject(
-        array $schema,
-        string $class,
-        BinaryReader $reader
-    ) {
+    private static function deserializeObject(
+        array        $schema,
+        /** @var class-string<TClass> $class */
+        string       $class,
+        BinaryReader $reader,
+    ): ?BorshSerializable {
         $objectSchema = $schema[$class] ?? null;
         if (! $objectSchema) {
             throw new BorshException("Class {$class} is missing in schema");
@@ -142,60 +183,91 @@ class Borsh
             }
 
             $result = $class::borshConstructor();
-            foreach ($objectSchema['fields'] as list($fieldName, $fieldType)) {
-                $result->{$fieldName} = static::deserializeField($schema, $fieldName, $fieldType, $reader);
-                //$result->fields[$fieldName] = static::deserializeField($schema, $fieldName, $fieldType, $reader);
+            foreach ($objectSchema['fields'] as [$fieldName, $fieldType]) {
+                $result->{$fieldName} = self::deserializeField(
+                    schema: $schema,
+                    fieldType: $fieldType,
+                    reader: $reader,
+                );
+                // $result->fields[$fieldName] = static::deserializeField($schema, $fieldName, $fieldType, $reader);
             }
+
             return $result;
         }
 
         if ($objectSchema['kind'] === 'enum') {
-            throw new TodoException("TODO: Enums don't exist in PHP yet???");
+            throw new NotImplementedException();
         }
 
-        $kind = $objectSchema['kind'];
-        throw new BorshException("Unexpected schema kind: {$kind} for {$class}");
+        throw new BorshException("Unexpected schema kind: {$objectSchema['kind']} for {$class}");
     }
 
-    /**
-     * @param array $schema
-     * @param $fieldName
-     * @param $fieldType
-     * @param BinaryReader $reader
-     */
-    protected static function deserializeField(
-        array $schema,
-        $fieldName,
-        $fieldType,
-        BinaryReader $reader
-    ) {
+    private static function deserializeField(
+        array        $schema,
+        string|array $fieldType,
+        BinaryReader $reader,
+    ): mixed {
         if (is_string($fieldType) && ! class_exists($fieldType)) {
-            return $reader->{'read' . ucfirst($fieldType)}();
+            return match($fieldType) {
+                'u8' => $reader->readU8(),
+                'u16' => $reader->readU16(),
+                'u32' => $reader->readU32(),
+                'u64' => $reader->readU64(),
+                'i8' => $reader->readI8(),
+                'i16' => $reader->readI16(),
+                'i32' => $reader->readI32(),
+                'i64' => $reader->readI64(),
+                'f32' => $reader->readF32(),
+                'f64' => $reader->readF64(),
+                'string' => $reader->readString(),
+                default => throw new BorshException("FieldType {{$fieldType}} unrecognized"),
+            };
         }
 
-        if (is_array($fieldType) && isset($fieldType[0])) { // sequential array
+        if (is_array($fieldType) && isset($fieldType[0])) {
+            // sequential array
             if (is_int($fieldType[0])) {
                 return $reader->readFixedArray($fieldType[0]);
-            } elseif (sizeof($fieldType) === 2 && is_int($fieldType[1])) {
+            }
+
+            // sequential array
+            if (count($fieldType) === 2 && is_int($fieldType[1])) {
                 $array = [];
                 for ($i = 0; $i < $fieldType[1]; $i++) {
-                    array_push($array, static::deserializeField($schema, null, $fieldType[0], $reader));
+                    $array[] = self::deserializeField(
+                        schema: $schema,
+                        fieldType: $fieldType[0],
+                        reader: $reader,
+                    );
                 }
+
                 return $array;
-            } else {
-                return $reader->readArray(fn () => static::deserializeField($schema, $fieldName, $fieldType[0], $reader));
             }
+
+            return $reader->readArray(fn (): mixed => self::deserializeField(
+                schema: $schema,
+                fieldType: $fieldType[0],
+                reader: $reader,
+            ));
         }
 
         if (isset($fieldType['kind']) && $fieldType['kind'] === 'option') { // associative array
             $option = $reader->readU8();
-            if ($option) {
-                return static::deserializeField($schema, $fieldName, $fieldType['type'], $reader);
+            if ($option !== 0) {
+                return self::deserializeField(
+                    schema: $schema,
+                    fieldType: $fieldType['type'],
+                    reader: $reader,
+                );
             }
 
             return null;
         }
 
-        return static::deserializeObject($schema, $fieldType, $reader);
+        return self::deserializeObject(
+            schema: $schema,
+            class: $fieldType,
+            reader: $reader,
+        );
     }
 }

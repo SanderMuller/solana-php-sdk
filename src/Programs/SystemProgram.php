@@ -1,36 +1,33 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Programs;
+namespace Collectiq\SolanaPhpSdk\Programs;
 
-use Attestto\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Attestto\SolanaPhpSdk\Program;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\TransactionInstruction;
-use Attestto\SolanaPhpSdk\Util\AccountMeta;
+use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\TransactionInstruction;
+use Collectiq\SolanaPhpSdk\Util\AccountMeta;
 
-class SystemProgram extends Program
+final class SystemProgram implements Program
 {
-    const PROGRAM_INDEX_CREATE_ACCOUNT = 0;
-    const PROGRAM_INDEX_TRANSFER = 2;
-    const PROGRAM_ID = '11111111111111111111111111111111';
+    use IsProgram;
+
+    public const int PROGRAM_INDEX_CREATE_ACCOUNT = 0;
+
+    private const int PROGRAM_INDEX_TRANSFER = 2;
 
     /**
      * Public key that identifies the System program
-     *
-     * @return PublicKey
      */
-    static function programId(): PublicKey
+    public static function programId(): PublicKey
     {
-        return new PublicKey('11111111111111111111111111111111');
+        return PublicKey::fromString('11111111111111111111111111111111');
     }
 
-    /**
-     * @param string $pubKey
-     * @return array
-     */
     public function getAccountInfo(string $pubKey): array
     {
-        $accountResponse = $this->client->call('getAccountInfo', [$pubKey, ["encoding" => "jsonParsed"]])['value'];
+        $accountResponse = $this->client->call('getAccountInfo', [$pubKey, ['encoding' => 'jsonParsed']])['value'];
+
+        dd($accountResponse);
 
         if (! $accountResponse) {
             throw new AccountNotFoundException("API Error: Account {$pubKey} not found.");
@@ -39,19 +36,11 @@ class SystemProgram extends Program
         return $accountResponse;
     }
 
-    /**
-     * @param string $pubKey
-     * @return float
-     */
     public function getBalance(string $pubKey): float
     {
         return $this->client->call('getBalance', [$pubKey])['value'];
     }
 
-    /**
-     * @param string $transactionSignature
-     * @return array
-     */
     public function getConfirmedTransaction(string $transactionSignature): array
     {
         return $this->client->call('getConfirmedTransaction', [$transactionSignature]);
@@ -59,9 +48,6 @@ class SystemProgram extends Program
 
     /**
      * NEW: This method is only available in solana-core v1.7 or newer. Please use getConfirmedTransaction for solana-core v1.6
-     *
-     * @param string $transactionSignature
-     * @return array
      */
     public function getTransaction(string $transactionSignature): array
     {
@@ -70,66 +56,51 @@ class SystemProgram extends Program
 
     /**
      * Generate a transaction instruction that transfers lamports from one account to another
-     *
-     * @param PublicKey $fromPubkey
-     * @param PublicKey $toPublicKey
-     * @param int $lamports
-     * @return TransactionInstruction
      */
-    static public function transfer(
+    public static function transfer(
         PublicKey $fromPubkey,
         PublicKey $toPublicKey,
         int $lamports
-    ): TransactionInstruction
-    {
-        // 4 byte instruction index + 8 bytes lamports
-        // look at https://www.php.net/manual/en/function.pack.php for formats.
-        $data = [
-            // uint32
-            ...unpack("C*", pack("V", self::PROGRAM_INDEX_TRANSFER)),
-            // int64
-            ...unpack("C*", pack("P", $lamports)),
-        ];
-        $keys = [
-            new AccountMeta($fromPubkey, true, true),
-            new AccountMeta($toPublicKey, false, true),
-        ];
-
+    ): TransactionInstruction {
         return new TransactionInstruction(
-            static::programId(),
-            $keys,
-            $data
+            programId: self::programId(),
+            keys: [
+                new AccountMeta($fromPubkey, true, true),
+                new AccountMeta($toPublicKey, false, true),
+            ],
+            // 4 byte instruction index + 8 bytes lamports
+            data: [
+                // uint32
+                ...unpack('C*', pack('V', self::PROGRAM_INDEX_TRANSFER)),
+                // int64
+                ...unpack('C*', pack('P', $lamports)),
+            ],
         );
     }
 
-    static public function createAccount(
+    public static function createAccount(
         PublicKey $fromPubkey,
         PublicKey $newAccountPublicKey,
         int $lamports,
         int $space,
         PublicKey $programId
-    ): TransactionInstruction
-    {
-        // look at https://www.php.net/manual/en/function.pack.php for formats.
-        $data = [
-            // uint32
-            ...unpack("C*", pack("V", self::PROGRAM_INDEX_CREATE_ACCOUNT)),
-            // int64
-            ...unpack("C*", pack("P", $lamports)),
-            // int64
-            ...unpack("C*", pack("P", $space)),
-            //
-            ...$programId->toBytes(),
-        ];
-        $keys = [
-            new AccountMeta($fromPubkey, true, true),
-            new AccountMeta($newAccountPublicKey, true, true),
-        ];
-
+    ): TransactionInstruction {
         return new TransactionInstruction(
-            static::programId(),
-            $keys,
-            $data
+            programId: self::programId(),
+            keys: [
+                new AccountMeta($fromPubkey, true, true),
+                new AccountMeta($newAccountPublicKey, true, true),
+            ],
+            data: [
+                // uint32
+                ...unpack('C*', pack('V', self::PROGRAM_INDEX_CREATE_ACCOUNT)),
+                // int64
+                ...unpack('C*', pack('P', $lamports)),
+                // int64
+                ...unpack('C*', pack('P', $space)),
+                //
+                ...$programId->toBytes(),
+            ],
         );
     }
 }

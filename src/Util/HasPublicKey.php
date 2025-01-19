@@ -1,8 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Util;
+namespace Collectiq\SolanaPhpSdk\Util;
 
-use Attestto\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\PublicKey;
 
 interface HasPublicKey
 {

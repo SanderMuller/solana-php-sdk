@@ -1,58 +1,54 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk;
+namespace Collectiq\SolanaPhpSdk;
 
+use Collectiq\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\Util\HasPublicKey;
+use Collectiq\SolanaPhpSdk\Util\HasSecretKey;
 use SodiumException;
-use Attestto\SolanaPhpSdk\Util\Buffer;
-use Attestto\SolanaPhpSdk\Util\HasPublicKey;
-use Attestto\SolanaPhpSdk\Util\HasSecretKey;
 
 /**
  * An account keypair used for signing transactions.
  *  @property PublicKey $publicKey The public key for this keypair
  *  @property PublicKey $secretKey The raw secret key for this keypair
- *   
  */
-class Keypair implements HasPublicKey, HasSecretKey
+final readonly class Keypair implements HasPublicKey, HasSecretKey
 {
     public PublicKey $publicKey;
-    public Buffer $secretKey;
 
+    public SecretKey $secretKey;
 
-    public function __construct($publicKey = null, $secretKey = null)
-    {
-        if ($publicKey == null && $secretKey == null) {
+    public function __construct(
+        mixed $publicKey = null,
+        mixed $secretKey = null,
+    ) {
+        if ($publicKey === null && $secretKey === null) {
             $keypair = sodium_crypto_sign_keypair();
 
             $publicKey = sodium_crypto_sign_publickey($keypair);
             $secretKey = sodium_crypto_sign_secretkey($keypair);
         }
 
-        // $this->publicKey = Buffer::from($publicKey);
-        // $this->secretKey = Buffer::from($secretKey);
-        $this->publicKey = new PublicKey($publicKey);
-        $this->secretKey = new Buffer($secretKey);
+        $this->publicKey = PublicKey::from($publicKey);
+        $this->secretKey = SecretKey::from($secretKey);
     }
 
     /**
-     * @return Keypair
      * @throws SodiumException
      */
     public static function generate(): Keypair
     {
         $keypair = sodium_crypto_sign_keypair();
 
-        return static::from($keypair);
+        return self::from($keypair);
     }
 
     /**
-     * @param string $keypair
-     * @return Keypair
      * @throws SodiumException
      */
     public static function from(string $keypair): Keypair
     {
-        return new static(
+        return new self(
             sodium_crypto_sign_publickey($keypair),
             sodium_crypto_sign_secretkey($keypair)
         );
@@ -64,19 +60,16 @@ class Keypair implements HasPublicKey, HasSecretKey
      * This method should only be used to recreate a keypair from a previously
      * generated secret key. Generating keypairs from a random seed should be done
      * with the {@link Keypair.fromSeed} method.
-     *
-     * @param $secretKey
-     * @return Keypair
      */
-    static public function fromSecretKey($secretKey, $skipValidation = null): Keypair
+    public static function fromSecretKey(array|Buffer|string $secretKey): Keypair
     {
-        $secretKey = Buffer::from($secretKey)->toString();
+        $secretKey = SecretKey::from($secretKey);
 
-        $publicKey = sodium_crypto_sign_publickey_from_secretkey($secretKey);
+        $publicKey = sodium_crypto_sign_publickey_from_secretkey($secretKey->toString());
 
-        return new static(
-            $publicKey,
-            $secretKey
+        return new self(
+            publicKey: PublicKey::fromString($publicKey),
+            secretKey: $secretKey,
         );
     }
 
@@ -84,22 +77,19 @@ class Keypair implements HasPublicKey, HasSecretKey
      * Generate a keypair from a 32 byte seed.
      *
      * @param string|array $seed
-     * @return Keypair
      * @throws SodiumException
      */
-    static public function fromSeed($seed): Keypair
+    public static function fromSeed($seed): Keypair
     {
         $seed = Buffer::from($seed)->toString();
 
         $keypair = sodium_crypto_sign_seed_keypair($seed);
 
-        return static::from($keypair);
+        return self::from($keypair);
     }
 
     /**
      * The public key for this keypair
-     *
-     * @return PublicKey
      */
     public function getPublicKey(): PublicKey
     {
@@ -108,11 +98,9 @@ class Keypair implements HasPublicKey, HasSecretKey
 
     /**
      * The raw secret key for this keypair
-     *
-     * @return Buffer
      */
-    public function getSecretKey(): Buffer
+    public function getSecretKey(): SecretKey
     {
-        return Buffer::from($this->secretKey);
+        return $this->secretKey;
     }
 }

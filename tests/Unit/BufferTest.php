@@ -1,19 +1,18 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests\Unit;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 
-use Attestto\SolanaPhpSdk\Account;
-use Attestto\SolanaPhpSdk\Exceptions\InputValidationException;
-use Attestto\SolanaPhpSdk\Keypair;
-use Attestto\SolanaPhpSdk\Programs\SystemProgram;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
-use Attestto\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferType;
+use Collectiq\SolanaPhpSdk\Keypair;
+use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
+use PHPUnit\Framework\Attributes\Test;
 
-class BufferTest extends TestCase
+final class BufferTest extends TestCase
 {
     #[Test]
-    public function test_it_buffer_push_fixed_length()
+    public function ibuffer_push_fixed_length(): void
     {
         $lamports = 4;
         $space = 6;
@@ -21,53 +20,47 @@ class BufferTest extends TestCase
 
         $rawCreateAccountBinary = [
             // uint32
-            ...unpack("C*", pack("V", SystemProgram::PROGRAM_INDEX_CREATE_ACCOUNT)),
+            ...unpack('C*', pack('V', SystemProgram::PROGRAM_INDEX_CREATE_ACCOUNT)),
             // int64
-            ...unpack("C*", pack("P", $lamports)),
+            ...unpack('C*', pack('P', $lamports)),
             // int64
-            ...unpack("C*", pack("P", $space)),
+            ...unpack('C*', pack('P', $space)),
             //
             ...$programId->toBytes(),
         ];
 
-        $bufferable = Buffer::from()
+        $bufferable = Buffer::empty()
             ->push(
-                Buffer::from(SystemProgram::PROGRAM_INDEX_CREATE_ACCOUNT,Buffer::TYPE_INT, false)
+                Buffer::fromInt(SystemProgram::PROGRAM_INDEX_CREATE_ACCOUNT, BufferType::INT, false)
             )
             ->push(
-                Buffer::from($lamports,Buffer::TYPE_LONG, false)
+                Buffer::fromInt($lamports, BufferType::LONG, false)
             )
             ->push(
-                Buffer::from($space,Buffer::TYPE_LONG, false)
+                Buffer::fromInt($space, BufferType::LONG, false)
             )
-            ->push($programId)
-        ;
+            ->push($programId);
 
         $this->assertEquals($rawCreateAccountBinary, $bufferable->toArray());
     }
 
-    /**
-     * @throws InputValidationException
-     */
     #[Test]
-    public function test_concat()
+    public function concat(): void
     {
-        $buffer1 = Buffer::from(1, Buffer::TYPE_INT, false);
-        $buffer2 = Buffer::from(2, Buffer::TYPE_INT, false);
-        $buffer3 = Buffer::from(3, Buffer::TYPE_INT, false);
+        $buffer = Buffer::concat(
+            Buffer::fromInt(1, BufferType::INT, false),
+            Buffer::fromInt(2, BufferType::INT, false),
+            Buffer::fromInt(3, BufferType::INT, false),
+        );
 
-        $buffer = Buffer::concat([$buffer1, $buffer2, $buffer3]);
-
-        $this->assertEquals([1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0], $buffer->toArray());
+        $this->assertSame([1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0], $buffer->toArray());
     }
 
-    /**
-     * @throws InputValidationException
-     */
     #[Test]
-    public function test_fromArray()
+    public function fromArray(): void
     {
         $buffer = Buffer::fromArray([1, 2, 3, 4]);
-        $this->assertEquals([1, 2, 3, 4], $buffer->toArray());
+
+        $this->assertSame([1, 2, 3, 4], $buffer->toArray());
     }
 }

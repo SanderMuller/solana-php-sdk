@@ -1,10 +1,7 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Borsh;
+namespace Collectiq\SolanaPhpSdk\Borsh;
 
-use Attestto\SolanaPhpSdk\Exceptions\BaseSolanaPhpSdkException;
+use Collectiq\SolanaPhpSdk\Exceptions\SolanaPhpSdkException;
 
-class BorshException extends BaseSolanaPhpSdkException
-{
-
-}
+final class BorshException extends SolanaPhpSdkException {}

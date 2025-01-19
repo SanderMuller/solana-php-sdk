@@ -1,10 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Exceptions;
+namespace Collectiq\SolanaPhpSdk\Exceptions;
 
-use Exception;
-
-class TokenInvalidMintError extends Exception
+final class TokenInvalidMintError extends SolanaPhpSdkException
 {
-
+    //
 }

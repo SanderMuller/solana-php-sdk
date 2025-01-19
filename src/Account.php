@@ -1,44 +1,33 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk;
+namespace Collectiq\SolanaPhpSdk;
 
-use Attestto\SolanaPhpSdk\Util\Buffer;
-use Attestto\SolanaPhpSdk\Util\HasPublicKey;
-use Attestto\SolanaPhpSdk\Util\HasSecretKey;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\Util\HasPublicKey;
+use Collectiq\SolanaPhpSdk\Util\HasSecretKey;
 
-class Account implements HasPublicKey, HasSecretKey
+final readonly class Account implements HasPublicKey, HasSecretKey
 {
-    protected Keypair $keypair;
+    private Keypair $keypair;
 
-    /**
-     * @param  $secretKey
-     */
-    public function __construct($secretKey = null)
+    public function __construct(array|Buffer|null $secretKey = null)
     {
         if ($secretKey) {
-            $secretKeyString = Buffer::from($secretKey)->toString();
-
-            $this->keypair = Keypair::fromSecretKey($secretKeyString);
+            $this->keypair = Keypair::fromSecretKey(
+                Buffer::from($secretKey)->toString()
+            );
         } else {
             $this->keypair = Keypair::generate();
         }
     }
 
-    /**
-     * @return PublicKey
-     */
     public function getPublicKey(): PublicKey
     {
         return $this->keypair->getPublicKey();
     }
 
-    /**
-     * @return Buffer
-     */
-    public function getSecretKey(): Buffer
+    public function getSecretKey(): SecretKey
     {
         return $this->keypair->getSecretKey();
     }
-
-
 }

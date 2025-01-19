@@ -1,16 +1,16 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Accounts;
+namespace Collectiq\SolanaPhpSdk\Accounts;
 
-use Attestto\SolanaPhpSdk\Borsh\Borsh;
-use Attestto\SolanaPhpSdk\Borsh\BorshDeserializable;
-use Attestto\SolanaPhpSdk\Borsh\BorshObject;
+use Collectiq\SolanaPhpSdk\Borsh\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
+use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
 
-class Metadata
+final class Metadata implements BorshSerializable
 {
-    use BorshObject;
+    use IsBorshObject;
 
-    public const SCHEMA = [
+    private const array SCHEMA = [
         Creator::class => Creator::SCHEMA[Creator::class],
         MetadataData::class => MetadataData::SCHEMA[MetadataData::class],
         self::class => [

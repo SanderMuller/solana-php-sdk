@@ -1,32 +1,30 @@
-/vendor/
-/temp/
-node_modules/
+/node_modules
+/vendor
+auth.json
+
+# Environment
+.env
+.env.*
+!.env.example
+!.env.ci
+
+# MacOS
+.DS_STORE
+
+# JS compilation
 npm-debug.log
 yarn-error.log
 
-# Laravel 4 specific
-bootstrap/compiled.php
-app/storage/
+# IDE
+.phpstorm.meta.php
+_ide_helper_models.php
+_ide_helper.php
+_ide_macros.php
+.idea/*
+!/.idea/codeStyles
+/.fleet
+/.nova
+/.vscode
+/.zed
 
-# Laravel 5 & Lumen specific
-public/storage
-public/hot
-
-# Laravel 5 & Lumen specific with changed public path
-public_html/storage
-public_html/hot
-
-storage/*.key
-.env
-Homestead.yaml
-Homestead.json
-/.vagrant
-.phpunit.result.cache
-.vscode
-.history
-.idea
-.phpunit.cache
-.run/
-/.run/
-/build/
-
+.phpactor.json

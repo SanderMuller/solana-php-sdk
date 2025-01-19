@@ -1,33 +1,23 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Programs\SNS\State;
+namespace Collectiq\SolanaPhpSdk\Programs\SNS\State;
 
-use Attestto\SolanaPhpSdk\Accounts\Did\VerificationMethodStruct;
-use Attestto\SolanaPhpSdk\Accounts\Did\ServiceStruct;
-use Attestto\SolanaPhpSdk\Accounts\DidData;
-use Attestto\SolanaPhpSdk\Borsh\Borsh;
-use Attestto\SolanaPhpSdk\Borsh\BorshDeserializable;
-use Attestto\SolanaPhpSdk\Borsh\BorshObject;
-use Attestto\SolanaPhpSdk\Connection;
-use Attestto\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Attestto\SolanaPhpSdk\Exceptions\InputValidationException;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\Exceptions\SNSError;
-use Attestto\SolanaPhpSdk\TransactionInstruction;
-use Attestto\SolanaPhpSdk\Util\AccountMeta;
-use Attestto\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\Borsh\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
+use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
+use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\TransactionInstruction;
+use Collectiq\SolanaPhpSdk\Util\AccountMeta;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
 
-
-class ReverseInstructionAccount
+final class ReverseInstructionAccount implements BorshSerializable
 {
+    use IsBorshObject;
 
-    use BorshObject;
+    private int $tag = 12;
 
-    private int $tag;
-    private string $name;
-
-
-    public const SCHEMA = [
+    private const array SCHEMA = [
         self::class => [
             'kind' => 'struct',
             'fields' => [
@@ -37,12 +27,7 @@ class ReverseInstructionAccount
         ],
     ];
 
-
-    public function __construct(string $name)
-    {
-        $this->tag = 12;
-        $this->name = $name;
-    }
+    public function __construct(private string $name) {}
 
     /**
      * @throws InputValidationException
@@ -56,10 +41,9 @@ class ReverseInstructionAccount
         PublicKey $centralState,
         PublicKey $feePayer,
         PublicKey $rentSysvar,
-        PublicKey $parentName = null,
-        PublicKey $parentNameOwner = null
+        ?PublicKey $parentName = null,
+        ?PublicKey $parentNameOwner = null
     ): TransactionInstruction {
-        $data = Buffer::from($this->serialize());
         $keys = [
             new AccountMeta($programId, false, false),
             new AccountMeta($namingServiceProgram, false, false),
@@ -71,18 +55,18 @@ class ReverseInstructionAccount
             new AccountMeta($rentSysvar, false, false),
         ];
 
-        if ($parentName !== null) {
-            $keys[] = ['pubkey' => $parentName, 'isSigner' => false, 'isWritable' => true];
+        if ($parentName instanceof PublicKey) {
+            $keys[] = new AccountMeta($parentName, false, true);
         }
 
-        if ($parentNameOwner !== null) {
-            $keys[] = ['pubkey' => $parentNameOwner, 'isSigner' => true, 'isWritable' => true];
+        if ($parentNameOwner instanceof PublicKey) {
+            $keys[] = new AccountMeta($parentNameOwner, true, true);
         }
 
         return new TransactionInstruction(
-            $programId,
-            $keys,
-            $data
+            programId: $programId,
+            keys: $keys,
+            data: Buffer::from($this->serialize()),
         );
     }
 
@@ -90,11 +74,9 @@ class ReverseInstructionAccount
     {
         return Borsh::deserialize(self::SCHEMA, self::class, $buffer);
     }
+
     public function serialize(): array
     {
         return Borsh::serialize(self::SCHEMA, $this);
     }
 }
-
-
-

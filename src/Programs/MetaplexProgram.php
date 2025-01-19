@@ -1,18 +1,17 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Programs;
+namespace Collectiq\SolanaPhpSdk\Programs;
 
-use Attestto\SolanaPhpSdk\Program;
-
-class MetaplexProgram extends Program
+final class MetaplexProgram implements Program
 {
-    public const METAPLEX_PROGRAM_ID = 'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s';
+    use IsProgram;
+
+    private const string METAPLEX_PROGRAM_ID = 'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s';
 
     /**
-     * @param string $pubKey
      * @return array|mixed
      */
-    public function getProgramAccounts(string $pubKey)
+    public function getProgramAccounts(string $pubKey): mixed
     {
         $magicOffsetNumber = 326; // 🤷‍♂️
 

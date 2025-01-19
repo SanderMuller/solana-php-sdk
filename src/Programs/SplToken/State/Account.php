@@ -1,28 +1,26 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Programs\SplToken\State;
+namespace Collectiq\SolanaPhpSdk\Programs\SplToken\State;
 
-use Attestto\SolanaPhpSdk\Borsh\Borsh;
-use Attestto\SolanaPhpSdk\Borsh\BorshObject;
-use Attestto\SolanaPhpSdk\Connection;
-use Attestto\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\Util\Commitment;
+use Collectiq\SolanaPhpSdk\Borsh\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
+use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
+use Collectiq\SolanaPhpSdk\Connection;
+use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use Collectiq\SolanaPhpSdk\PublicKey;
 
 /**
  * @property mixed|null $mint
  */
-class Account
+final class Account implements BorshSerializable
 {
+    use IsBorshObject;
 
-    use BorshObject;
-    protected const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     private static PublicKey $address;
+
     private static mixed $tlvData;
 
-
-
-    public const SCHEMA = [
+    private const array SCHEMA = [
         self::class => [
             'kind' => 'struct',
             'fields' => [
@@ -36,7 +34,7 @@ class Account
                 ['isNative', 'u8'],
                 ['delegatedAmount', 'u64'],
                 ['closeAuthorityOption', 'u32'],
-                ['closeAuthority', 'pubKey']
+                ['closeAuthority', 'pubKey'],
             ],
         ],
     ];
@@ -51,20 +49,18 @@ class Account
      */
     public static function getAccount(
         Connection $connection,
-        PublicKey $accountPublicKeyOnbject,
-        Commitment $commitment = null,
-        $programId = new PublicKey(self::TOKEN_PROGRAM_ID)
-    ): Account
-    {
+        PublicKey $accountPublicKeyOnbject
+    ): Account {
         try {
-            $info = $connection->getAccountInfo($accountPublicKeyOnbject, $commitment);
+            $info = $connection->getAccountInfo($accountPublicKeyOnbject);
             self::$address = $accountPublicKeyOnbject;
             self::$tlvData = $info['data'];
             $base64Data = $info['data']['0'];
-            $base64String = base64_decode($base64Data);
+            $base64String = base64_decode((string) $base64Data);
             $uint8Array = array_values(unpack('C*', $base64String));
+
             return self::fromBuffer($uint8Array);
-        } catch (AccountNotFoundException $e) {
+        } catch (AccountNotFoundException) {
             throw new AccountNotFoundException();
         }
     }

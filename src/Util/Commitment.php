@@ -1,20 +1,19 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Util;
+namespace Collectiq\SolanaPhpSdk\Util;
 
-use Attestto\SolanaPhpSdk\Exceptions\InputValidationException;
+use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
 
-class Commitment
+final readonly class Commitment implements \Stringable
 {
-    const FINALIZED = 'finalized';
-    const CONFIRMED = 'confirmed';
-    const PROCESSED = 'processed';
+    private const string FINALIZED = 'finalized';
 
-    protected string $commitmentLevel;
+    private const string CONFIRMED = 'confirmed';
 
-    /**
-     * @param string $commitmentLevel
-     */
+    private const string PROCESSED = 'processed';
+
+    private string $commitmentLevel;
+
     public function __construct(string $commitmentLevel)
     {
         if (! in_array($commitmentLevel, [
@@ -28,34 +27,22 @@ class Commitment
         $this->commitmentLevel = $commitmentLevel;
     }
 
-    /**
-     * @return static
-     */
     public static function finalized(): Commitment
     {
-        return new static(static::FINALIZED);
+        return new self(self::FINALIZED);
     }
 
-    /**
-     * @return static
-     */
     public static function confirmed(): Commitment
     {
-        return new static(static::CONFIRMED);
+        return new self(self::CONFIRMED);
     }
 
-    /**
-     * @return static
-     */
     public static function processed(): Commitment
     {
-        return new static(static::PROCESSED);
+        return new self(self::PROCESSED);
     }
 
-    /**
-     * @return string
-     */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->commitmentLevel;
     }

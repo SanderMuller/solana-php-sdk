@@ -1,53 +1,46 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests\Unit;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 
-use Illuminate\Support\Facades\Http;
-use Attestto\SolanaPhpSdk\Exceptions\GenericException;
-use Attestto\SolanaPhpSdk\Programs\SystemProgram;
-use Attestto\SolanaPhpSdk\SolanaRpcClient;
-use Attestto\SolanaPhpSdk\Tests\TestCase;
-use Attestto\SolanaPhpSdk\TransactionInstruction;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\Util\AccountMeta;
-use Attestto\SolanaPhpSdk\Util\Buffer;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\TransactionInstruction;
+use Collectiq\SolanaPhpSdk\Util\AccountMeta;
+use Collectiq\SolanaPhpSdk\Util\Buffer;
+use PHPUnit\Framework\Attributes\Test;
 
-
-class TransactionInstructionTest extends TestCase
+final class TransactionInstructionTest extends TestCase
 {
     #[Test]
-    public function test_it_creates_transaction_instruction_with_program_id_and_keys()
+    public function icreates_transaction_instruction_with_program_id_and_keys(): void
     {
-        $programId = new PublicKey('3Wnd5Df69KitZfUoPYZU438eFRNwGHkhLnSAWL65PxJX');
-        $pk2 = new PublicKey('3Js7k6xYQbvXv6qUYLapYV7Sptfg37Tss9GcAyVEuUqk');
+        $programId = PublicKey::fromString('3Wnd5Df69KitZfUoPYZU438eFRNwGHkhLnSAWL65PxJX');
         $keys = [
             new AccountMeta($programId, true, true),
-            new AccountMeta($pk2, false, true),
+            new AccountMeta(PublicKey::fromString('3Js7k6xYQbvXv6qUYLapYV7Sptfg37Tss9GcAyVEuUqk'), false, true),
         ];
         $data = 'some data';
 
-        $instruction = new TransactionInstruction($programId, $keys, $data);
+        $instruction = new TransactionInstruction(programId: $programId, keys: $keys, data: $data);
 
         $this->assertEquals($programId, $instruction->programId);
         $this->assertEquals($keys, $instruction->keys);
-        $this->assertEquals($data, $instruction->data->toString());
+        $this->assertSame($data, $instruction->data->toString());
     }
 
     #[Test]
-    public function test_it_creates_transaction_instruction_with_program_id_and_keys_without_data()
+    public function icreates_transaction_instruction_with_program_id_and_keys_without_data(): void
     {
-        $programId = new PublicKey('3Wnd5Df69KitZfUoPYZU438eFRNwGHkhLnSAWL65PxJX');
-        $pk2 = new PublicKey('3Js7k6xYQbvXv6qUYLapYV7Sptfg37Tss9GcAyVEuUqk');
+        $programId = PublicKey::fromString('3Wnd5Df69KitZfUoPYZU438eFRNwGHkhLnSAWL65PxJX');
         $keys = [
             new AccountMeta($programId, true, true),
-            new AccountMeta($pk2, false, true),
+            new AccountMeta(PublicKey::fromString('3Js7k6xYQbvXv6qUYLapYV7Sptfg37Tss9GcAyVEuUqk'), false, true),
         ];
-        $emptyData = Buffer::from([]);
 
         $instruction = new TransactionInstruction($programId, $keys);
 
         $this->assertEquals($programId, $instruction->programId);
         $this->assertEquals($keys, $instruction->keys);
-        $this->assertEquals($emptyData, $instruction->data);
+        $this->assertEquals(Buffer::empty(), $instruction->data);
     }
 }

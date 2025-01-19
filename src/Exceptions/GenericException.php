@@ -1,10 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Exceptions;
+namespace Collectiq\SolanaPhpSdk\Exceptions;
 
-use Exception;
-
-class GenericException extends Exception
+final class GenericException extends SolanaPhpSdkException
 {
-
+    //
 }

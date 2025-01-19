@@ -1,26 +1,19 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Util;
+namespace Collectiq\SolanaPhpSdk\Util;
 
-class CompiledInstruction
+final readonly class CompiledInstruction
 {
-    public int $programIdIndex;
-    /**
-     * array of indexes.
-     *
-     * @var array<integer>
-     */
-    public array $accounts;
-    public Buffer $data;
-
     public function __construct(
-        int $programIdIndex,
-        array $accounts,
-        $data
-    )
-    {
-        $this->programIdIndex = $programIdIndex;
-        $this->accounts = $accounts;
-        $this->data = Buffer::from($data);
+        public int    $programIdIndex,
+        /**
+         * array of indexes.
+         *
+         * @var array<int>
+         */
+        public array  $accounts,
+        public Buffer $data,
+    ) {
+        //
     }
 }

@@ -1,106 +1,66 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk;
+namespace Collectiq\SolanaPhpSdk;
 
-use Attestto\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Attestto\SolanaPhpSdk\Exceptions\GenericException;
-use Attestto\SolanaPhpSdk\Exceptions\InvalidIdResponseException;
-use Attestto\SolanaPhpSdk\Exceptions\MethodNotFoundException;
-use Attestto\SolanaPhpSdk\Util\Commitment;
+use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use Collectiq\SolanaPhpSdk\Programs\IsProgram;
+use Collectiq\SolanaPhpSdk\Programs\Program;
+use Collectiq\SolanaPhpSdk\Util\Commitment;
 use Illuminate\Http\Client\Response;
-use Psr\Http\Client\ClientExceptionInterface;
-use SodiumException;
 
 /**
  * Class Connection
- * @package Attestto\SolanaPhpSdk
- * https://solana-labs.github.io/solana-web3.js/v1.x/classes/Connection.html
  */
-class Connection extends Program
+final class Connection implements Program
 {
-    /**
-     * @param string $pubKey
-     * @return array
-     */
-    public function getAccountInfo(string $pubKey): array
+    use IsProgram;
+
+    public function getAccountInfo(string|PublicKey $walletAddress): array
     {
-        $accountResponse = $this->client->call('getAccountInfo', [$pubKey, ["encoding" => "base64"]])['value'];
+        $accountResponse = $this->client->call('getAccountInfo', [
+            (string) $walletAddress, ['encoding' => 'base64'],
+        ])['value'];
 
         if (! $accountResponse) {
-            throw new AccountNotFoundException("API Error: Account {$pubKey} not found.");
+            throw new AccountNotFoundException("API Error: Account {$walletAddress} not found.");
         }
 
         return $accountResponse;
     }
 
-    /**
-     * @param string $pubKey
-     * @return float
-     */
-    public function getBalance(string $pubKey): float
+    public function getBalance(string $walletAddress): float
     {
-        return $this->client->call('getBalance', [$pubKey])['value'];
+        return $this->client->call('getBalance', [$walletAddress])['value'];
     }
 
-    /**
-     * @param string $transactionSignature
-     * @return array|null
-     */
-    public function getConfirmedTransaction(string $transactionSignature): array|null
+    public function getTransaction(string $transactionSignature, ?Commitment $commitment = null): ?array
     {
-        return $this->client->call('getConfirmedTransaction', [$transactionSignature]);
+        return $this->client->call('getTransaction', [
+            $transactionSignature,
+            [
+                'commitment' => $commitment,
+            ],
+        ]);
     }
 
-    /**
-     * NEW: This method is only available in solana-core v1.7 or newer. Please use getConfirmedTransaction for solana-core v1.6
-     *
-     * @param string $transactionSignature
-     * @return array|null
-     */
-    public function getTransaction(string $transactionSignature): array|null
-    {
-        return $this->client->call('getTransaction', [$transactionSignature]);
-    }
-
-    /**
-     * @param Commitment|null $commitment
-     * @return array
-     * @throws Exceptions\GenericException|Exceptions\MethodNotFoundException|Exceptions\InvalidIdResponseException
-     * Deprecated: Use getLatestBlockhash instead
-     */
-    public function getRecentBlockhash(?Commitment $commitment = null): array
-    {
-        return $this->client->call('getLatestBlockhash', array_filter([$commitment]))['value'];
-    }
-
-    /**
-     * @param string|null $commitment
-     * @return array
-     * @throws Exceptions\GenericException|Exceptions\MethodNotFoundException|Exceptions\InvalidIdResponseException|\Psr\Http\Client\ClientExceptionInterface
-     */
     public function getLatestBlockhash(?Commitment $commitment = null): array
     {
         return $this->client->call('getLatestBlockhash', array_filter([$commitment]))['value'];
     }
 
     /**
-     * @param Transaction $transaction
      * @param Keypair[] $signers
-     * @param array $params
-
-     * @throws GenericException
-     * @throws InvalidIdResponseException
-     * @throws MethodNotFoundException
-     * @throws ClientExceptionInterface
-     * @throws SodiumException
      * TODO Add Support for Versioned TXns
      */
-    public function sendTransaction(Transaction $transaction, array $signers, array $params = [])
+    public function sendTransaction(Transaction $transaction, array $signers, array $params = []): mixed
     {
         if (! $transaction->recentBlockhash) {
             $transaction->recentBlockhash = $this->getLatestBlockhash()['blockhash'];
         }
-        $transaction->sign(...$signers);
+
+        foreach ($signers as $signer) {
+            $transaction->sign($signer);
+        }
 
         $rawBinaryString = $transaction->serialize(false);
 
@@ -108,72 +68,62 @@ class Connection extends Program
 
         $send_params = ['encoding' => 'base64', 'preflightCommitment' => 'confirmed'];
 
-        foreach ($params as $k=>$v)
+        foreach ($params as $k => $v) {
             $send_params[$k] = $v;
+        }
 
         return $this->client->call('sendTransaction', [$hashString, $send_params]);
     }
 
     /**
-	 * @param Transaction $transaction
-	 * @param Keypair[] $signers
-	 * @param array $params
-	 * @return array|Response
-	 * @throws Exceptions\GenericException
-	 * @throws Exceptions\InvalidIdResponseException
-	 * @throws Exceptions\MethodNotFoundException
-	 */
-	public function simulateTransaction(Transaction $transaction, array $signers, array $params = [])
-	{
-		$transaction->sign(...$signers);
-
-		$rawBinaryString = $transaction->serialize(false);
-
-		$hashString = sodium_bin2base64($rawBinaryString, SODIUM_BASE64_VARIANT_ORIGINAL);
-
-		$send_params = ['encoding' => 'base64', 'commitment' => 'confirmed', 'sigVerify'=>true];
-
-		foreach ($params as $k=>$v)
-			$send_params[$k] = $v;
-
-		return $this->client->call('simulateTransaction', [$hashString, $send_params]);
-	}
-
-    /**
-     * @param string $pubKey
-     * @param array $params
-     * @return string
+     * @param Keypair[] $signers
      */
+    public function simulateTransaction(Transaction $transaction, array $signers, array $params = []): array|Response
+    {
+        foreach ($signers as $signer) {
+            $transaction->sign($signer);
+        }
+
+        $rawBinaryString = $transaction->serialize(false);
+
+        $hashString = sodium_bin2base64($rawBinaryString, SODIUM_BASE64_VARIANT_ORIGINAL);
+
+        $send_params = ['encoding' => 'base64', 'commitment' => 'confirmed', 'sigVerify' => true];
+
+        foreach ($params as $k => $v) {
+            $send_params[$k] = $v;
+        }
+
+        return $this->client->call('simulateTransaction', [$hashString, $send_params]);
+    }
+
     public function requestAirdrop(array $params = []): string
     {
-        return $response = $this->client->call('requestAirdrop', $params );
-
+        return $this->client->call('requestAirdrop', $params);
     }
+
     // https://solana.com/docs/rpc/http/getprogramaccounts
     // https://sns.guide/domain-name/all-domains.html
-    public function getProgramAccounts(string $programIdBs58, $dataSlice, $filters)
+    public function getProgramAccounts(string $programIdBs58, $dataSlice, $filters): mixed
     {
         $params = [
-                $programIdBs58,
-                [
-                    'dataSlice' => $dataSlice,
-                    'filters' => $filters,
-                    'dataSize' => 108, // 'dataSize' => 108
-                    'encoding' => 'base64',
-                    'page' => 1,
-                    'limit' => 1000
-
-                ],
-
-
+            $programIdBs58,
+            [
+                'dataSlice' => $dataSlice,
+                'filters' => $filters,
+                'dataSize' => 108, // 'dataSize' => 108
+                'encoding' => 'base64',
+                'page' => 1,
+                'limit' => 1000,
+            ],
         ];
-        return $this->client->call('getProgramAccounts', $params );
-        //return $this->client->call('getAssetsByOwner', $params );
 
+        return $this->client->call('getProgramAccounts', $params);
+        // return $this->client->call('getAssetsByOwner', $params );
     }
 
-    public function getMinimumBalanceForRentExemption(int $space = 1024){
-        return $this->client->call('getMinimumBalanceForRentExemption', [$space] );
+    public function getMinimumBalanceForRentExemption(int $space = 1024): int
+    {
+        return $this->client->call('getMinimumBalanceForRentExemption', [$space]);
     }
-
 }

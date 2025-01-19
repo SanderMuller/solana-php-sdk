@@ -1,115 +1,84 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Programs\SplToken\Actions;
+namespace Collectiq\SolanaPhpSdk\Programs\SplToken\Actions;
 
-use Attestto\SolanaPhpSdk\Connection;
-use Attestto\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Attestto\SolanaPhpSdk\Exceptions\GenericException;
-use Attestto\SolanaPhpSdk\Exceptions\InputValidationException;
-use Attestto\SolanaPhpSdk\Exceptions\InvalidIdResponseException;
-use Attestto\SolanaPhpSdk\Exceptions\MethodNotFoundException;
-use Attestto\SolanaPhpSdk\Exceptions\TokenInvalidAccountOwnerError;
-use Attestto\SolanaPhpSdk\Exceptions\TokenInvalidMintError;
-use Attestto\SolanaPhpSdk\Exceptions\TokenOwnerOffCurveError;
-use Attestto\SolanaPhpSdk\Keypair;
-use Attestto\SolanaPhpSdk\Programs\SplToken\State\Account;
-use Attestto\SolanaPhpSdk\PublicKey;
-use Attestto\SolanaPhpSdk\Transaction;
-use Attestto\SolanaPhpSdk\Util\Commitment;
-use Attestto\SolanaPhpSdk\Util\ConfirmOptions;
-use Attestto\SolanaPhpSdk\Util\Signer;
+use Collectiq\SolanaPhpSdk\Connection;
+use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use Collectiq\SolanaPhpSdk\Exceptions\TokenInvalidAccountOwnerError;
+use Collectiq\SolanaPhpSdk\Exceptions\TokenInvalidMintError;
+use Collectiq\SolanaPhpSdk\Keypair;
+use Collectiq\SolanaPhpSdk\Programs\SplToken\State\Account;
+use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\Transaction;
+use Collectiq\SolanaPhpSdk\Util\Commitment;
+use Collectiq\SolanaPhpSdk\Util\ConfirmOptions;
+use Collectiq\SolanaPhpSdk\Util\Signer;
 use Exception;
-use Psr\Http\Client\ClientExceptionInterface;
-use function Attestto\SolanaPhpSdk\Programs\SplToken\getAccount;
 
-trait SPLTokenActions {
-
-    /**
-     * @param Connection $connection
-     * @param Signer|Keypair $payer
-     * @param PublicKey $mint
-     * @param PublicKey $owner
-     * @param boolean $allowOwnerOffCurve
-     * @param Commitment|null $commitment
-     * @param ConfirmOptions $confirmOptions
-     * @param PublicKey $programId
-     * @param PublicKey $associatedTokenProgramId
-     * @return mixed
-     * @throws AccountNotFoundException
-     * @throws ClientExceptionInterface
-     * @throws InputValidationException
-     * @throws TokenInvalidAccountOwnerError
-     * @throws TokenInvalidMintError
-     * @throws TokenOwnerOffCurveError
-     * @throws GenericException
-     * @throws InvalidIdResponseException
-     * @throws MethodNotFoundException
-     * @throws \SodiumException
-     */
+trait SPLTokenActions
+{
     public function getOrCreateAssociatedTokenAccount(
-        Connection     $connection,
-        mixed          $payer,
-        PublicKey      $mint,
-        PublicKey      $owner,
-        bool           $allowOwnerOffCurve = true,
-        Commitment     $commitment = null,
-        ConfirmOptions $confirmOptions = null,
-        PublicKey      $programId = new PublicKey(self::TOKEN_PROGRAM_ID),
-        PublicKey      $associatedTokenProgramId = new PublicKey(self::ASSOCIATED_TOKEN_PROGRAM_ID)
-    ): Account
-    {
+        Connection      $connection,
+        Signer|Keypair  $payer,
+        PublicKey       $mint,
+        PublicKey       $owner,
+        bool            $allowOwnerOffCurve = true,
+        ?Commitment     $commitment = null,
+        ?ConfirmOptions $confirmOptions = null,
+        ?PublicKey      $programId = null,
+        ?PublicKey      $associatedTokenProgramId = null,
+    ): Account {
+        $programId ??= PublicKey::fromString(self::TOKEN_PROGRAM_ID);
+        $associatedTokenProgramId ??= PublicKey::fromString(self::ASSOCIATED_TOKEN_PROGRAM_ID);
 
         $associatedToken = $this->getAssociatedTokenAddressSync(
-            $mint,
-            $owner,
-            $allowOwnerOffCurve,
-            $programId,
-            $associatedTokenProgramId
+            mint: $mint,
+            owner: $owner,
+            allowOwnerOffCurve: $allowOwnerOffCurve,
+            programId: $programId,
+            atPid: $associatedTokenProgramId,
         );
-        $ata = $associatedToken->toBase58();
+
         try {
-            $account = Account::getAccount($connection, $associatedToken, $commitment, $programId);
-        } catch (Exception $error) {
-            if ($error instanceof AccountNotFoundException || $error instanceof TokenInvalidAccountOwnerError) {
-                try {
-                    $transaction = new Transaction();
-                    $transaction->add(
-                        $this->createAssociatedTokenAccountInstruction(
-                            $payer->getPublicKey(),
-                            $associatedToken,
-                            $owner,
-                            $mint,
-                            $programId,
-                            $associatedTokenProgramId
-                        )
-                    );
-                    if (!$confirmOptions) $confirmOptions = new ConfirmOptions();
-                    $transaction->feePayer = $payer->getPublicKey();
-                    $txnHash = $connection->sendTransaction( $transaction, [$payer]);
-                } catch (Exception $error) {
-                    // Ignore all errors
-                    // Account Exists but is not funded
-                    throw $error;
+            $account = Account::getAccount($connection, $associatedToken);
+        } catch (Exception $exception) {
+            if ($exception instanceof AccountNotFoundException || $exception instanceof TokenInvalidAccountOwnerError) {
+                $transaction = new Transaction();
+                $transaction->addInstructions(
+                    $this->createAssociatedTokenAccountInstruction(
+                        payer: $payer->getPublicKey(),
+                        associatedToken: $associatedToken,
+                        owner: $owner,
+                        mint: $mint,
+                        programId: $programId,
+                        associatedTokenProgramId: $associatedTokenProgramId,
+                    )
+                );
+
+                if (! $confirmOptions instanceof ConfirmOptions) {
+                    $confirmOptions = new ConfirmOptions();
                 }
 
-                $account = Account::getAccount($connection, $associatedToken, $commitment, $programId);
+                $transaction->feePayer = $payer->getPublicKey();
+                $txnHash = $connection->sendTransaction($transaction, [$payer]);
+                $account = Account::getAccount($connection, $associatedToken);
             } else {
-                throw $error;
+                throw $exception;
             }
         }
 
-        if ($account->mint != $mint) throw new TokenInvalidMintError(
-            $account->mint->toBase58() . ' != ' . $mint->toBase58()
-        );
-        if ($account->owner != $owner) throw new TokenInvalidAccountOwnerError(
-            $account->owner->toBase58() . ' != ' . $owner->toBase58()
-        );
+        if ($account->mint != $mint) {
+            throw new TokenInvalidMintError(
+                $account->mint->toBase58() . ' != ' . $mint->toBase58()
+            );
+        }
+
+        if ($account->owner != $owner) {
+            throw new TokenInvalidAccountOwnerError(
+                $account->owner->toBase58() . ' != ' . $owner->toBase58()
+            );
+        }
 
         return $account;
     }
-
-
-
-
-
 }

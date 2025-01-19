@@ -1,14 +1,15 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace Attestto\SolanaPhpSdk\Tests\Unit;
+namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 
-use Attestto\SolanaPhpSdk\Tests\TestCase;
-use Attestto\SolanaPhpSdk\Util\ShortVec;
+use Collectiq\SolanaPhpSdk\Tests\TestCase;
+use Collectiq\SolanaPhpSdk\Util\ShortVec;
+use PHPUnit\Framework\Attributes\Test;
 
-class ShortVecTest extends TestCase
+final class ShortVecTest extends TestCase
 {
     #[Test]
-    public function test_it_decodeLength()
+    public function idecodeLength(): void
     {
         $this->checkDecodedArray([], 0, 0);
         $this->checkDecodedArray([5], 1, 5);
@@ -22,38 +23,38 @@ class ShortVecTest extends TestCase
     }
 
     #[Test]
-    public function test_it_encodeLength()
+    public function iencodeLength(): void
     {
         $array = [];
         $prevLength = 0;
 
         $expected = [0];
         $this->checkEncodedArray($array, 0, $prevLength, $expected);
-        $prevLength += sizeof($expected);
+        $prevLength += count($expected);
 
         $expected = [5];
         $this->checkEncodedArray($array, 5, $prevLength, $expected);
-        $prevLength += sizeof($expected);
+        $prevLength += count($expected);
 
         $expected = [0x7F];
-        $this->checkEncodedArray($array, 0x7f, $prevLength, $expected);
-        $prevLength += sizeof($expected);
+        $this->checkEncodedArray($array, 0x7F, $prevLength, $expected);
+        $prevLength += count($expected);
 
         $expected = [0x80, 0x01];
         $this->checkEncodedArray($array, 0x80, $prevLength, $expected);
-        $prevLength += sizeof($expected);
+        $prevLength += count($expected);
 
-        $expected = [0xff, 0x01];
-        $this->checkEncodedArray($array, 0xff, $prevLength, $expected);
-        $prevLength += sizeof($expected);
+        $expected = [0xFF, 0x01];
+        $this->checkEncodedArray($array, 0xFF, $prevLength, $expected);
+        $prevLength += count($expected);
 
         $expected = [0x80, 0x02];
         $this->checkEncodedArray($array, 0x100, $prevLength, $expected);
-        $prevLength += sizeof($expected);
+        $prevLength += count($expected);
 
-        $expected = [0xff, 0xff, 0x01];
-        $this->checkEncodedArray($array, 0x7fff, $prevLength, $expected);
-        $prevLength += sizeof($expected);
+        $expected = [0xFF, 0xFF, 0x01];
+        $this->checkEncodedArray($array, 0x7FFF, $prevLength, $expected);
+        $prevLength += count($expected);
 
         $expected = [0x80, 0x80, 0x80, 0x01];
         $this->checkEncodedArray(
@@ -62,35 +63,25 @@ class ShortVecTest extends TestCase
             $prevLength,
             $expected
         );
-        $prevLength += sizeof($expected);
+        $prevLength += count($expected);
 
-        $this->assertEquals(16, $prevLength);
-        $this->assertEquals($prevLength, sizeof($array));
+        $this->assertSame(16, $prevLength);
+        $this->assertCount($prevLength, $array);
     }
 
-    /**
-     * @param array $array
-     * @param int $expectedValue
-     */
-    protected function checkDecodedArray(array $array, int $expectedLength, int $expectedValue)
+    private function checkDecodedArray(array $array, int $expectedLength, int $expectedValue): void
     {
-        list($value, $length) = ShortVec::decodeLength($array);
+        [$value, $length] = ShortVec::decodeLength($array);
         $this->assertEquals($expectedValue, $value);
         $this->assertEquals($expectedLength, $length);
     }
 
-    /**
-     * @param array $array
-     * @param int $length
-     * @param int $prevLength
-     * @param array $expectedArray
-     */
-    protected function checkEncodedArray(array &$array, int $length, int $prevLength, array $expectedArray)
+    private function checkEncodedArray(array &$array, int $length, int $prevLength, array $expectedArray): void
     {
-        $this->assertEquals(sizeof($array), $prevLength);
+        $this->assertSame(count($array), $prevLength);
         $actual = ShortVec::encodeLength($length);
         array_push($array, ...$actual);
-        $this->assertEquals(sizeof($array), $prevLength + sizeof($expectedArray));
-        $this->assertEquals($expectedArray, array_slice($array, -sizeof($expectedArray)));
+        $this->assertSame(count($array), $prevLength + count($expectedArray));
+        $this->assertEquals($expectedArray, array_slice($array, -count($expectedArray)));
     }
 }
