@@ -294,11 +294,6 @@ class Buffer implements Arrayable, Countable, Stringable
         return new Base58()->encode($this->toString());
     }
 
-    final public function toBase58(): string
-    {
-        return $this->toBase58String();
-    }
-
     final public function length(): int
     {
         return $this->count();

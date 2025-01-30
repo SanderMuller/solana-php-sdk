@@ -12,7 +12,7 @@ final class AccountTest extends TestCase
     #[Test]
     public function generate_new_account(): void
     {
-        $this->assertCount(64, new Account()->getSecretKey());
+        self::assertCount(64, new Account()->getSecretKey());
     }
 
     #[Test]
@@ -25,7 +25,7 @@ final class AccountTest extends TestCase
             59, 33, 84, 75, 52, 213, 221, 74, 101, 217, 139, 135, 139, 153, 34,
         ]);
 
-        $this->assertSame('2q7pyhPwAwZ3QMfZrnAbDhnh9mDUqycszcpf86VgQxhF', $account->getPublicKey()->toBase58());
+        self::assertSame('2q7pyhPwAwZ3QMfZrnAbDhnh9mDUqycszcpf86VgQxhF', $account->getPublicKey()->toBase58());
     }
 
     #[Test]
@@ -36,7 +36,7 @@ final class AccountTest extends TestCase
         $keypair = Keypair::fromSecretKey($expectedAccount->getSecretKey());
 
         $derivedAccount = new Account($keypair->getSecretKey());
-        $this->assertEquals($expectedAccount->getPublicKey(), $derivedAccount->getPublicKey());
-        $this->assertEquals($expectedAccount->getSecretKey(), $derivedAccount->getSecretKey());
+        self::assertEquals($expectedAccount->getPublicKey(), $derivedAccount->getPublicKey());
+        self::assertEquals($expectedAccount->getSecretKey(), $derivedAccount->getSecretKey());
     }
 }

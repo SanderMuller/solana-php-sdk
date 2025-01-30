@@ -41,7 +41,7 @@ final class BufferTest extends TestCase
             )
             ->push($programId);
 
-        $this->assertEquals($rawCreateAccountBinary, $bufferable->toArray());
+        self::assertEquals($rawCreateAccountBinary, $bufferable->toArray());
     }
 
     #[Test]
@@ -53,7 +53,7 @@ final class BufferTest extends TestCase
             Buffer::fromInt(3, BufferType::INT, false),
         );
 
-        $this->assertSame([1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0], $buffer->toArray());
+        self::assertSame([1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0], $buffer->toArray());
     }
 
     #[Test]
@@ -61,6 +61,6 @@ final class BufferTest extends TestCase
     {
         $buffer = Buffer::fromArray([1, 2, 3, 4]);
 
-        $this->assertSame([1, 2, 3, 4], $buffer->toArray());
+        self::assertSame([1, 2, 3, 4], $buffer->toArray());
     }
 }

@@ -29,7 +29,7 @@ final class SnsProgram implements Program
     ) {
         $this->config = $config ?: $this->loadConstants();
 
-        $sns_records_id = PublicKey::fromString('HP3D4D1ZCmohQGFVms2SS4LCANgJyksBf5s1F77FuFjZ');
+        $sns_records_id = PublicKey::from('HP3D4D1ZCmohQGFVms2SS4LCANgJyksBf5s1F77FuFjZ');
 
         $this->centralStateSNSRecords = PublicKey::findProgramAddressSync(
             [$sns_records_id],

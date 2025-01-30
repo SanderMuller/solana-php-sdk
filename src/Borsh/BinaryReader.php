@@ -102,7 +102,7 @@ final class BinaryReader
 
     public function readPubKey(): PublicKey
     {
-        return PublicKey::fromArray($this->readFixedArray(32));
+        return PublicKey::from($this->readFixedArray(32));
     }
 
     public function readPubKeyAsString(): string

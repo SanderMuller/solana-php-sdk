@@ -4,6 +4,7 @@ namespace Collectiq\SolanaPhpSdk;
 
 use Collectiq\SolanaPhpSdk\Exceptions\GenericException;
 use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
+use Collectiq\SolanaPhpSdk\Support\PublicKeyCollection;
 use Collectiq\SolanaPhpSdk\Util\AccountMeta;
 use Collectiq\SolanaPhpSdk\Util\Buffer;
 use Collectiq\SolanaPhpSdk\Util\CompiledInstruction;
@@ -40,9 +41,9 @@ final class Transaction
     public array $instructions = [];
 
     public function __construct(
-        public ?string           $recentBlockhash = null,
-        public ?NonceInformation $nonceInformation = null,
-        public ?PublicKey        $feePayer = null,
+        public string|PublicKey|null $recentBlockhash = null,
+        public ?NonceInformation     $nonceInformation = null,
+        public ?PublicKey            $feePayer = null,
         /**
          * @var array<SignaturePubKeyPair>
          */
@@ -89,7 +90,7 @@ final class Transaction
             array_unshift($this->instructions, $nonceInfo->nonceInstruction);
         }
 
-        if (! $this->recentBlockhash) {
+        if ($this->recentBlockhash === null) {
             throw new InputValidationException('Transaction recentBlockhash required.');
         }
 
@@ -105,13 +106,10 @@ final class Transaction
             throw new InputValidationException('Transaction fee payer required.');
         }
 
-        /**
-         * @var array<string> $programIds
-         */
-        $programIds = [];
+        $programIds = PublicKeyCollection::empty();
 
         /**
-         * @var array<AccountMeta> $accountMetas
+         * @var AccountMeta[] $accountMetas
          */
         $accountMetas = [];
 
@@ -134,7 +132,7 @@ final class Transaction
         // Append programID account metas
         foreach ($programIds as $programId) {
             $accountMetas[] = new AccountMeta(
-                publicKey: PublicKey::fromString($programId),
+                publicKey: PublicKey::from($programId),
                 isSigner: false,
                 isWritable: false,
             );
@@ -155,7 +153,7 @@ final class Transaction
 
         // Cull duplicate account metas
         /**
-         * @var array<AccountMeta> $uniqueMetas
+         * @var AccountMeta[] $uniqueMetas
          */
         $uniqueMetas = [];
         foreach ($accountMetas as $accountMeta) {
@@ -195,25 +193,19 @@ final class Transaction
         $numReadonlyUnsignedAccounts = 0;
 
         // Split out signing from non-signing keys and count header values
-        /**
-         * @var array<string> $signedKeys
-         */
-        $signedKeys = [];
+        $signedKeys = PublicKeyCollection::empty();
 
-        /**
-         * @var array<string> $unsignedKeys
-         */
-        $unsignedKeys = [];
+        $unsignedKeys = PublicKeyCollection::empty();
 
         foreach ($uniqueMetas as $accountMeta) {
             if ($accountMeta->isSigner) {
-                $signedKeys[] = $accountMeta->getPublicKey()->toBase58();
+                $signedKeys[] = $accountMeta->getPublicKey();
                 $numRequiredSignatures++;
                 if (! $accountMeta->isWritable) {
                     $numReadonlySignedAccounts++;
                 }
             } else {
-                $unsignedKeys[] = $accountMeta->getPublicKey()->toBase58();
+                $unsignedKeys[] = $accountMeta->getPublicKey();
                 if (! $accountMeta->isWritable) {
                     $numReadonlyUnsignedAccounts++;
                 }
@@ -222,17 +214,15 @@ final class Transaction
 
         // Initialize signature array, if needed
         if (! $this->signatures) {
-            $this->signatures = array_map(function (string $signedKey): SignaturePubKeyPair {
-                return new SignaturePubKeyPair(PublicKey::fromString($signedKey), null);
+            $this->signatures = array_map(function (PublicKey $signedKey): SignaturePubKeyPair {
+                return new SignaturePubKeyPair($signedKey, null);
             }, $signedKeys);
         }
 
-        $accountKeys = [
-            ...$signedKeys,
-            ...$unsignedKeys,
-        ];
+        $accountKeys = $signedKeys->push(...$unsignedKeys);
+
         /**
-         * @var array<CompiledInstruction> $instructions
+         * @var CompiledInstruction[] $instructions
          */
         $instructions = array_map(function (TransactionInstruction $instruction) use ($accountKeys): CompiledInstruction {
             $programIdIndex = array_search($instruction->programId->toBase58(), $accountKeys, true);
@@ -256,7 +246,7 @@ final class Transaction
             ),
             accountKeys: $accountKeys,
             recentBlockhash: $this->recentBlockhash,
-            instructions: $instructions
+            instructions: $instructions,
         );
     }
 
@@ -337,7 +327,7 @@ final class Transaction
      * @throws \SodiumException
      * @throws InputValidationException
      */
-    public function partialSign(Signer|Keypair ...$signers): void
+    public function partialSign(Signer|Keypair|PublicKey ...$signers): void
     {
         // Dedupe signers
         $uniqueSigners = $this->arrayUnique($signers);
@@ -405,7 +395,7 @@ final class Transaction
                 if ($requireAllSignatures) {
                     return false;
                 }
-            } elseif (! sodium_crypto_sign_verify_detached($signature->signature, $signData, $signature->getPublicKey()->toBinaryString())) {
+            } elseif (! sodium_crypto_sign_verify_detached((string) $signature->signature, $signData, (string) $signature->getPublicKey()->toBinaryString())) {
                 return false;
             }
         }
@@ -444,7 +434,7 @@ final class Transaction
 
         // Encode signatures
         foreach ($this->signatures as $signature) {
-            if ($signature->signature && strlen($signature->signature) != self::SIGNATURE_LENGTH) {
+            if ($signature->signature && strlen((string) $signature->signature) != self::SIGNATURE_LENGTH) {
                 throw new GenericException("signature has invalid length: {$signature->signature}");
             }
 
@@ -501,12 +491,12 @@ final class Transaction
         $transaction->recentBlockhash = $message->recentBlockhash;
 
         if ($message->header->numRequiredSignature > 0) {
-            $transaction->feePayer = $message->accountKeys[0];
+            $transaction->feePayer = $message->accountKeys->offsetGet(0);
         }
 
         foreach ($signatures as $i => $signature) {
             $transaction->signatures[] = new SignaturePubKeyPair(
-                $message->accountKeys[$i],
+                $message->accountKeys->offsetGet($i),
                 $signature === Buffer::fromArray(self::DEFAULT_SIGNATURE)->toBase58String()
                     ? null
                     : Buffer::fromBase58($signature)->toString()
@@ -515,7 +505,7 @@ final class Transaction
 
         foreach ($message->instructions as $instruction) {
             $keys = array_map(function (int $accountIndex) use ($transaction, $message): AccountMeta {
-                $publicKey = $message->accountKeys[$accountIndex];
+                $publicKey = $message->accountKeys->offsetGet($accountIndex);
                 $isSigner = self::arraySearchAccountMetaForPublicKey($transaction->signatures, $publicKey) !== -1
                     || $message->isAccountSigner($accountIndex);
                 $isWritable = $message->isAccountWritable($accountIndex);
@@ -524,7 +514,7 @@ final class Transaction
             }, $instruction->accounts);
 
             $transaction->instructions[] = new TransactionInstruction(
-                programId: $message->accountKeys[$instruction->programIdIndex],
+                programId: $message->accountKeys->offsetGet($instruction->programIdIndex),
                 keys: $keys,
                 data: $instruction->data,
             );
@@ -569,6 +559,6 @@ final class Transaction
             return $fromKeypair->getPublicKey();
         }
 
-        return PublicKey::fromString($fromKeypair);
+        return PublicKey::from($fromKeypair);
     }
 }

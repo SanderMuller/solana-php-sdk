@@ -7,6 +7,7 @@ use Collectiq\SolanaPhpSdk\Keypair;
 use Collectiq\SolanaPhpSdk\Message;
 use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
 use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\Support\PublicKeyCollection;
 use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use Collectiq\SolanaPhpSdk\Transaction;
 use Collectiq\SolanaPhpSdk\TransactionInstruction;
@@ -43,9 +44,9 @@ final class TransactionTest extends TestCase
         ));
 
         $message = $transaction->compileMessage();
-        $this->assertEquals($payer->getPublicKey(), $message->accountKeys[0]);
-        $this->assertEquals($account2->getPublicKey(), $message->accountKeys[1]);
-        $this->assertEquals($account3->getPublicKey(), $message->accountKeys[2]);
+        self::assertEquals($payer->getPublicKey(), $message->accountKeys->offsetGet(0));
+        self::assertEquals($account2->getPublicKey(), $message->accountKeys->offsetGet(1));
+        self::assertEquals($account3->getPublicKey(), $message->accountKeys->offsetGet(2));
     }
 
     #[Test]
@@ -68,11 +69,11 @@ final class TransactionTest extends TestCase
         $transaction->sign($payer, $other);
 
         $message = $transaction->compileMessage();
-        $this->assertEquals($payer->getPublicKey(), $message->accountKeys[0]);
-        $this->assertEquals($other->getPublicKey(), $message->accountKeys[1]);
-        $this->assertSame(2, $message->header->numRequiredSignature);
-        $this->assertSame(0, $message->header->numReadonlySignedAccounts);
-        $this->assertSame(1, $message->header->numReadonlyUnsignedAccounts);
+        self::assertEquals($payer->getPublicKey(), $message->accountKeys->offsetGet(0));
+        self::assertEquals($other->getPublicKey(), $message->accountKeys->offsetGet(1));
+        self::assertSame(2, $message->header->numRequiredSignature);
+        self::assertSame(0, $message->header->numReadonlySignedAccounts);
+        self::assertSame(1, $message->header->numReadonlyUnsignedAccounts);
     }
 
     #[Test]
@@ -90,10 +91,10 @@ final class TransactionTest extends TestCase
         $transaction->sign($payer);
 
         $message = $transaction->compileMessage();
-        $this->assertEquals($payer->getPublicKey(), $message->accountKeys[0]);
-        $this->assertSame(1, $message->header->numRequiredSignature);
-        $this->assertSame(0, $message->header->numReadonlySignedAccounts);
-        $this->assertSame(1, $message->header->numReadonlyUnsignedAccounts);
+        self::assertEquals($payer->getPublicKey(), $message->accountKeys->offsetGet(0));
+        self::assertSame(1, $message->header->numRequiredSignature);
+        self::assertSame(0, $message->header->numReadonlySignedAccounts);
+        self::assertSame(1, $message->header->numReadonlyUnsignedAccounts);
     }
 
     #[Test]
@@ -108,19 +109,19 @@ final class TransactionTest extends TestCase
         $partialTransaction->addInstructions($transfer);
         $partialTransaction->partialSign($account1, $account2->getPublicKey());
 
-        $this->assertSame(Transaction::SIGNATURE_LENGTH, strlen((string) $partialTransaction->signature()));
-        $this->assertCount(2, $partialTransaction->signatures);
-        $this->assertNotNull($partialTransaction->signatures[0]->signature);
-        $this->assertNull($partialTransaction->signatures[1]->signature);
+        self::assertSame(Transaction::SIGNATURE_LENGTH, strlen((string) $partialTransaction->signature()));
+        self::assertCount(2, $partialTransaction->signatures);
+        self::assertNotNull($partialTransaction->signatures[0]->signature);
+        self::assertNull($partialTransaction->signatures[1]->signature);
 
         $partialTransaction->addSigner($account2);
-        $this->assertNotNull($partialTransaction->signatures[0]->signature);
-        $this->assertNotNull($partialTransaction->signatures[1]->signature);
+        self::assertNotNull($partialTransaction->signatures[0]->signature);
+        self::assertNotNull($partialTransaction->signatures[1]->signature);
 
         $expected = new Transaction($recentBlockhash);
         $expected->addInstructions($transfer);
         $expected->sign($account1, $account2);
-        $this->assertEquals($expected, $partialTransaction);
+        self::assertEquals($expected, $partialTransaction);
     }
 
     #[Test]
@@ -145,14 +146,14 @@ final class TransactionTest extends TestCase
             $duplicate2->getPublicKey()
         );
 
-        $this->assertCount(1, $transaction->signatures);
-        $this->assertEquals($payer->getPublicKey(), $transaction->signatures[0]->getPublicKey());
+        self::assertCount(1, $transaction->signatures);
+        self::assertEquals($payer->getPublicKey(), $transaction->signatures[0]->getPublicKey());
 
         $message = $transaction->compileMessage();
-        $this->assertEquals($payer->getPublicKey(), $message->accountKeys[0]);
-        $this->assertSame(1, $message->header->numRequiredSignature);
-        $this->assertSame(0, $message->header->numReadonlySignedAccounts);
-        $this->assertSame(1, $message->header->numReadonlyUnsignedAccounts);
+        self::assertEquals($payer->getPublicKey(), $message->accountKeys->offsetGet(0));
+        self::assertSame(1, $message->header->numRequiredSignature);
+        self::assertSame(0, $message->header->numReadonlySignedAccounts);
+        self::assertSame(1, $message->header->numReadonlyUnsignedAccounts);
     }
 
     #[Test]
@@ -180,14 +181,14 @@ final class TransactionTest extends TestCase
             $duplicate2,
         );
 
-        $this->assertCount(1, $transaction->signatures);
-        $this->assertEquals($payer->getPublicKey(), $transaction->signatures[0]->getPublicKey());
+        self::assertCount(1, $transaction->signatures);
+        self::assertEquals($payer->getPublicKey(), $transaction->signatures[0]->getPublicKey());
 
         $message = $transaction->compileMessage();
-        $this->assertEquals($payer->getPublicKey(), $message->accountKeys[0]);
-        $this->assertSame(1, $message->header->numRequiredSignature);
-        $this->assertSame(0, $message->header->numReadonlySignedAccounts);
-        $this->assertSame(1, $message->header->numReadonlyUnsignedAccounts);
+        self::assertEquals($payer->getPublicKey(), $message->accountKeys->offsetGet(0));
+        self::assertSame(1, $message->header->numRequiredSignature);
+        self::assertSame(0, $message->header->numReadonlySignedAccounts);
+        self::assertSame(1, $message->header->numReadonlyUnsignedAccounts);
     }
 
     #[Test]
@@ -207,7 +208,7 @@ final class TransactionTest extends TestCase
         $newTransaction = new Transaction($orgTransaction->recentBlockhash, null, null, $orgTransaction->signatures);
         $newTransaction->addInstructions($transfer1, $transfer2);
 
-        $this->assertEquals($orgTransaction, $newTransaction);
+        self::assertEquals($orgTransaction, $newTransaction);
     }
 
     #[Test]
@@ -226,7 +227,7 @@ final class TransactionTest extends TestCase
     {
         $sender = Keypair::fromSeed([8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]); // Arbitrary known account
         $recentBlockhash = 'EETubP5AKHgjPAhzPAFcb8BAY1hMH639CWCFTqi3hq1k'; // Arbitrary known recentBlockhash
-        $recipient = PublicKey::fromString('J3dxNj7nDRRqRRXuEMynDG57DkZK4jYRuv3Garmb1i99'); // Arbitrary known public key
+        $recipient = PublicKey::from('J3dxNj7nDRRqRRXuEMynDG57DkZK4jYRuv3Garmb1i99'); // Arbitrary known public key
 
         $transfer = SystemProgram::transfer($sender->getPublicKey(), $recipient, 49);
         $expectedTransaction = new Transaction($recentBlockhash, null, $sender->getPublicKey());
@@ -236,25 +237,23 @@ final class TransactionTest extends TestCase
         $wireTransaction = sodium_base642bin('AVuErQHaXv0SG0/PchunfxHKt8wMRfMZzqV0tkC5qO6owYxWU2v871AoWywGoFQr4z+q/7mE8lIufNl/kxj+nQ0BAAEDE5j2LG0aRXxRumpLXz29L2n8qTIWIY3ImX5Ba9F9k8r9Q5/Mtmcn8onFxt47xKj+XdXXd3C8j/FcPu7csUrz/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxJrndgN4IFTxep3s6kO0ROug7bEsbx0xxuDkqEvwUusBAgIAAQwCAAAAMQAAAAAAAAA=', SODIUM_BASE64_VARIANT_ORIGINAL);
         $tx = Transaction::from($wireTransaction);
 
-        $this->assertEquals($tx, $expectedTransaction);
-        $this->assertSame($wireTransaction, $expectedTransaction->serialize());
+        self::assertEquals($tx, $expectedTransaction);
+        self::assertSame($wireTransaction, $expectedTransaction->serialize());
     }
 
     #[Test]
     public function populate_transaction(): void
     {
-        $recentBlockhash = PublicKey::fromInt(1, BufferType::INT);
-
         $message = new Message(
             header: new MessageHeader(2, 0, 3),
-            accountKeys: [
-                PublicKey::fromInt(1, BufferType::INT),
-                PublicKey::fromInt(2, BufferType::INT),
-                PublicKey::fromInt(3, BufferType::INT),
-                PublicKey::fromInt(4, BufferType::INT),
-                PublicKey::fromInt(5, BufferType::INT),
-            ],
-            recentBlockhash: $recentBlockhash->toString(),
+            accountKeys: new PublicKeyCollection([
+                PublicKey::from(1),
+                PublicKey::from(2),
+                PublicKey::from(3),
+                PublicKey::from(4),
+                PublicKey::from(5),
+            ]),
+            recentBlockhash: PublicKey::from(1),
             instructions: [
                 new CompiledInstruction(4, [1, 2, 3], Buffer::fromArray(array_pad([], 5, 9))),
             ],
@@ -266,9 +265,9 @@ final class TransactionTest extends TestCase
         ];
 
         $transaction = Transaction::populate($message, $signatures);
-        $this->assertCount(1, $transaction->instructions);
-        $this->assertCount(2, $transaction->signatures);
-        $this->assertEquals($recentBlockhash, $transaction->recentBlockhash);
+        self::assertCount(1, $transaction->instructions);
+        self::assertCount(2, $transaction->signatures);
+        self::assertEquals($message->recentBlockhash, $transaction->recentBlockhash);
     }
 
     #[Test]
@@ -276,13 +275,13 @@ final class TransactionTest extends TestCase
     {
         $sender = Keypair::fromSeed([8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]); // Arbitrary known account
         $recentBlockhash = 'EETubP5AKHgjPAhzPAFcb8BAY1hMH639CWCFTqi3hq1k'; // Arbitrary known recentBlockhash
-        $recipient = PublicKey::fromString('J3dxNj7nDRRqRRXuEMynDG57DkZK4jYRuv3Garmb1i99'); // Arbitrary known public key
+        $recipient = PublicKey::from('J3dxNj7nDRRqRRXuEMynDG57DkZK4jYRuv3Garmb1i99'); // Arbitrary known public key
 
         $transfer = SystemProgram::transfer($sender->getPublicKey(), $recipient, 49);
         $expectedTransaction = new Transaction($recentBlockhash, null, $sender->getPublicKey());
         $expectedTransaction->addInstructions($transfer);
 
-        $this->assertCount(0, $expectedTransaction->signatures);
+        self::assertCount(0, $expectedTransaction->signatures);
         $expectedTransaction->feePayer = $sender->getPublicKey();
 
         // Serializing without signatures is allowed if sigverify disabled.
@@ -292,7 +291,7 @@ final class TransactionTest extends TestCase
 
         $expectedTransaction->feePayer = null;
 //        $expectedTransaction->setSigners($sender->getPublicKey());
-        $this->assertCount(1, $expectedTransaction->signatures);
+        self::assertCount(1, $expectedTransaction->signatures);
 
         // Serializing without signatures is allowed if sigverify disabled.
         $expectedTransaction->serialize(true, false); // no exception
@@ -300,15 +299,15 @@ final class TransactionTest extends TestCase
         $expectedTransaction->serializeMessage(); // no exception
 
         $expectedSerializationWithNoSignatures = sodium_base642bin('AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDE5j2LG0aRXxRumpLXz29L2n8qTIWIY3ImX5Ba9F9k8r9Q5/Mtmcn8onFxt47xKj+XdXXd3C8j/FcPu7csUrz/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxJrndgN4IFTxep3s6kO0ROug7bEsbx0xxuDkqEvwUusBAgIAAQwCAAAAMQAAAAAAAAA=', SODIUM_BASE64_VARIANT_ORIGINAL);
-        $this->assertSame($expectedSerializationWithNoSignatures, $expectedTransaction->serialize(false));
+        self::assertSame($expectedSerializationWithNoSignatures, $expectedTransaction->serialize(false));
 
         // Properly signed transaction succeeds
         $expectedTransaction->partialSign($sender);
-        $this->assertCount(1, $expectedTransaction->signatures);
+        self::assertCount(1, $expectedTransaction->signatures);
         $expectedSerialization = sodium_base642bin('AVuErQHaXv0SG0/PchunfxHKt8wMRfMZzqV0tkC5qO6owYxWU2v871AoWywGoFQr4z+q/7mE8lIufNl/kxj+nQ0BAAEDE5j2LG0aRXxRumpLXz29L2n8qTIWIY3ImX5Ba9F9k8r9Q5/Mtmcn8onFxt47xKj+XdXXd3C8j/FcPu7csUrz/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxJrndgN4IFTxep3s6kO0ROug7bEsbx0xxuDkqEvwUusBAgIAAQwCAAAAMQAAAAAAAAA=', SODIUM_BASE64_VARIANT_ORIGINAL);
 
-        $this->assertSame($expectedSerialization, $expectedTransaction->serialize());
-        $this->assertCount(1, $expectedTransaction->signatures);
+        self::assertSame($expectedSerialization, $expectedTransaction->serialize());
+        self::assertCount(1, $expectedTransaction->signatures);
     }
 
     #[Test]

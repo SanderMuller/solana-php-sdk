@@ -24,8 +24,8 @@ trait SPLTokenInstructions
             owner: $owner,
             mint: $mint,
             instructionData: Buffer::empty(),
-            programId: $programId ?? PublicKey::fromString(self::TOKEN_PROGRAM_ID),
-            associatedTokenProgramId: $associatedTokenProgramId ?? PublicKey::fromString(self::ASSOCIATED_TOKEN_PROGRAM_ID),
+            programId: $programId ?? PublicKey::from(self::TOKEN_PROGRAM_ID),
+            associatedTokenProgramId: $associatedTokenProgramId ?? PublicKey::from(self::ASSOCIATED_TOKEN_PROGRAM_ID),
         );
     }
 
@@ -39,14 +39,14 @@ trait SPLTokenInstructions
         ?PublicKey $associatedTokenProgramId = null,
     ): TransactionInstruction {
         return new TransactionInstruction(
-            programId: $associatedTokenProgramId ?? PublicKey::fromString(self::ASSOCIATED_TOKEN_PROGRAM_ID),
+            programId: $associatedTokenProgramId ?? PublicKey::from(self::ASSOCIATED_TOKEN_PROGRAM_ID),
             keys: [
                 new AccountMeta($payer, true, true),
                 new AccountMeta($associatedToken, false, true),
                 new AccountMeta($owner, false, false),
                 new AccountMeta($mint, false, false),
                 new AccountMeta(SystemProgram::programId(), false, false),
-                new AccountMeta($programId ?? PublicKey::fromString(self::TOKEN_PROGRAM_ID), false, false),
+                new AccountMeta($programId ?? PublicKey::from(self::TOKEN_PROGRAM_ID), false, false),
             ],
             data: $instructionData,
         );
@@ -55,7 +55,7 @@ trait SPLTokenInstructions
     public function createSyncNativeInstruction(PublicKey $owner, string $programId = self::TOKEN_PROGRAM_ID): TransactionInstruction
     {
         return new TransactionInstruction(
-            programId: PublicKey::fromString($programId),
+            programId: PublicKey::from($programId),
             keys: [
                 new AccountMeta(publicKey: $owner, isSigner: false, isWritable: true),
             ],

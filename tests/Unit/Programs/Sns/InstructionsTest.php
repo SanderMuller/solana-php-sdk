@@ -16,21 +16,21 @@ final class InstructionsTest extends TestCase
     public function create_instruction(): void
     {
         $instruction = $this->container->get(SnsProgram::class)->createInstruction(
-            NAME_PROGRAM_ID: PublicKey::fromBuffer(Buffer::alloc(32)),
-            programId: PublicKey::fromBuffer(Buffer::alloc(32)),
-            nameAccountKey: PublicKey::fromBuffer(Buffer::alloc(32)),
-            nameOwner: PublicKey::fromBuffer(Buffer::alloc(32)),
-            payerKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+            NAME_PROGRAM_ID: PublicKey::generate(),
+            programId: PublicKey::generate(),
+            nameAccountKey: PublicKey::generate(),
+            nameOwner: PublicKey::generate(),
+            payerKey: PublicKey::generate(),
             hashed_name: Buffer::fromInt(32, BufferType::INT, false),
             param: Buffer::fromInt(1000000, BufferType::INT, false),
             param1: Buffer::fromInt(2000, BufferType::INT, false),
-            nameClass: PublicKey::fromBuffer(Buffer::alloc(32)),
-            parentName: PublicKey::fromBuffer(Buffer::alloc(32)),
-            nameParentOwner: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameClass: PublicKey::generate(),
+            parentName: PublicKey::generate(),
+            nameParentOwner: PublicKey::generate(),
         );
 
-        $this->assertInstanceOf(TransactionInstruction::class, $instruction);
-        $this->assertEquals(0, $instruction->data->toArray()[0]);
+        self::assertInstanceOf(TransactionInstruction::class, $instruction);
+        self::assertEquals(0, $instruction->data->toArray()[0]);
 
         // TODO: Add more assertions here to verify the properties of the returned TransactionInstruction
     }
@@ -39,62 +39,62 @@ final class InstructionsTest extends TestCase
     public function updateInstruction(): void
     {
         $instruction = $this->container->get(SnsProgram::class)->updateInstruction(
-            nameProgramId: PublicKey::fromBuffer(Buffer::alloc(32)),
-            nameAccountKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameProgramId: PublicKey::generate(),
+            nameAccountKey: PublicKey::generate(),
             offset: Buffer::fromInt(96, BufferType::INT, false),
             input_data: Buffer::fromString('INPUT DATA'),
-            nameUpdateSigner: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameUpdateSigner: PublicKey::generate(),
         );
 
-        $this->assertEquals(1, $instruction->data->toArray()[0]);
+        self::assertEquals(1, $instruction->data->toArray()[0]);
     }
 
     #[Test]
     public function transferInstruction(): void
     {
         $instruction = $this->container->get(SnsProgram::class)->transferInstruction(
-            NAME_PROGRAM_ID: PublicKey::fromBuffer(Buffer::alloc(32)),
-            pubkey: PublicKey::fromBuffer(Buffer::alloc(32)),
-            newOwner: PublicKey::fromBuffer(Buffer::alloc(32)),
-            owner: PublicKey::fromBuffer(Buffer::alloc(32)),
+            NAME_PROGRAM_ID: PublicKey::generate(),
+            pubkey: PublicKey::generate(),
+            newOwner: PublicKey::generate(),
+            owner: PublicKey::generate(),
             null: null,
             nameParent: null,
             nameParentOwner: null,
         );
 
-        $this->assertInstanceOf(TransactionInstruction::class, $instruction);
-        $this->assertEquals(2, $instruction->data->toArray()[0]);
+        self::assertInstanceOf(TransactionInstruction::class, $instruction);
+        self::assertEquals(2, $instruction->data->toArray()[0]);
     }
 
     #[Test]
     public function reallocInstruction(): void
     {
-        $currentNameOwnerKey = PublicKey::fromBuffer(Buffer::alloc(32));
+        $currentNameOwnerKey = PublicKey::generate();
 
         $instruction = $this->container->get(SnsProgram::class)->reallocInstruction(
-            nameProgramId: PublicKey::fromBuffer(Buffer::alloc(32)),
-            systemProgramId: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameProgramId: PublicKey::generate(),
+            systemProgramId: PublicKey::generate(),
             payerKey: $currentNameOwnerKey,
-            nameAccountKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameAccountKey: PublicKey::generate(),
             nameOwnerKey: $currentNameOwnerKey,
             space: Buffer::fromInt(2000, BufferType::INT, false),
         );
 
-        $this->assertEquals(4, $instruction->data->toArray()[0]);
+        self::assertEquals(4, $instruction->data->toArray()[0]);
     }
 
     #[Test]
     public function deleteInstruction(): void
     {
-        $currentNameOwnerKey = PublicKey::fromBuffer(Buffer::alloc(32));
+        $currentNameOwnerKey = PublicKey::generate();
 
         $instruction = $this->container->get(SnsProgram::class)->deleteInstruction(
-            nameProgramId: PublicKey::fromBuffer(Buffer::alloc(32)),
-            nameAccountKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+            nameProgramId: PublicKey::generate(),
+            nameAccountKey: PublicKey::generate(),
             refundTargetKey: $currentNameOwnerKey,
             nameOwnerKey: $currentNameOwnerKey
         );
 
-        $this->assertEquals(3, $instruction->data->toArray()[0]);
+        self::assertEquals(3, $instruction->data->toArray()[0]);
     }
 }

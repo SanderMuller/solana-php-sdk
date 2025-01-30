@@ -55,7 +55,7 @@ trait Instructions
             );
         } else {
             $keys[] = new AccountMeta(
-                publicKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+                publicKey: PublicKey::generate(),
                 isSigner: false,
                 isWritable: false,
             );
@@ -69,7 +69,7 @@ trait Instructions
             );
         } else {
             $keys[] = new AccountMeta(
-                publicKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+                publicKey: PublicKey::generate(),
                 isSigner: false,
                 isWritable: false,
             );
@@ -178,7 +178,7 @@ trait Instructions
         if ($parentOwner instanceof PublicKey && $nameParent instanceof PublicKey) {
             if (! $nameClassKey instanceof PublicKey) {
                 $keys[] = new AccountMeta(
-                    publicKey: PublicKey::fromBuffer(Buffer::alloc(32)),
+                    publicKey: PublicKey::generate(),
                     isSigner: false,
                     isWritable: false,
                 );

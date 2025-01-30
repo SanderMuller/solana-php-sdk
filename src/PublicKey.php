@@ -6,21 +6,77 @@ use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
 use Collectiq\SolanaPhpSdk\Exceptions\SolanaPhpSdkException;
 use Collectiq\SolanaPhpSdk\Util\Buffer;
 use Collectiq\SolanaPhpSdk\Util\HasPublicKey;
+use Collectiq\SolanaPhpSdk\Util\Stringable;
 use Exception;
 use ParagonIE_Sodium_Compat;
 use RangeException;
 
-final class PublicKey extends Buffer implements HasPublicKey
+final class PublicKey implements Stringable, HasPublicKey
 {
-    protected static bool $defaultsToBase58 = true;
-
     public static ?int $fixedLength = 32;
+
+    private const int LENGTH = 32;
 
     private const int MAX_SEED_LENGTH = 32;
 
+    private Buffer $buffer;
+
+    public function __construct(mixed $bnORBase58String)
+    {
+        if (is_int($bnORBase58String)) {
+            $this->buffer = Buffer::empty()->pad(self::LENGTH, $bnORBase58String);
+        } elseif (is_string($bnORBase58String)) {
+            // https://stackoverflow.com/questions/25343508/detect-if-string-is-binary
+            $isBinaryString = preg_match('~[^\x20-\x7E\t\r\n]~', $bnORBase58String) > 0;
+            // if not binary string already, assumed to be a base58 string.
+            if ($isBinaryString) {
+                $this->buffer = Buffer::fromString($bnORBase58String);
+            } else {
+                $this->buffer = Buffer::fromBase58($bnORBase58String);
+            }
+        } else {
+            $this->buffer = Buffer::from($bnORBase58String);
+        }
+
+        if ($this->buffer->length() !== self::LENGTH) {
+            throw new InputValidationException("Invalid public key input. Expected length 32. Found: {$this->buffer->length()}");
+        }
+    }
+
+    public static function from(mixed $bnORBase58String): self
+    {
+        return new self($bnORBase58String);
+    }
+
     public static function default(): self
     {
-        return self::fromString('11111111111111111111111111111111');
+        return new self('11111111111111111111111111111111');
+    }
+
+    public static function generate(): self
+    {
+        return self::from(Buffer::alloc(32));
+    }
+
+    /**
+     * Check if two publicKeys are equal
+     */
+    public function equals(self $publicKey): bool
+    {
+        return $this->buffer->equals($publicKey->buffer);
+    }
+
+    /**
+     * Return the base-58 representation of the public key
+     */
+    public function toBase58(): string
+    {
+        return $this->buffer->toBase58String();
+    }
+
+    public function toBytes(): array
+    {
+        return $this->buffer->toBytes();
     }
 
     /**
@@ -37,7 +93,7 @@ final class PublicKey extends Buffer implements HasPublicKey
 
         $binaryString = sodium_hex2bin(hash('sha256', $buffer->toString()));
 
-        return self::fromString($binaryString);
+        return self::from($binaryString);
     }
 
     /**
@@ -65,7 +121,7 @@ final class PublicKey extends Buffer implements HasPublicKey
             throw new InputValidationException('Invalid seeds, address must fall off the curve.');
         }
 
-        return self::fromString($binaryString);
+        return self::from($binaryString);
     }
 
     /**
@@ -126,5 +182,15 @@ final class PublicKey extends Buffer implements HasPublicKey
     public function getPublicKey(): self
     {
         return $this;
+    }
+
+    public function toString(): string
+    {
+        return $this->toBase58();
+    }
+
+    public function __toString(): string
+    {
+        return $this->toString();
     }
 }

@@ -27,31 +27,26 @@ trait Utils
     public function getHashedNameSync(string $name): Buffer
     {
         $input = $this->config['HASH_PREFIX'] . $name;
-        $hashed = hash('sha256', Buffer::from($input), true);
 
-        return Buffer::from($hashed);
+        $hash = hash('sha256', Buffer::fromString($input)->toString(), true);
+
+        return Buffer::from($hash);
     }
 
-    /**
-     * @param PublicKey|null $nameClass The name class public key
-     * @param PublicKey|null $nameParent The name parent public key
-     * @return PublicKey The public key of the name account
-     * @throws InputValidationException
-     */
     public function getNameAccountKeySync(
         Buffer     $hashed_name,
         ?PublicKey $nameClass = null,
-        ?PublicKey $nameParent = null
+        ?PublicKey $nameParent = null,
     ): PublicKey {
         $seeds = [$hashed_name];
-        $programIdPublicKey = PublicKey::fromString($this->config['NAME_PROGRAM_ID']);
-        $seeds[] = $nameClass instanceof PublicKey ? $nameClass : Buffer::alloc(32);
 
-        $seeds[] = $nameParent instanceof PublicKey ? $nameParent : Buffer::alloc(32);
+        $seeds[] = $nameClass instanceof PublicKey ? $nameClass : PublicKey::generate();
+        $seeds[] = $nameParent instanceof PublicKey ? $nameParent : PublicKey::generate();
 
+        $programIdPublicKey = PublicKey::from($this->config['NAME_PROGRAM_ID']);
         [$nameAccountKey] = PublicKey::findProgramAddressSync(
-            $seeds,
-            $programIdPublicKey
+            seeds: $seeds,
+            programId: $programIdPublicKey,
         );
 
         return $nameAccountKey;
@@ -61,7 +56,7 @@ trait Utils
      * This function can be used to perform a reverse look up
      * @param connection The Solana RPC connection
      * @param nameAccount The public key of the domain to look up
-     * @returns The human readable domain name
+     * @return string The human-readable domain name
      */
     public function reverseLookup(Connection $connection, PublicKey $nameAccount): string
     {
@@ -151,7 +146,7 @@ trait Utils
 
         $result = $this->_deriveSync(
             name: $domain,
-            parent: PublicKey::fromString($this->config['ROOT_DOMAIN_ACCOUNT']),
+            parent: PublicKey::from($this->config['ROOT_DOMAIN_ACCOUNT']),
         );
 
         return array_merge($result, ['isSub' => false, 'parent' => null]);
@@ -168,7 +163,7 @@ trait Utils
             'pubkey' => $this->getNameAccountKeySync(
                 hashed_name: $hashedDomainName,
                 nameClass: $classKey,
-                nameParent: $parent ?: PublicKey::fromString($this->config['ROOT_DOMAIN_ACCOUNT']),
+                nameParent: $parent ?: PublicKey::from($this->config['ROOT_DOMAIN_ACCOUNT']),
             ),
             'hashed' => $hashedDomainName,
         ];
@@ -192,7 +187,7 @@ trait Utils
 
         return $this->getNameAccountKeySync(
             hashed_name: $hashedReverseLookup,
-            nameClass: PublicKey::fromString($this->config['REVERSE_LOOKUP_CLASS']),
+            nameClass: PublicKey::from($this->config['REVERSE_LOOKUP_CLASS']),
             nameParent: $isSub ? $domainKeySync['parent'] : null,
         );
     }

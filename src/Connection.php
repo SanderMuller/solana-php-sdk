@@ -54,7 +54,7 @@ final class Connection implements Program
      */
     public function sendTransaction(Transaction $transaction, array $signers, array $params = []): mixed
     {
-        if (! $transaction->recentBlockhash) {
+        if ($transaction->recentBlockhash === null) {
             $transaction->recentBlockhash = $this->getLatestBlockhash()['blockhash'];
         }
 

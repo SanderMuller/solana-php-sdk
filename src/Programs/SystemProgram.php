@@ -20,7 +20,7 @@ final class SystemProgram implements Program
      */
     public static function programId(): PublicKey
     {
-        return PublicKey::fromString('11111111111111111111111111111111');
+        return PublicKey::default();
     }
 
     public function getAccountInfo(string $pubKey): array

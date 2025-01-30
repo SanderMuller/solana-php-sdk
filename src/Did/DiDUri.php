@@ -9,7 +9,7 @@ use Illuminate\Support\Stringable;
 use Illuminate\Support\Uri;
 use JsonSerializable;
 
-final readonly class DiDUri implements \Stringable, JsonSerializable
+final readonly class DiDUri implements \Collectiq\SolanaPhpSdk\Util\Stringable, JsonSerializable
 {
     /**
      * DID scheme.

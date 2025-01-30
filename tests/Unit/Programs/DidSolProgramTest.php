@@ -24,7 +24,7 @@ final class DidSolProgramTest extends TestCase
         $base64Data = self::DID_DATA;
         $didData = DidSolProgram::deserializeDidData($base64Data);
 
-        $this->assertEquals(self::DID_SUBJECT_PK, $didData->keyData);
+        self::assertEquals(self::DID_SUBJECT_PK, $didData->keyData);
 
     }
 
@@ -33,7 +33,7 @@ final class DidSolProgramTest extends TestCase
     {
 
         $didId = DidSolProgram::getDidDataAccountId(self::DID_SUBJECT_PK);
-        $this->assertSame(self::DID_ACCOUNT_ID, $didId);
+        self::assertSame(self::DID_ACCOUNT_ID, $didId);
 
     }
 }

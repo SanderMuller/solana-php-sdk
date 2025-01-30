@@ -47,5 +47,7 @@ parameters:
 
     ignoreErrors:
         - identifier: arrayFilter.strict
+        - identifier: missingType.iterableValue
+          path: tests
 
     excludePaths:

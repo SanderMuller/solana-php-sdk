@@ -81,15 +81,15 @@ final class BorshTest extends TestCase
         $buffer = Borsh::serialize($schema, $value);
         $newValue = Borsh::deserialize($schema, TestObject::class, $buffer);
 
-        $this->assertInstanceOf(TestObject::class, $newValue);
-        $this->assertEquals(255, $newValue->fields['x']);
-        $this->assertEquals(20, $newValue->fields['y']);
-        $this->assertEquals('a123', $newValue->fields['zz']);
-        $this->assertEquals('123', $newValue->fields['z']);
-        $this->assertEqualsWithDelta(12.987, $newValue->fields['a'], PHP_FLOAT_EPSILON);
-        $this->assertEquals(-121, $newValue->fields['b']);
-        $this->assertEquals(-20, $newValue->fields['c']);
-        $this->assertEquals([1, 2, 3], $newValue->fields['q']);
+        self::assertInstanceOf(TestObject::class, $newValue);
+        self::assertEquals(255, $newValue->fields['x']);
+        self::assertEquals(20, $newValue->fields['y']);
+        self::assertEquals('a123', $newValue->fields['zz']);
+        self::assertEquals('123', $newValue->fields['z']);
+        self::assertEqualsWithDelta(12.987, $newValue->fields['a'], PHP_FLOAT_EPSILON);
+        self::assertEquals(-121, $newValue->fields['b']);
+        self::assertEquals(-20, $newValue->fields['c']);
+        self::assertEquals([1, 2, 3], $newValue->fields['q']);
     }
 
     #[Test]
@@ -111,13 +111,13 @@ final class BorshTest extends TestCase
         $value->x = 'bacon';
         $buffer = Borsh::serialize($schema, $value);
         $newValue = Borsh::deserialize($schema, TestObject::class, $buffer);
-        $this->assertEquals('bacon', $newValue->x);
+        self::assertEquals('bacon', $newValue->x);
 
         $value = new TestObject();
         $value->fields['x'] = null;
         $buffer = Borsh::serialize($schema, $value);
         $newValue = Borsh::deserialize($schema, TestObject::class, $buffer);
-        $this->assertNull($newValue->fields['x']);
+        self::assertNull($newValue->fields['x']);
     }
 
     #[Test]
@@ -138,9 +138,9 @@ final class BorshTest extends TestCase
         $buffer = Borsh::serialize($schema, $value);
         $newValue = Borsh::deserialize($schema, TestObject::class, $buffer);
 
-        $this->assertSame([5, 0, 0, 0, 104, 101, 108, 108, 111, 5, 0, 0, 0, 119, 111, 114, 108, 100], $buffer);
+        self::assertSame([5, 0, 0, 0, 104, 101, 108, 108, 111, 5, 0, 0, 0, 119, 111, 114, 108, 100], $buffer);
         // Note, asserts TRUE because of the magic getter __get()
-        $this->assertEquals(['hello', 'world'], $newValue->x);
+        self::assertEquals(['hello', 'world'], $newValue->x);
     }
 
     #[Test]
@@ -161,8 +161,8 @@ final class BorshTest extends TestCase
         $buffer = Borsh::serialize($schema, $value);
         $newValue = Borsh::deserialize($schema, TestWithPrivateVariable::class, $buffer);
 
-        $this->assertInstanceOf(TestWithPrivateVariable::class, $newValue);
-        $this->assertEquals(255, $newValue->getM());
+        self::assertInstanceOf(TestWithPrivateVariable::class, $newValue);
+        self::assertEquals(255, $newValue->getM());
     }
 
     #[Test]
@@ -182,7 +182,7 @@ final class BorshTest extends TestCase
         $buffer = Borsh::serialize($schema, $value);
         $newValue = Borsh::deserialize($schema, TestWithConstructorParameters::class, $buffer);
 
-        $this->assertInstanceOf(TestWithConstructorParameters::class, $newValue);
-        $this->assertEquals(255, $newValue->getM());
+        self::assertInstanceOf(TestWithConstructorParameters::class, $newValue);
+        self::assertEquals(255, $newValue->getM());
     }
 }

@@ -24,7 +24,7 @@ final class ConnectionFeatureTest extends TestCase
 
         // Assert: Check the result is as expected
         // This will depend on what the actual response from the Solana API looks like
-        $this->assertEquals('11111111111111111111111111111111', $result['owner']);
+        self::assertEquals('11111111111111111111111111111111', $result['owner']);
     }
 
     #[Test]
@@ -36,7 +36,7 @@ final class ConnectionFeatureTest extends TestCase
         $txn = '3ScP26YbYarMTQBA6i3a9NynrXj845FNX3afmgTWiZAAhqVrZwyw5YbMhuqczamjBLwWZ3XNY91nrRCeVNMjtexE';
         $result = $connection->getTransaction($txn);
 
-        $this->assertEquals('3ScP26YbYarMTQBA6i3a9NynrXj845FNX3afmgTWiZAAhqVrZwyw5YbMhuqczamjBLwWZ3XNY91nrRCeVNMjtexE', $result['transaction']['signatures'][0]);
+        self::assertEquals('3ScP26YbYarMTQBA6i3a9NynrXj845FNX3afmgTWiZAAhqVrZwyw5YbMhuqczamjBLwWZ3XNY91nrRCeVNMjtexE', $result['transaction']['signatures'][0]);
     }
 
     #[Test]
@@ -46,7 +46,7 @@ final class ConnectionFeatureTest extends TestCase
 
         $result = $connection->getLatestBlockhash(Commitment::finalized());
 
-        $this->assertNotNull($result['blockhash']);
+        self::assertNotNull($result['blockhash']);
     }
 
     #[Test]
@@ -55,7 +55,7 @@ final class ConnectionFeatureTest extends TestCase
         $result = $this->container->get(Connection::class)
             ->getLatestBlockhash(new Commitment('finalized'));
 
-        $this->assertNotNull($result['blockhash']);
+        self::assertNotNull($result['blockhash']);
     }
 
     #[Test]
@@ -65,7 +65,7 @@ final class ConnectionFeatureTest extends TestCase
 
         $result = $this->container->get(Connection::class)->getTransaction($txn);
 
-        $this->assertEquals($txn, $result['transaction']['signatures'][0]);
+        self::assertEquals($txn, $result['transaction']['signatures'][0]);
     }
 
     #[Test]
@@ -97,7 +97,7 @@ final class ConnectionFeatureTest extends TestCase
             signers: [$account1, $account2],
         );
 
-        $this->assertEquals('AccountNotFound', $response['value']['err']);
+        self::assertEquals('AccountNotFound', $response['value']['err']);
     }
 
     #[Test]
@@ -108,7 +108,7 @@ final class ConnectionFeatureTest extends TestCase
         $secretKey = json_decode('[45,54,39,107,89,97,142,99,78,79,179,20,100,88,176,123,63,144,15,102,152,62,187,243,16,83,234,7,115,196,73,58,136,86,43,13,28,152,130,148,70,247,159,0,0,197,176,80,47,230,51,124,29,148,39,41,36,61,88,254,63,143,109,69]');
 
         $account1 = Keypair::fromSecretKey($secretKey);
-        $account2 = PublicKey::fromString('BURNKKWBSaXmUFQPaABzWWtQ97U2oByNtPiXz3cCAMpq');
+        $account2 = PublicKey::from('BURNKKWBSaXmUFQPaABzWWtQ97U2oByNtPiXz3cCAMpq');
 
         $transfer1 = SystemProgram::transfer($account1->getPublicKey(), $account2->getPublicKey(), 123);
 
@@ -117,13 +117,13 @@ final class ConnectionFeatureTest extends TestCase
         $orgTransaction->addInstructions($transfer1);
 
         $response = $connection->sendTransaction($orgTransaction, [$account1], ['skipPreflight' => false]);
-        $this->assertIsString($response);
+        self::assertIsString($response);
 
         $tx2 = new Transaction();
         $tx2->addInstructions($transfer1);
 
         $response = $connection->sendTransaction($tx2, [$account1]);
-        $this->assertIsString($response);
+        self::assertIsString($response);
     }
 
     #[Test]
@@ -131,7 +131,7 @@ final class ConnectionFeatureTest extends TestCase
     {
         $connection = $this->container->get(Connection::class);
 
-        $this->assertIsFloat($connection->getBalance('ABCexcAcjLuEsZUbaudqATgUp4MUL5STNAjr3goRLk6Y'));
+        self::assertIsFloat($connection->getBalance('ABCexcAcjLuEsZUbaudqATgUp4MUL5STNAjr3goRLk6Y'));
     }
 
     #[Test]
@@ -139,6 +139,6 @@ final class ConnectionFeatureTest extends TestCase
     {
         $connection = $this->container->get(Connection::class);
 
-        $this->assertIsInt($connection->getMinimumBalanceForRentExemption(2000));
+        self::assertIsInt($connection->getMinimumBalanceForRentExemption(2000));
     }
 }

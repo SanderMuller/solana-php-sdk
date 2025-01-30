@@ -3,38 +3,37 @@
 namespace Collectiq\SolanaPhpSdk;
 
 use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
+use Collectiq\SolanaPhpSdk\Support\PublicKeyCollection;
 use Collectiq\SolanaPhpSdk\Util\Buffer;
 use Collectiq\SolanaPhpSdk\Util\CompiledInstruction;
 use Collectiq\SolanaPhpSdk\Util\MessageHeader;
 use Collectiq\SolanaPhpSdk\Util\ShortVec;
 
-final class Message
+final readonly class Message
 {
-    /**
-     * @var array<PublicKey>
-     */
-    public array $accountKeys;
+    private const int HEADER_OFFSET = 3;
 
     /**
      * int to PublicKey: https://github.com/solana-labs/solana-web3.js/blob/966d7c653198de193f607cdfe19a161420408df2/src/message.ts
      */
-    private array $indexToProgramIds = [];
+    private array $indexToProgramIds;
 
     /**
-     * @param array<string> $accountKeys
      * @param array<CompiledInstruction> $instructions
      */
     public function __construct(
-        public MessageHeader $header,
-        array $accountKeys,
-        public string $recentBlockhash,
-        public array $instructions
+        public MessageHeader       $header,
+        public PublicKeyCollection $accountKeys,
+        public string|PublicKey    $recentBlockhash,
+        public array               $instructions,
     ) {
-        $this->accountKeys = array_map(PublicKey::fromString(...), $accountKeys);
+        $indexToProgramIds = [];
 
         foreach ($this->instructions as $instruction) {
-            $this->indexToProgramIds[$instruction->programIdIndex] = $this->accountKeys[$instruction->programIdIndex];
+            $indexToProgramIds[$instruction->programIdIndex] = $this->accountKeys->get($instruction->programIdIndex);
         }
+
+        $this->indexToProgramIds = $indexToProgramIds;
     }
 
     public function isAccountSigner(int $index): bool
@@ -44,8 +43,12 @@ final class Message
 
     public function isAccountWritable(int $index): bool
     {
-        return $index < ($this->header->numRequiredSignature - $this->header->numReadonlySignedAccounts)
-            || ($index >= $this->header->numRequiredSignature && $index < count($this->accountKeys) - $this->header->numReadonlyUnsignedAccounts);
+        if ($index < ($this->header->numRequiredSignature - $this->header->numReadonlySignedAccounts)) {
+            return true;
+        }
+
+        return $index >= $this->header->numRequiredSignature
+            && $index < $this->accountKeys->count() - $this->header->numReadonlyUnsignedAccounts;
     }
 
     public function isProgramId(int $index): bool
@@ -63,9 +66,7 @@ final class Message
 
     public function nonProgramIds(): array
     {
-        return array_filter($this->accountKeys, function (PublicKey $account, $index): bool {
-            return ! $this->isProgramId($index);
-        });
+        return $this->accountKeys->reject(fn (PublicKey $account, int $index): bool => $this->isProgramId($index));
     }
 
     public function serialize(): string
@@ -84,12 +85,6 @@ final class Message
 
     private function encodeMessage(): array
     {
-        $publicKeys = [];
-
-        foreach ($this->accountKeys as $publicKey) {
-            array_push($publicKeys, ...$publicKey->toBytes());
-        }
-
         return [
             // uint8
             ...unpack('C*', pack('C', $this->header->numRequiredSignature)),
@@ -98,8 +93,12 @@ final class Message
             // uint8
             ...unpack('C*', pack('C', $this->header->numReadonlyUnsignedAccounts)),
 
-            ...ShortVec::encodeLength(count($this->accountKeys)),
-            ...$publicKeys,
+            ...ShortVec::encodeLength($this->accountKeys->count()),
+
+            ...$this->accountKeys
+                ->map(fn (PublicKey $publicKey): array => $publicKey->toBytes())
+                ->all(),
+
             ...Buffer::fromBase58($this->recentBlockhash)->toArray(),
         ];
     }
@@ -115,9 +114,11 @@ final class Message
             ...unpack('C*', pack('C', $instruction->programIdIndex)),
 
             ...ShortVec::encodeLength(count($accounts)),
+
             ...$accounts,
 
             ...ShortVec::encodeLength($data->length()),
+
             ...$data->toArray(),
         ];
     }
@@ -126,32 +127,40 @@ final class Message
     {
         $rawMessage = Buffer::from($rawMessage);
 
-        $HEADER_OFFSET = 3;
-        if ($rawMessage->length() < $HEADER_OFFSET) {
+        if ($rawMessage->length() < self::HEADER_OFFSET) {
             throw new InputValidationException('Byte representation of message is missing message header.');
         }
 
         $numRequiredSignatures = $rawMessage->shift();
         $numReadonlySignedAccounts = $rawMessage->shift();
         $numReadonlyUnsignedAccounts = $rawMessage->shift();
-        $header = new MessageHeader($numRequiredSignatures, $numReadonlySignedAccounts, $numReadonlyUnsignedAccounts);
 
-        $accountKeys = [];
+        $header = new MessageHeader(
+            numRequiredSignature: $numRequiredSignatures,
+            numReadonlySignedAccounts: $numReadonlySignedAccounts,
+            numReadonlyUnsignedAccounts: $numReadonlyUnsignedAccounts,
+        );
+
+        $accountKeys = PublicKeyCollection::empty();
         [$accountsLength, $accountsOffset] = ShortVec::decodeLength($rawMessage);
         for ($i = 0; $i < $accountsLength; $i++) {
             $keyBytes = $rawMessage->slice($accountsOffset, PublicKey::$fixedLength);
-            $accountKeys[] = PublicKey::fromBuffer($keyBytes)->toBase58();
+            $accountKeys->add(PublicKey::from($keyBytes));
             $accountsOffset += PublicKey::$fixedLength;
         }
 
         $rawMessage = $rawMessage->slice($accountsOffset);
 
-        $recentBlockhash = $rawMessage->slice(0, PublicKey::$fixedLength)->toBase58String();
+        $recentBlockhash = PublicKey::from(
+            $rawMessage->slice(0, PublicKey::$fixedLength)->toBase58String()
+        );
+
         $rawMessage = $rawMessage->slice(PublicKey::$fixedLength);
 
         $instructions = [];
         [$instructionCount, $offset] = ShortVec::decodeLength($rawMessage);
         $rawMessage = $rawMessage->slice($offset);
+
         for ($i = 0; $i < $instructionCount; $i++) {
             $programIdIndex = $rawMessage->shift();
 

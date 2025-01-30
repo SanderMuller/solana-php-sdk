@@ -38,7 +38,7 @@ final class DerivationTest extends TestCase
         $sns = new SnsProgram($client);
         $hashedName = $sns->getHashedNameSync('bonfida');
         $bs58HashedName = $hashedName->toBase58String();
-        $this->assertSame('AcmVjPtaDyNboWGSKjYHxea1QDgN648T4Je3HUpkHecf', $bs58HashedName);
+        self::assertSame('AcmVjPtaDyNboWGSKjYHxea1QDgN648T4Je3HUpkHecf', $bs58HashedName);
     }
 
     #[Test]
@@ -49,7 +49,7 @@ final class DerivationTest extends TestCase
         $hashedName = $sns->_deriveSync('bonfida');
         $nameAccountKey = $sns->getNameAccountKeySync($hashedName['hashed']);
         $nameAccountKeyBs58 = $nameAccountKey->toBase58();
-        $this->assertSame('85v6oF1VnGNeT4oV2fH8HpVBj3k3U4m6uNnWYT8AcA5H', $nameAccountKeyBs58);
+        self::assertSame('85v6oF1VnGNeT4oV2fH8HpVBj3k3U4m6uNnWYT8AcA5H', $nameAccountKeyBs58);
     }
 
     #[Test]
@@ -59,8 +59,8 @@ final class DerivationTest extends TestCase
         $sns = new SnsProgram($client);
         foreach ($this->items as $item) {
             $result = $sns->getDomainKeySync($item['domain']);
-            $this->assertInstanceOf(PublicKey::class, $result['pubkey']);
-            $this->assertEquals($item['address'], $result['pubkey']->toBase58());
+            self::assertInstanceOf(PublicKey::class, $result['pubkey']);
+            self::assertEquals($item['address'], $result['pubkey']->toBase58());
         }
     }
 
@@ -71,11 +71,9 @@ final class DerivationTest extends TestCase
         $sns = new SnsProgram($client);
         foreach ($this->items as $item) {
             $result = $sns->getReverseKeySync($item['domain']);
-            $this->assertInstanceOf(PublicKey::class, $result);
-            $this->assertTrue(
-                $result->toBase58() === 'DqgmWxe2PPrfy45Ja3UPyFGwcbRzkRuwXt3NyxjX8krg' ||
-                $result->toBase58() === 'BrRErziYEA9oBoDyYrdVF9p6Gs1QtdpaZ6AQpaybeZgf'
-            );
+            self::assertInstanceOf(PublicKey::class, $result);
+            self::assertTrue($result->toBase58() === 'DqgmWxe2PPrfy45Ja3UPyFGwcbRzkRuwXt3NyxjX8krg' ||
+            $result->toBase58() === 'BrRErziYEA9oBoDyYrdVF9p6Gs1QtdpaZ6AQpaybeZgf');
         }
     }
 
@@ -90,8 +88,8 @@ final class DerivationTest extends TestCase
         $result = $sns->getNameOwner($connection, $nameAccountKey);
         $owner = $result['registry']->owner;
         $parent = $result['registry']->parentName;
-        $this->assertInstanceOf(PublicKey::class, $owner);
-        $this->assertSame('CnNHzcp7L4jKiA2Rsca3hZyVwSmoqXaT8wGwzS8WvvB2', $owner->toBase58());
-        $this->assertEquals('Crf8hzfthWGbGbLTVCiqRqV5MVnbpHB1L9KQMd6gsinb', $parent->toBase58());
+        self::assertInstanceOf(PublicKey::class, $owner);
+        self::assertSame('CnNHzcp7L4jKiA2Rsca3hZyVwSmoqXaT8wGwzS8WvvB2', $owner->toBase58());
+        self::assertEquals('Crf8hzfthWGbGbLTVCiqRqV5MVnbpHB1L9KQMd6gsinb', $parent->toBase58());
     }
 }

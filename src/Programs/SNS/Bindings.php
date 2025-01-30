@@ -163,7 +163,7 @@ trait Bindings
         }
 
         return $this->createInstruction(
-            NAME_PROGRAM_ID: PublicKey::fromString($this->config['NAME_PROGRAM_ID']),
+            NAME_PROGRAM_ID: PublicKey::from($this->config['NAME_PROGRAM_ID']),
             programId: SystemProgram::programId(),
             nameAccountKey: $nameAccountKey,
             nameOwner: $nameOwner,
@@ -260,16 +260,16 @@ trait Bindings
 
         $initCentralStateInstruction = new ReverseInstructionAccount($name);
         $initCentralStateInstruction->getInstruction(
-            programId: PublicKey::fromString($this->config['REGISTER_PROGRAM_ID']),
-            namingServiceProgram: PublicKey::fromString($this->config['NAME_PROGRAM_ID']),
-            rootDomain: PublicKey::fromString($this->config['ROOT_DOMAIN_ACCOUNT']),
+            programId: PublicKey::from($this->config['REGISTER_PROGRAM_ID']),
+            namingServiceProgram: PublicKey::from($this->config['NAME_PROGRAM_ID']),
+            rootDomain: PublicKey::from($this->config['ROOT_DOMAIN_ACCOUNT']),
             reverseLookup: $reverseLookupAccount,
             systemProgram: SystemProgram::programId(),
             centralState: $this->centralStateSNSRecords,
             feePayer: $feePayer,
-            rentSysvar: PublicKey::fromString($this->config['SYSVAR_RENT_PUBKEY']),
+            rentSysvar: PublicKey::from($this->config['SYSVAR_RENT_PUBKEY']),
             parentName: $parentName,
-            parentNameOwner: $parentNameOwner
+            parentNameOwner: $parentNameOwner,
         );
 
         $instructions = [$initCentralStateInstruction];

@@ -4,7 +4,7 @@ namespace Collectiq\SolanaPhpSdk\Util;
 
 use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
 
-final readonly class Commitment implements \Stringable
+final readonly class Commitment implements Stringable
 {
     private const string FINALIZED = 'finalized';
 
@@ -12,19 +12,15 @@ final readonly class Commitment implements \Stringable
 
     private const string PROCESSED = 'processed';
 
-    private string $commitmentLevel;
-
-    public function __construct(string $commitmentLevel)
+    public function __construct(private string $commitmentLevel)
     {
-        if (! in_array($commitmentLevel, [
+        if (! in_array($this->commitmentLevel, [
             self::FINALIZED,
             self::CONFIRMED,
             self::PROCESSED,
         ])) {
             throw new InputValidationException('Invalid commitment level.');
         }
-
-        $this->commitmentLevel = $commitmentLevel;
     }
 
     public static function finalized(): Commitment
@@ -42,8 +38,13 @@ final readonly class Commitment implements \Stringable
         return new self(self::PROCESSED);
     }
 
-    public function __toString(): string
+    public function toString(): string
     {
         return $this->commitmentLevel;
+    }
+
+    public function __toString(): string
+    {
+        return $this->toString();
     }
 }

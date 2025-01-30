@@ -10,7 +10,17 @@ use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
 use Collectiq\SolanaPhpSdk\PublicKey;
 
 /**
- * @property mixed|null $mint
+ * @property PublicKey|null $mint
+ * @property PublicKey|null $owner
+ * @property int $amount
+ * @property int $delegateOption
+ * @property PublicKey|null $delegate
+ * @property int $state
+ * @property int $isNativeOption
+ * @property int $isNative
+ * @property int $delegatedAmount
+ * @property int $closeAuthorityOption
+ * @property PublicKey|null $closeAuthority
  */
 final class Account implements BorshSerializable
 {
@@ -49,7 +59,7 @@ final class Account implements BorshSerializable
      */
     public static function getAccount(
         Connection $connection,
-        PublicKey $accountPublicKeyOnbject
+        PublicKey  $accountPublicKeyOnbject,
     ): Account {
         try {
             $info = $connection->getAccountInfo($accountPublicKeyOnbject);

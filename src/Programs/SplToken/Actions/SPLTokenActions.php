@@ -28,8 +28,8 @@ trait SPLTokenActions
         ?PublicKey      $programId = null,
         ?PublicKey      $associatedTokenProgramId = null,
     ): Account {
-        $programId ??= PublicKey::fromString(self::TOKEN_PROGRAM_ID);
-        $associatedTokenProgramId ??= PublicKey::fromString(self::ASSOCIATED_TOKEN_PROGRAM_ID);
+        $programId ??= PublicKey::from(self::TOKEN_PROGRAM_ID);
+        $associatedTokenProgramId ??= PublicKey::from(self::ASSOCIATED_TOKEN_PROGRAM_ID);
 
         $associatedToken = $this->getAssociatedTokenAddressSync(
             mint: $mint,
@@ -67,15 +67,15 @@ trait SPLTokenActions
             }
         }
 
-        if ($account->mint != $mint) {
+        if (! $account->mint->equals($mint)) {
             throw new TokenInvalidMintError(
-                $account->mint->toBase58() . ' != ' . $mint->toBase58()
+                "{$account->mint->toBase58()} != {$mint->toBase58()}"
             );
         }
 
-        if ($account->owner != $owner) {
+        if (! $account->owner->equals($owner)) {
             throw new TokenInvalidAccountOwnerError(
-                $account->owner->toBase58() . ' != ' . $owner->toBase58()
+                "{$account->owner->toBase58()} != {$owner->toBase58()}"
             );
         }
 

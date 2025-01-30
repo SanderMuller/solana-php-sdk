@@ -13,9 +13,9 @@ final class MetadataTest extends TestCase
     {
         $metadata = Metadata::fromBuffer($this->getBuffer());
 
-        $this->assertEquals(4, $metadata->key);
-        $this->assertEquals('FeGDLocrdh5AVH5EMFsAx583hF6f7bqEaVnCE5UEzizg', $metadata->mint);
-        $this->assertEquals(420, $metadata->data->sellerFeeBasisPoints);
+        self::assertEquals(4, $metadata->key);
+        self::assertEquals('FeGDLocrdh5AVH5EMFsAx583hF6f7bqEaVnCE5UEzizg', $metadata->mint);
+        self::assertEquals(420, $metadata->data->sellerFeeBasisPoints);
     }
 
     private function getBuffer(): array

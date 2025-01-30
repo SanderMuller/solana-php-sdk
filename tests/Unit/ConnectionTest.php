@@ -37,7 +37,7 @@ final class ConnectionTest extends TestCase
 
         // TODO - Fix this test, call the method and compare the transactions
 
-        $this->assertEquals($orgTransaction, $newTransaction);
+        self::assertEquals($orgTransaction, $newTransaction);
     }
 
     #[Test]
@@ -58,6 +58,6 @@ final class ConnectionTest extends TestCase
 
         $result = $connection->getBalance($pubKey);
 
-        $this->assertEquals($balance, $result);
+        self::assertEquals($balance, $result);
     }
 }

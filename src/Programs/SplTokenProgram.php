@@ -42,8 +42,8 @@ final class SplTokenProgram implements Program
         }
 
         $address = PublicKey::findProgramAddressSync(
-            seeds: [$owner, $programId ?? PublicKey::fromString(self::TOKEN_PROGRAM_ID), $mint],
-            programId: $atPid ?? PublicKey::fromString(self::ASSOCIATED_TOKEN_PROGRAM_ID),
+            seeds: [$owner, $programId ?? PublicKey::from(self::TOKEN_PROGRAM_ID), $mint],
+            programId: $atPid ?? PublicKey::from(self::ASSOCIATED_TOKEN_PROGRAM_ID),
         );
 
         return $address[0];

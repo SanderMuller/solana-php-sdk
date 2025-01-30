@@ -27,9 +27,9 @@ final class SolanaRpcClientTest extends TestCase
         $rpc3 = $client->buildRpc('doStuff', []);
         $rpc4 = $client->buildRpc('doStuff', []);
 
-        $this->assertEquals($rpc1['id'], $rpc2['id']);
-        $this->assertEquals($rpc3['id'], $rpc4['id']);
-        $this->assertNotEquals($rpc1['id'], $rpc4['id']);
+        self::assertEquals($rpc1['id'], $rpc2['id']);
+        self::assertEquals($rpc3['id'], $rpc4['id']);
+        self::assertNotEquals($rpc1['id'], $rpc4['id']);
     }
 
     #[Test]

@@ -17,10 +17,10 @@ final class KeypairTest extends TestCase
     #[Test]
     public function inew_keypair(): void
     {
-        $keypair = new Keypair();
+        $keypair = Keypair::generate();
 
-        $this->assertCount(64, $keypair->getSecretKey());
-        $this->assertCount(32, $keypair->getPublicKey()->toBytes());
+        self::assertCount(64, $keypair->getSecretKey());
+        self::assertCount(32, $keypair->getPublicKey()->toBytes());
     }
 
     #[Test]
@@ -28,8 +28,8 @@ final class KeypairTest extends TestCase
     {
         $keypair = Keypair::generate();
 
-        $this->assertCount(64, $keypair->getSecretKey());
-        $this->assertCount(32, $keypair->getPublicKey()->toBytes());
+        self::assertCount(64, $keypair->getSecretKey());
+        self::assertCount(32, $keypair->getPublicKey()->toBytes());
     }
 
     #[Test]
@@ -39,7 +39,7 @@ final class KeypairTest extends TestCase
 
         $keypair = Keypair::fromSecretKey($secretKey);
 
-        $this->assertSame('2q7pyhPwAwZ3QMfZrnAbDhnh9mDUqycszcpf86VgQxhF', $keypair->getPublicKey()->toBase58());
+        self::assertSame('2q7pyhPwAwZ3QMfZrnAbDhnh9mDUqycszcpf86VgQxhF', $keypair->getPublicKey()->toBase58());
     }
 
     #[Test]
@@ -51,7 +51,7 @@ final class KeypairTest extends TestCase
 
         $keypair = Keypair::fromSeed($seedString);
 
-        $this->assertSame('2KW2XRd9kwqet15Aha2oK3tYvd3nWbTFH1MBiRAv1BE1', $keypair->getPublicKey()->toBase58());
+        self::assertSame('2KW2XRd9kwqet15Aha2oK3tYvd3nWbTFH1MBiRAv1BE1', $keypair->getPublicKey()->toBase58());
     }
 
     #[Test]
@@ -63,6 +63,6 @@ final class KeypairTest extends TestCase
         $valueAsArray = Buffer::from($publicKey)->toArray();
         $valueAsString = Buffer::from($valueAsArray)->toString();
 
-        $this->assertSame($publicKey, $valueAsString);
+        self::assertSame($publicKey, $valueAsString);
     }
 }

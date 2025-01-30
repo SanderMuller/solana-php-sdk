@@ -45,7 +45,7 @@ final class DidSolProgram implements Program
     {
         $b58 = new Base58();
         $seeds = [self::DIDSOL_DEFAULT_SEED, $b58->decode($base58SubjectPk)];
-        $pId = PublicKey::fromString(self::DIDSOL_PROGRAM_ID);
+        $pId = PublicKey::from(self::DIDSOL_PROGRAM_ID);
         $publicKey = PublicKey::findProgramAddress($seeds, $pId);
 
         return $publicKey[0]->toBase58();

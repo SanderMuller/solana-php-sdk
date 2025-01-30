@@ -8,8 +8,14 @@ use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
 use Collectiq\SolanaPhpSdk\Connection;
 use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
 use Collectiq\SolanaPhpSdk\Exceptions\SNSError;
+use Collectiq\SolanaPhpSdk\PublicKey;
 use Collectiq\SolanaPhpSdk\Util\Buffer;
 
+/**
+ * @property PublicKey $parentName
+ * @property PublicKey $owner
+ * @property PublicKey $class
+ */
 final class NameRegistryStateAccount implements BorshSerializable
 {
     use IsBorshObject;
@@ -30,11 +36,14 @@ final class NameRegistryStateAccount implements BorshSerializable
     public const int SOL_RECORD_SIG_LEN = 96; // HEADER_LENGTH
 
     /**
+     * @return array{registry: self, nftOwner: bool, nameAccountKey: PublicKey}
      * @throws SNSError
      * @throws AccountNotFoundException
      */
-    public static function retrieve(Connection $connection, string $nameAccountKey): array
+    public static function retrieve(Connection $connection, PublicKey|string $nameAccountKey): array
     {
+        $nameAccountKey = PublicKey::from($nameAccountKey);
+
         $nameAccount = $connection->getAccountInfo($nameAccountKey);
 
         if ($nameAccount === []) {

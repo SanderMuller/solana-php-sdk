@@ -17,6 +17,8 @@ use Rector\Php81\Rector\Array_\FirstClassCallableRector;
 use Rector\Php82\Rector\Param\AddSensitiveParameterAttributeRector;
 use Rector\Php83\Rector\ClassMethod\AddOverrideAttributeToOverriddenMethodsRector;
 use Rector\Php84\Rector\Param\ExplicitNullableParamTypeRector;
+use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitSelfCallRector;
+use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector;
 use Rector\PHPUnit\Set\PHPUnitSetList;
 use Rector\Privatization\Rector\Property\PrivatizeFinalClassPropertyRector;
 
@@ -39,6 +41,7 @@ return RectorConfig::configure()
         ParenthesizeNestedTernaryRector::class,
         RemoveUnreachableStatementRector::class,
         PrivatizeFinalClassPropertyRector::class,
+        PreferPHPUnitSelfCallRector::class,
     ])
     ->withConfiguredRule(AddSensitiveParameterAttributeRector::class, [
         'sensitive_parameters' => [
@@ -67,6 +70,8 @@ return RectorConfig::configure()
         ReturnBinaryOrToEarlyReturnRector::class,
         SeparateMultiUseImportsRector::class,
         SplitGroupedClassConstantsRector::class,
+        PreferPHPUnitThisCallRector::class,
+        __DIR__ . '/.cache',
     ])
     ->withSets([
         PHPUnitSetList::PHPUNIT_110,

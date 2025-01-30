@@ -9,7 +9,6 @@ use Collectiq\SolanaPhpSdk\PublicKey;
 use Collectiq\SolanaPhpSdk\SolanaRpcClient;
 use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use Collectiq\SolanaPhpSdk\TransactionInstruction;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
 use PHPUnit\Framework\Attributes\Test;
 
 final class BindingsTest extends TestCase
@@ -17,7 +16,7 @@ final class BindingsTest extends TestCase
     #[Test]
     public function create_sub_domain_fast(): void
     {
-        $nameOwnerKey = PublicKey::fromString('6V3DAZhWgATw8hrmMh7DnvLgaVpHLuMafZZPTVnyUs6Y');
+        $nameOwnerKey = PublicKey::from('6V3DAZhWgATw8hrmMh7DnvLgaVpHLuMafZZPTVnyUs6Y');
 
         config(['solana-php-sdk.network' => Network::MAINNET]);
 
@@ -25,16 +24,16 @@ final class BindingsTest extends TestCase
         $sns = new SnsProgram();
 
         $instruction = $sns->createSubdomainFast(
-                $connection,
-                'subdomain.chongkan.sol',
-                PublicKey::fromString('57vj6H1omWUvrQypM8esx4q67WNRZhTW3ZHZ97unkSTb'), // f.chongkan.sol
-                PublicKey::fromString('34MxBdMJYgugd9ZzmZN338kL1vMqkhPqtnZG5qmWnfn1'),
-                $nameOwnerKey,
-                1_000,
-                $nameOwnerKey
-            );
+            connection: $connection,
+            subdomain: 'subdomain.chongkan.sol',
+            subdomainPk: PublicKey::from('57vj6H1omWUvrQypM8esx4q67WNRZhTW3ZHZ97unkSTb'), // f.chongkan.sol
+            parentPk: PublicKey::from('34MxBdMJYgugd9ZzmZN338kL1vMqkhPqtnZG5qmWnfn1'),
+            owner: $nameOwnerKey,
+            space: 1_000,
+            feePayer: $nameOwnerKey,
+        );
 
-        $this->assertInstanceOf(TransactionInstruction::class, $instruction[1][0]);
+        self::assertInstanceOf(TransactionInstruction::class, $instruction[1][0]);
 
         // TODO Assert IX keys and data
     }
@@ -42,7 +41,7 @@ final class BindingsTest extends TestCase
     #[Test]
     public function createNameRegistry(): void
     {
-        $nameOwnerSigner = PublicKey::fromBuffer(Buffer::alloc(32));
+        $nameOwnerSigner = PublicKey::generate();
 
         $connection = $this->container->get(SolanaRpcClient::class);
         $snsProgram = $this->container->get(SnsProgram::class);
@@ -55,6 +54,6 @@ final class BindingsTest extends TestCase
             nameOwner: $nameOwnerSigner, // could be someone else
         );
 
-        $this->assertEquals(0, $instruction->data->toArray()[0]);
+        self::assertEquals(0, $instruction->data->toArray()[0]);
     }
 }
