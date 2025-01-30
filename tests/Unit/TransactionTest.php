@@ -244,6 +244,7 @@ final class TransactionTest extends TestCase
     public function populate_transaction(): void
     {
         $recentBlockhash = PublicKey::fromInt(1, BufferType::INT);
+
         $message = new Message(
             header: new MessageHeader(2, 0, 3),
             accountKeys: [
@@ -253,7 +254,7 @@ final class TransactionTest extends TestCase
                 PublicKey::fromInt(4, BufferType::INT),
                 PublicKey::fromInt(5, BufferType::INT),
             ],
-            recentBlockhash: $recentBlockhash->__toString(),
+            recentBlockhash: $recentBlockhash->toString(),
             instructions: [
                 new CompiledInstruction(4, [1, 2, 3], Buffer::fromArray(array_pad([], 5, 9))),
             ],

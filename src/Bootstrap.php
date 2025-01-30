@@ -20,5 +20,3 @@ final class Bootstrap
         return $container;
     }
 }
-
-Bootstrap::createContainer(__DIR__ . '/../config/solana-php-sdk.php');
