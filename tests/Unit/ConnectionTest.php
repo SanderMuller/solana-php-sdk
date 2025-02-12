@@ -52,7 +52,7 @@ final class ConnectionTest extends TestCase
             ->with('getBalance', [$pubKey])
             ->willReturn(['value' => $balance]);
 
-        $this->container->register(SolanaRpcClient::class, fn (): MockObject => $clientMock);
+        $this->container->bind(SolanaRpcClient::class, fn (): MockObject => $clientMock);
 
         $connection = $this->container->get(Connection::class);
 

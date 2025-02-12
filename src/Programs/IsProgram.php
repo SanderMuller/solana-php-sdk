@@ -3,10 +3,13 @@
 namespace Collectiq\SolanaPhpSdk\Programs;
 
 use Collectiq\SolanaPhpSdk\SolanaRpcClient;
-use Tempest\Container\Inject;
+use Illuminate\Container\Container;
 
 trait IsProgram
 {
-    #[Inject]
-    private readonly SolanaRpcClient $client;
+    private SolanaRpcClient $client {
+        get {
+            return Container::getInstance()->get(SolanaRpcClient::class);
+        }
+    }
 }

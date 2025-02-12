@@ -2,9 +2,8 @@
 
 namespace Collectiq\SolanaPhpSdk;
 
-use Collectiq\SolanaPhpSdk\Initializers\SolanaRpcClientInitializer;
-use Tempest\Container\Container;
-use Tempest\Container\GenericContainer;
+use Collectiq\SolanaPhpSdk\Programs\SnsProgram;
+use Illuminate\Container\Container;
 
 final class Bootstrap
 {
@@ -13,9 +12,9 @@ final class Bootstrap
         // Load configuration
         Config::load($configPath);
 
-        // Set up the container
-        $container = new GenericContainer();
-        $container->addInitializer(SolanaRpcClientInitializer::class);
+        $container = Container::getInstance();
+        $container->singleton(SolanaRpcClient::class, fn (): SolanaRpcClient => new SolanaRpcClient());
+        $container->bind(SnsProgram::class, fn (): SnsProgram => new SnsProgram());
 
         return $container;
     }

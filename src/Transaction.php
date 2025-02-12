@@ -124,8 +124,8 @@ final class Transaction
             ];
 
             $programId = $instruction->programId->toBase58();
-            if (! in_array($programId, $programIds)) {
-                $programIds[] = $programId;
+            if (! $programIds->contains($programId)) {
+                $programIds->add($programId);
             }
         }
 
@@ -214,9 +214,9 @@ final class Transaction
 
         // Initialize signature array, if needed
         if (! $this->signatures) {
-            $this->signatures = array_map(function (PublicKey $signedKey): SignaturePubKeyPair {
-                return new SignaturePubKeyPair($signedKey, null);
-            }, $signedKeys);
+            $this->signatures = $signedKeys
+                ->map(fn (PublicKey $signedKey): SignaturePubKeyPair => new SignaturePubKeyPair($signedKey, null))
+                ->all();
         }
 
         $accountKeys = $signedKeys->push(...$unsignedKeys);
@@ -225,10 +225,15 @@ final class Transaction
          * @var CompiledInstruction[] $instructions
          */
         $instructions = array_map(function (TransactionInstruction $instruction) use ($accountKeys): CompiledInstruction {
-            $programIdIndex = array_search($instruction->programId->toBase58(), $accountKeys, true);
+            /** @var int|false $programIdIndex */
+            $programIdIndex = $accountKeys->search(function (PublicKey $publicKey) use ($instruction): bool {
+                return $instruction->programId->equals($publicKey);
+            }, true);
 
-            $accounts = array_map(function (AccountMeta $meta) use ($accountKeys): int|string|false {
-                return array_search($meta->getPublicKey()->toBase58(), $accountKeys, true);
+            $accounts = array_map(function (AccountMeta $meta) use ($accountKeys): int|false {
+                $metaPublicKey = $meta->getPublicKey();
+
+                return $accountKeys->search(fn (PublicKey $publicKey): bool => $metaPublicKey->equals($publicKey), true);
             }, $instruction->keys);
 
             return new CompiledInstruction(

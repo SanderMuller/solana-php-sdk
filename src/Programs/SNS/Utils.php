@@ -175,7 +175,6 @@ trait Utils
      * @param string $domain The domain to compute the reverse for
      * @param bool|null $isSub Whether the domain is a subdomain or not
      * @return PublicKey The public key of the reverse account
-     * @throws Exception
      * @throws SNSError
      * @throws InputValidationException
      */

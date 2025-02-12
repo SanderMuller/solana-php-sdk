@@ -15,12 +15,12 @@
     "require": {
         "php": "^8.4",
         "ext-sodium": "*",
+        "illuminate/container": "^11.31",
         "illuminate/collections": "^11.31",
         "illuminate/http": "^11.31",
         "illuminate/support": "^11.31",
         "paragonie/sodium_compat": "^2.1",
         "stephenhill/base58": "^1.1",
-        "tempest/container": "v1.0.0-alpha.4",
         "vlucas/phpdotenv": "^5.6"
     },
     "require-dev": {

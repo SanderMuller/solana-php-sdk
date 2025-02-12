@@ -184,6 +184,11 @@ final class PublicKey implements Stringable, HasPublicKey
         return $this;
     }
 
+    public function toBinaryString(): string
+    {
+        return $this->buffer->toBinaryString();
+    }
+
     public function toString(): string
     {
         return $this->toBase58();

@@ -5,8 +5,8 @@ namespace Collectiq\SolanaPhpSdk\Tests;
 use Collectiq\SolanaPhpSdk\Bootstrap;
 use Collectiq\SolanaPhpSdk\SolanaRpcClient;
 use DG\BypassFinals;
+use Illuminate\Container\Container;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Tempest\Container\Container;
 
 abstract class TestCase extends Orchestra
 {
