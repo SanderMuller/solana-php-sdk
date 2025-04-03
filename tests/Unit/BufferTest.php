@@ -39,7 +39,7 @@ final class BufferTest extends TestCase
             ->push(
                 Buffer::fromInt($space, BufferType::LONG, false)
             )
-            ->push($programId);
+            ->push($programId->getBuffer());
 
         self::assertEquals($rawCreateAccountBinary, $bufferable->toArray());
     }
@@ -57,7 +57,7 @@ final class BufferTest extends TestCase
     }
 
     #[Test]
-    public function fromArray(): void
+    public function from_array(): void
     {
         $buffer = Buffer::fromArray([1, 2, 3, 4]);
 

@@ -31,9 +31,8 @@ final class DidSolProgramTest extends TestCase
     #[Test]
     public function igets_did_data_account_id(): void
     {
-
         $didId = DidSolProgram::getDidDataAccountId(self::DID_SUBJECT_PK);
-        self::assertSame(self::DID_ACCOUNT_ID, $didId);
 
+        self::assertSame(self::DID_ACCOUNT_ID, $didId);
     }
 }

@@ -5,7 +5,7 @@ namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 use Collectiq\SolanaPhpSdk\Connection;
 use Collectiq\SolanaPhpSdk\Keypair;
 use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
-use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
 use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use Collectiq\SolanaPhpSdk\Transaction;
 use PHPUnit\Framework\Attributes\Test;

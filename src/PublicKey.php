@@ -11,7 +11,7 @@ use Exception;
 use ParagonIE_Sodium_Compat;
 use RangeException;
 
-final class PublicKey implements Stringable, HasPublicKey
+final class PublicKey implements HasPublicKey, Stringable
 {
     public static ?int $fixedLength = 32;
 
@@ -79,6 +79,11 @@ final class PublicKey implements Stringable, HasPublicKey
         return $this->buffer->toBytes();
     }
 
+    public function getBuffer(): Buffer
+    {
+        return $this->buffer;
+    }
+
     /**
      * Derive a public key from another key, a seed, and a program ID.
      * The program ID will also serve as the owner of the public key, giving
@@ -113,7 +118,7 @@ final class PublicKey implements Stringable, HasPublicKey
             $buffer->push($seed);
         }
 
-        $buffer->push($programId)->push('ProgramDerivedAddress');
+        $buffer->push($programId->getBuffer())->push('ProgramDerivedAddress');
 
         $binaryString = sodium_hex2bin(hash('sha256', $buffer->toString()));
 
@@ -125,7 +130,7 @@ final class PublicKey implements Stringable, HasPublicKey
     }
 
     /**
-     * @return array 2 elements, [0] = PublicKey, [1] = nonce
+     * @return array{0: PublicKey, 1: int} 2 elements, [0] = PublicKey, [1] = nonce
      * @throws SolanaPhpSdkException
      */
     public static function findProgramAddress(array $seeds, self $programId): array
@@ -134,9 +139,13 @@ final class PublicKey implements Stringable, HasPublicKey
 
         while ($nonce !== 0) {
             try {
-                $copyOfSeedsWithNonce = $seeds;
-                $copyOfSeedsWithNonce[] = [$nonce];
-                $address = self::createProgramAddress($copyOfSeedsWithNonce, $programId);
+                $address = self::createProgramAddress(
+                    seeds: [
+                        ...$seeds,
+                        $nonce,
+                    ],
+                    programId: $programId,
+                );
             } catch (Exception) {
                 $nonce--;
 
@@ -150,7 +159,7 @@ final class PublicKey implements Stringable, HasPublicKey
     }
 
     /**
-     * @return array 2 elements, [0] = PublicKey, [1] = integer
+     * @return array{0: PublicKey, 1: int} 2 elements, [0] = PublicKey, [1] = nonce
      */
     public static function findProgramAddressSync(array $seeds, self $programId): array
     {

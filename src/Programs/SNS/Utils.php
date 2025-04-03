@@ -198,6 +198,5 @@ trait Utils
     public function getNameOwner(Connection $connection, string $parentNameKey): array
     {
         return NameRegistryStateAccount::retrieve($connection, $parentNameKey);
-
     }
 }

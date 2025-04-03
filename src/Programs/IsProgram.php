@@ -2,7 +2,7 @@
 
 namespace Collectiq\SolanaPhpSdk\Programs;
 
-use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
 use Illuminate\Container\Container;
 use ReflectionProperty;
 

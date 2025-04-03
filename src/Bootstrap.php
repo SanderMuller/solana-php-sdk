@@ -3,6 +3,7 @@
 namespace Collectiq\SolanaPhpSdk;
 
 use Collectiq\SolanaPhpSdk\Programs\SnsProgram;
+use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
 use Illuminate\Container\Container;
 
 final class Bootstrap

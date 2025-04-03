@@ -3,7 +3,7 @@
 namespace Collectiq\SolanaPhpSdk\Tests;
 
 use Collectiq\SolanaPhpSdk\Bootstrap;
-use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
 use DG\BypassFinals;
 use Illuminate\Container\Container;
 use Orchestra\Testbench\TestCase as Orchestra;

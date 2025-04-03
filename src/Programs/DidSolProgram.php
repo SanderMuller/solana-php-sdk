@@ -6,7 +6,7 @@ use Collectiq\SolanaPhpSdk\Accounts\DidData;
 use Collectiq\SolanaPhpSdk\Did\DiDUri;
 use Collectiq\SolanaPhpSdk\Exceptions\SolanaPhpSdkException;
 use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
 use StephenHill\Base58;
 
 final class DidSolProgram implements Program
@@ -43,8 +43,11 @@ final class DidSolProgram implements Program
      */
     public static function getDidDataAccountId($base58SubjectPk): string
     {
-        $b58 = new Base58();
-        $seeds = [self::DIDSOL_DEFAULT_SEED, $b58->decode($base58SubjectPk)];
+        $seeds = [
+            self::DIDSOL_DEFAULT_SEED,
+            new Base58()->decode($base58SubjectPk),
+        ];
+
         $pId = PublicKey::from(self::DIDSOL_PROGRAM_ID);
         $publicKey = PublicKey::findProgramAddress($seeds, $pId);
 

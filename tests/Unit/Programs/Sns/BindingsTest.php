@@ -6,7 +6,7 @@ use Collectiq\SolanaPhpSdk\Connection;
 use Collectiq\SolanaPhpSdk\Enum\Network;
 use Collectiq\SolanaPhpSdk\Programs\SnsProgram;
 use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
 use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use Collectiq\SolanaPhpSdk\TransactionInstruction;
 use PHPUnit\Framework\Attributes\Test;

@@ -131,7 +131,7 @@ trait Bindings
     /**
      * Creates a name account with the given rent budget, allocated space, owner and class.
      *
-     * @param Connection $connection The solana connection object to the RPC node
+     * @param Connection $connection The Solana connection object to the RPC node
      * @param string $name The name of the new account
      * @param int $space The space in bytes allocated to the account
      * @param PublicKey $payerKey The allocation cost payer
@@ -163,16 +163,16 @@ trait Bindings
         }
 
         return $this->createInstruction(
-            NAME_PROGRAM_ID: PublicKey::from($this->config['NAME_PROGRAM_ID']),
-            programId: SystemProgram::programId(),
-            nameAccountKey: $nameAccountKey,
-            nameOwner: $nameOwner,
+            nameProgramId: PublicKey::from($this->config['NAME_PROGRAM_ID']),
+            systemProgramId: SystemProgram::programId(),
+            nameKey: $nameAccountKey,
+            nameOwnerKey: $nameOwner,
             payerKey: $payerKey,
             hashed_name: $hashed_name,
-            param: Buffer::fromInt($balance, BufferType::LONG, false),
-            param1: Buffer::fromInt($space, BufferType::INT, false),
-            nameClass: $nameClass,
-            parentName: $parentName,
+            lamports: Buffer::fromInt($balance, BufferType::LONG, false),
+            space: Buffer::fromInt($space, BufferType::INT, false),
+            nameClassKey: $nameClass,
+            nameParent: $parentName,
             nameParentOwner: $nameParentOwner,
         );
     }

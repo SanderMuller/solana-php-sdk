@@ -3,7 +3,7 @@
 namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 
 use Collectiq\SolanaPhpSdk\Exceptions\MethodNotFoundException;
-use Collectiq\SolanaPhpSdk\SolanaRpcClient;
+use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
 use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 

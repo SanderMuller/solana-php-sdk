@@ -6,7 +6,6 @@ use Collectiq\SolanaPhpSdk\Connection;
 use Collectiq\SolanaPhpSdk\Enum\Network;
 use Collectiq\SolanaPhpSdk\Programs\SnsProgram;
 use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\SolanaRpcClient;
 use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -32,20 +31,17 @@ final class DerivationTest extends TestCase
     ];
 
     #[Test]
-    public function getHashedNameSync(): void
+    public function get_hashed_name_sync(): void
     {
-        $client = $this->createMock(SolanaRpcClient::class);
-        $sns = new SnsProgram($client);
-        $hashedName = $sns->getHashedNameSync('bonfida');
+        $hashedName = new SnsProgram()->getHashedNameSync('bonfida');
         $bs58HashedName = $hashedName->toBase58String();
         self::assertSame('AcmVjPtaDyNboWGSKjYHxea1QDgN648T4Je3HUpkHecf', $bs58HashedName);
     }
 
     #[Test]
-    public function deriveSynch(): void
+    public function derive_synch(): void
     {
-        $client = $this->createMock(SolanaRpcClient::class);
-        $sns = new SnsProgram($client);
+        $sns = new SnsProgram();
         $hashedName = $sns->_deriveSync('bonfida');
         $nameAccountKey = $sns->getNameAccountKeySync($hashedName['hashed']);
         $nameAccountKeyBs58 = $nameAccountKey->toBase58();
@@ -53,10 +49,9 @@ final class DerivationTest extends TestCase
     }
 
     #[Test]
-    public function getDomainKeySync(): void
+    public function get_domain_key_sync(): void
     {
-        $client = $this->createMock(SolanaRpcClient::class);
-        $sns = new SnsProgram($client);
+        $sns = new SnsProgram();
         foreach ($this->items as $item) {
             $result = $sns->getDomainKeySync($item['domain']);
             self::assertInstanceOf(PublicKey::class, $result['pubkey']);
@@ -65,10 +60,9 @@ final class DerivationTest extends TestCase
     }
 
     #[Test]
-    public function getReverseKeySync(): void
+    public function get_reverse_key_sync(): void
     {
-        $client = $this->createMock(SolanaRpcClient::class);
-        $sns = new SnsProgram($client);
+        $sns = new SnsProgram();
         foreach ($this->items as $item) {
             $result = $sns->getReverseKeySync($item['domain']);
             self::assertInstanceOf(PublicKey::class, $result);
@@ -78,14 +72,13 @@ final class DerivationTest extends TestCase
     }
 
     #[Test]
-    public function getNameOwner(): void
+    public function get_name_owner(): void
     {
         config(['solana-php-sdk.network' => Network::MAINNET]);
 
         $connection = $this->container->get(Connection::class);
-        $sns = new SnsProgram();
         $nameAccountKey = 'HoFfFXqFHAC8RP3duuQNzag1ieUwJRBv1HtRNiWFq4Qu';
-        $result = $sns->getNameOwner($connection, $nameAccountKey);
+        $result = new SnsProgram()->getNameOwner($connection, $nameAccountKey);
         $owner = $result['registry']->owner;
         $parent = $result['registry']->parentName;
         self::assertInstanceOf(PublicKey::class, $owner);

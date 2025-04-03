@@ -112,6 +112,10 @@ class Buffer implements Arrayable, Countable, Stringable
             );
         }
 
+        if ($value instanceof PublicKey) {
+            $value = $value->getBuffer();
+        }
+
         if ($value instanceof self) {
             return static::fromBuffer(
                 value: $value,
