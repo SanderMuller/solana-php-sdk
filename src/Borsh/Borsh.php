@@ -9,8 +9,8 @@ use Collectiq\SolanaPhpSdk\Util\Buffer;
 final class Borsh
 {
     public static function serialize(
-        array  $schema,
-        $object,
+        array $schema,
+              $object,
     ): array {
         $writer = new BinaryWriter();
 
@@ -25,7 +25,7 @@ final class Borsh
 
     private static function serializeObject(
         array        $schema,
-              $object,
+                     $object,
         BinaryWriter $writer
     ): void {
         $objectSchema = $schema[$object::class] ?? null;
