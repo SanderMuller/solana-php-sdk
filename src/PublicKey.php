@@ -63,7 +63,7 @@ final class PublicKey implements HasPublicKey, Stringable
      */
     public function equals(self $publicKey): bool
     {
-        return $this->buffer->equals($publicKey->buffer);
+        return $this->buffer->equals($publicKey->getBuffer());
     }
 
     /**

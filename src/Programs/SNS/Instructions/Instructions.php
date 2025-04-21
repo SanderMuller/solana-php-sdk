@@ -22,7 +22,7 @@ trait Instructions
         Buffer     $space,
         ?PublicKey $nameClassKey = null,
         ?PublicKey $nameParent = null,
-        ?PublicKey $nameParentOwner = null
+        ?PublicKey $nameParentOwner = null,
     ): TransactionInstruction {
         $keys = [
             new AccountMeta(

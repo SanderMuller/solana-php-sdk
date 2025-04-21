@@ -8,6 +8,7 @@ use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
 use Collectiq\SolanaPhpSdk\Connection;
 use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
 use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\Buffer;
 
 /**
  * @property PublicKey|null $mint
@@ -73,5 +74,30 @@ final class Account implements BorshSerializable
         } catch (AccountNotFoundException) {
             throw new AccountNotFoundException();
         }
+    }
+
+    public function getMint(): ?PublicKey
+    {
+        return isset($this->mint) ? PublicKey::from(Buffer::from($this->mint)) : null;
+    }
+
+    public function getOwner(): ?PublicKey
+    {
+        return isset($this->owner) ? PublicKey::from(Buffer::from($this->owner)) : null;
+    }
+
+    public function getDelegate(): ?PublicKey
+    {
+        return isset($this->delegate) ? PublicKey::from(Buffer::from($this->delegate)) : null;
+    }
+
+    public function getCloseAuthority(): ?PublicKey
+    {
+        return isset($this->closeAuthority) ? PublicKey::from(Buffer::from($this->closeAuthority)) : null;
+    }
+
+    public function getNativeBalance(): ?int
+    {
+        return $this->isNative;
     }
 }

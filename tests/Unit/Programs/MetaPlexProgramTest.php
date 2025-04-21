@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 final class MetaPlexProgramTest extends TestCase
 {
     #[Test]
-    public function getsProgramAccounts(): void
+    public function gets_program_accounts(): void
     {
         $this->expectException(AccountNotFoundException::class);
 
