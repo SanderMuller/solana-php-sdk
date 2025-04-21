@@ -52,7 +52,7 @@ final class PublicKeyTest extends TestCase
     }
 
     #[Test]
-    public function toBase58(): void
+    public function to_base58(): void
     {
         $key1 = PublicKey::from('CiDwVBFgWV9E5MvXWoLgnEgn2hK7rJikbvfWavzAQz3');
         self::assertSame('CiDwVBFgWV9E5MvXWoLgnEgn2hK7rJikbvfWavzAQz3', $key1->toBase58());
@@ -70,7 +70,7 @@ final class PublicKeyTest extends TestCase
     }
 
     #[Test]
-    public function createWithSeed(): void
+    public function create_with_seed(): void
     {
         $defaultPublicKey = PublicKey::from('11111111111111111111111111111111');
         $derivedKey = PublicKey::createWithSeed($defaultPublicKey, 'limber chicken: 4/45', $defaultPublicKey);
@@ -79,7 +79,7 @@ final class PublicKeyTest extends TestCase
     }
 
     #[Test]
-    public function createProgramAddress(): void
+    public function create_program_address(): void
     {
         $programId = PublicKey::from('BPFLoader1111111111111111111111111111111111');
         $publicKey = PublicKey::from('SeedPubey1111111111111111111111111111111111');
@@ -108,7 +108,7 @@ final class PublicKeyTest extends TestCase
     }
 
     #[Test]
-    public function findProgramAddress(): void
+    public function find_program_address(): void
     {
         $programId = PublicKey::from('BPFLoader1111111111111111111111111111111111');
 
@@ -124,7 +124,7 @@ final class PublicKeyTest extends TestCase
     }
 
     #[Test]
-    public function isOnCurve(): void
+    public function is_on_curve(): void
     {
         self::assertTrue(PublicKey::isOnCurve(Keypair::generate()->getPublicKey()));
 

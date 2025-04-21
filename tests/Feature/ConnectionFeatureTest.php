@@ -135,7 +135,7 @@ final class ConnectionFeatureTest extends TestCase
     }
 
     #[Test]
-    public function getMinimumBalanceForRentExemption(): void
+    public function get_minimum_balance_for_rent_exemption(): void
     {
         $connection = $this->container->get(Connection::class);
 

@@ -5,10 +5,10 @@ namespace Collectiq\SolanaPhpSdk\Programs\SplToken\State;
 use Collectiq\SolanaPhpSdk\Borsh\Borsh;
 use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
 use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
+use Collectiq\SolanaPhpSdk\Buffer;
 use Collectiq\SolanaPhpSdk\Connection;
 use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
 use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Buffer;
 
 /**
  * @property PublicKey|null $mint

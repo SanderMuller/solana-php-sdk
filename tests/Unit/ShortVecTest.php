@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 final class ShortVecTest extends TestCase
 {
     #[Test]
-    public function idecodeLength(): void
+    public function idecode_length(): void
     {
         $this->checkDecodedArray([], 0, 0);
         $this->checkDecodedArray([5], 1, 5);
@@ -23,7 +23,7 @@ final class ShortVecTest extends TestCase
     }
 
     #[Test]
-    public function iencodeLength(): void
+    public function iencode_length(): void
     {
         $array = [];
         $prevLength = 0;

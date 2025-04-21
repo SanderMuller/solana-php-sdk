@@ -98,7 +98,7 @@ final class TransactionTest extends TestCase
     }
 
     #[Test]
-    public function partialSign(): void
+    public function partial_sign(): void
     {
         $account1 = Keypair::generate();
         $account2 = Keypair::generate();
@@ -125,7 +125,7 @@ final class TransactionTest extends TestCase
     }
 
     #[Test]
-    public function dedupe_setSigners(): void
+    public function dedupe_set_signers(): void
     {
         $payer = Keypair::generate();
         $duplicate1 = $payer;

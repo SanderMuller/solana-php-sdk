@@ -36,7 +36,7 @@ final class InstructionsTest extends TestCase
     }
 
     #[Test]
-    public function updateInstruction(): void
+    public function update_instruction(): void
     {
         $instruction = $this->container->get(SnsProgram::class)->updateInstruction(
             nameProgramId: PublicKey::generate(),
@@ -50,7 +50,7 @@ final class InstructionsTest extends TestCase
     }
 
     #[Test]
-    public function transferInstruction(): void
+    public function transfer_instruction(): void
     {
         $instruction = $this->container->get(SnsProgram::class)->transferInstruction(
             NAME_PROGRAM_ID: PublicKey::generate(),
@@ -67,7 +67,7 @@ final class InstructionsTest extends TestCase
     }
 
     #[Test]
-    public function reallocInstruction(): void
+    public function realloc_instruction(): void
     {
         $currentNameOwnerKey = PublicKey::generate();
 
@@ -84,7 +84,7 @@ final class InstructionsTest extends TestCase
     }
 
     #[Test]
-    public function deleteInstruction(): void
+    public function delete_instruction(): void
     {
         $currentNameOwnerKey = PublicKey::generate();
 

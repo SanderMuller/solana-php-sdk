@@ -39,7 +39,7 @@ final class BindingsTest extends TestCase
     }
 
     #[Test]
-    public function createNameRegistry(): void
+    public function create_name_registry(): void
     {
         $nameOwnerSigner = PublicKey::generate();
 
