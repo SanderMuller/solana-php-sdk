@@ -14,7 +14,7 @@ final class Bootstrap
         Config::load($configPath);
 
         $container = Container::getInstance();
-        $container->singleton(SolanaRpcClient::class, fn (): SolanaRpcClient => new SolanaRpcClient());
+        $container->singleton(SolanaRpcClient::class, fn (): SolanaRpcClient => new SolanaRpcClient(Config::get('network')));
         $container->bind(SnsProgram::class, fn (): SnsProgram => new SnsProgram());
 
         return $container;
