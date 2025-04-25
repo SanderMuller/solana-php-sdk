@@ -13,7 +13,15 @@ final class ServiceProvider extends \Illuminate\Support\ServiceProvider
         Bootstrap::createContainer(
             file_exists(config_path('solana-php-sdk.php'))
                 ? config_path('solana-php-sdk.php')
-                : __DIR__ . '/../config/solana-php-sdk.php'
+                : __DIR__ . '/../config/solana-php-sdk.php',
+        );
+    }
+
+    public function register(): void
+    {
+        $this->mergeConfigFrom(
+            __DIR__ . '/../config/solana-php-sdk.php',
+            'solana-php-sdk.php',
         );
     }
 }

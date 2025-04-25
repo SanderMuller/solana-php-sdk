@@ -8,7 +8,7 @@ use ReflectionProperty;
 
 trait IsProgram
 {
-    private SolanaRpcClient $client {
+    public private(set) SolanaRpcClient $client {
         get {
             $reflectionProperty = new ReflectionProperty($this, 'client');
 
