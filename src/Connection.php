@@ -34,7 +34,7 @@ final class Connection implements Program
         return $this->client->call('getBalance', [$walletAddress])['value'];
     }
 
-    public function getTransaction(string $transactionSignature, ?Commitment $commitment = null): ?array
+    public function getTransaction(string $transactionSignature, ?Commitment $commitment = null): ?TransactionStatement
     {
         $response = $this->client->call('getTransaction', [
             $transactionSignature,
