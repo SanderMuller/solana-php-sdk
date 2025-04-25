@@ -21,7 +21,7 @@ final class ServiceProvider extends \Illuminate\Support\ServiceProvider
     {
         $this->mergeConfigFrom(
             __DIR__ . '/../config/solana-php-sdk.php',
-            'solana-php-sdk.php',
+            'solana-php-sdk',
         );
     }
 }
