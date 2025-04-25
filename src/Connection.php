@@ -2,6 +2,7 @@
 
 namespace Collectiq\SolanaPhpSdk;
 
+use Collectiq\SolanaPhpSdk\DataObjects\TransactionStatement;
 use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
 use Collectiq\SolanaPhpSdk\Programs\IsProgram;
 use Collectiq\SolanaPhpSdk\Programs\Program;
@@ -35,12 +36,18 @@ final class Connection implements Program
 
     public function getTransaction(string $transactionSignature, ?Commitment $commitment = null): ?array
     {
-        return $this->client->call('getTransaction', [
+        $response = $this->client->call('getTransaction', [
             $transactionSignature,
             [
                 'commitment' => $commitment,
             ],
         ]);
+
+        if ($response === null) {
+            return null;
+        }
+
+        return TransactionStatement::fromResponse($response);
     }
 
     public function getLatestBlockhash(?Commitment $commitment = null): array
