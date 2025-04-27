@@ -7,20 +7,16 @@ use Rector\CodingStyle\Rector\Encapsed\EncapsedStringsToSprintfRector;
 use Rector\CodingStyle\Rector\PostInc\PostIncDecToPreIncDecRector;
 use Rector\CodingStyle\Rector\Use_\SeparateMultiUseImportsRector;
 use Rector\Config\RectorConfig;
-use Rector\DeadCode\Rector\Stmt\RemoveUnreachableStatementRector;
 use Rector\EarlyReturn\Rector\If_\ChangeOrIfContinueToMultiContinueRector;
 use Rector\EarlyReturn\Rector\Return_\ReturnBinaryOrToEarlyReturnRector;
 use Rector\Php74\Rector\Closure\ClosureToArrowFunctionRector;
 use Rector\Php74\Rector\Property\RestoreDefaultNullToNullableTypePropertyRector;
-use Rector\Php74\Rector\Ternary\ParenthesizeNestedTernaryRector;
 use Rector\Php81\Rector\Array_\FirstClassCallableRector;
 use Rector\Php82\Rector\Param\AddSensitiveParameterAttributeRector;
 use Rector\Php83\Rector\ClassMethod\AddOverrideAttributeToOverriddenMethodsRector;
-use Rector\Php84\Rector\Param\ExplicitNullableParamTypeRector;
 use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitSelfCallRector;
 use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector;
 use Rector\PHPUnit\Set\PHPUnitSetList;
-use Rector\Privatization\Rector\Property\PrivatizeFinalClassPropertyRector;
 
 /**
  * @see https://github.com/rectorphp/rector/blob/main/docs/rector_rules_overview.md
@@ -37,10 +33,6 @@ return RectorConfig::configure()
         __DIR__ . '/tests',
     ])
     ->withRules([
-        ExplicitNullableParamTypeRector::class,
-        ParenthesizeNestedTernaryRector::class,
-        RemoveUnreachableStatementRector::class,
-        PrivatizeFinalClassPropertyRector::class,
         PreferPHPUnitSelfCallRector::class,
     ])
     ->withConfiguredRule(AddSensitiveParameterAttributeRector::class, [

@@ -109,6 +109,7 @@ final class BorshTest extends TestCase
 
         $value = new TestObject();
         $value->x = 'bacon';
+
         $buffer = Borsh::serialize($schema, $value);
         $newValue = Borsh::deserialize($schema, TestObject::class, $buffer);
         self::assertEquals('bacon', $newValue->x);

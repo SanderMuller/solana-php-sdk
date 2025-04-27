@@ -5,12 +5,14 @@ namespace Collectiq\SolanaPhpSdk\DataObjects;
 final readonly class TransactionStatement
 {
     public function __construct(
-        public int $blockTime,
-        public int $slot,
-        public string $signature,
+        public int      $blockTime,
+        public int      $slot,
+        public string   $signature,
         public Lamports $fee,
         /** @var list<SolTransfer> */
-        public array $transfers,
+        public array    $transfers,
+        /** @var list<SolMemo> */
+        public array    $memos,
     ) {
         //
     }
@@ -23,6 +25,7 @@ final readonly class TransactionStatement
             signature: $response['transaction']['signatures'][0],
             fee: new Lamports($response['meta']['fee']),
             transfers: SolTransfer::fromTransactionStatement($response),
+            memos: SolMemo::fromTransactionStatement($response),
         );
     }
 }
