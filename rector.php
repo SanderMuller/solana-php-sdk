@@ -17,6 +17,7 @@ use Rector\Php83\Rector\ClassMethod\AddOverrideAttributeToOverriddenMethodsRecto
 use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitSelfCallRector;
 use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector;
 use Rector\PHPUnit\Set\PHPUnitSetList;
+use Rector\Privatization\Rector\MethodCall\PrivatizeLocalGetterToPropertyRector;
 
 /**
  * @see https://github.com/rectorphp/rector/blob/main/docs/rector_rules_overview.md
@@ -58,11 +59,12 @@ return RectorConfig::configure()
         EncapsedStringsToSprintfRector::class,
         FirstClassCallableRector::class,
         PostIncDecToPreIncDecRector::class,
+        PreferPHPUnitThisCallRector::class,
+        PrivatizeLocalGetterToPropertyRector::class,
         RestoreDefaultNullToNullableTypePropertyRector::class,
         ReturnBinaryOrToEarlyReturnRector::class,
         SeparateMultiUseImportsRector::class,
         SplitGroupedClassConstantsRector::class,
-        PreferPHPUnitThisCallRector::class,
         __DIR__ . '/.cache',
     ])
     ->withSets([
