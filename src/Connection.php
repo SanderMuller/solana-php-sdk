@@ -39,6 +39,7 @@ final class Connection implements Program
         $response = $this->client->call('getTransaction', [
             $transactionSignature,
             [
+                'encoding' => 'jsonParsed',
                 'commitment' => $commitment,
             ],
         ]);

@@ -15,33 +15,10 @@ final readonly class SolMemo
      */
     public static function fromTransactionStatement(array $response): array
     {
-        $accountKeys = $response['transaction']['message']['accountKeys'] ?? [];
-        $instructions = $response['transaction']['message']['instructions'] ?? [];
-
-        // Find Memo Program ID index
-        $memoProgramId = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
-
-        $memos = [];
-
-        foreach ($instructions as $instruction) {
-            $programIdIndex = $instruction['programIdIndex'] ?? null;
-
-            if ($programIdIndex === null || ! isset($accountKeys[$programIdIndex])) {
-                continue;
-            }
-
-            if ($accountKeys[$programIdIndex] === $memoProgramId) {
-                $encodedData = $instruction['data'] ?? '';
-
-                if ($encodedData !== '') {
-                    $decoded = base64_decode((string) $encodedData, true);
-                    if ($decoded !== false) {
-                        $memos[] = new self($decoded);
-                    }
-                }
-            }
-        }
-
-        return $memos;
+        return collect($response['transaction']['message']['instructions'])
+            ->filter(fn (array $instruction): bool => data_get($instruction, 'program') === 'spl-memo')
+            ->map(fn (array $instruction): self => new self(data_get($instruction, 'parsed')))
+            ->values()
+            ->all();
     }
 }
