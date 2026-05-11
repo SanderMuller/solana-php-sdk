@@ -2,6 +2,7 @@
 
 namespace Collectiq\SolanaPhpSdk\Tests\Unit;
 
+use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
 use Collectiq\SolanaPhpSdk\Keypair;
 use Collectiq\SolanaPhpSdk\PublicKey;
 use Collectiq\SolanaPhpSdk\Tests\TestCase;
@@ -140,5 +141,46 @@ final class PublicKeyTest extends TestCase
          */
         $onCurve = PublicKey::from('q5xfHVuAsGmKRTmJNshERHHkVnHKxRX3cKzz5cYnFRn');
         self::assertTrue(PublicKey::isOnCurve($onCurve));
+    }
+
+    #[Test]
+    public function verify_returns_true_for_valid_signature(): void
+    {
+        $keypair = Keypair::generate();
+        $message = 'sign-in nonce: 0e9c3f2a-1d4b-4e7a-9f8c-2b5d6e8a1c3f';
+        $signature = $keypair->sign($message);
+
+        self::assertTrue($keypair->getPublicKey()->verify($message, $signature));
+    }
+
+    #[Test]
+    public function verify_returns_false_for_wrong_message(): void
+    {
+        $keypair = Keypair::generate();
+        $signature = $keypair->sign('original');
+
+        self::assertFalse($keypair->getPublicKey()->verify('tampered', $signature));
+    }
+
+    #[Test]
+    public function verify_returns_false_for_wrong_pubkey(): void
+    {
+        $signer = Keypair::generate();
+        $other = Keypair::generate();
+        $message = 'msg';
+        $signature = $signer->sign($message);
+
+        self::assertFalse($other->getPublicKey()->verify($message, $signature));
+    }
+
+    #[Test]
+    public function verify_throws_on_signature_length_mismatch(): void
+    {
+        $publicKey = Keypair::generate()->getPublicKey();
+
+        $this->expectException(InputValidationException::class);
+        $this->expectExceptionMessage('Invalid signature length. Expected 64. Found: 5');
+
+        $publicKey->verify('msg', 'short');
     }
 }

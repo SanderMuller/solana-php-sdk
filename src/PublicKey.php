@@ -10,10 +10,13 @@ use Collectiq\SolanaPhpSdk\Util\Stringable;
 use Exception;
 use ParagonIE_Sodium_Compat;
 use RangeException;
+use SodiumException;
 
 final class PublicKey implements HasPublicKey, Stringable
 {
     public static ?int $fixedLength = 32;
+
+    public const int SIGNATURE_LENGTH = 64;
 
     private const int LENGTH = 32;
 
@@ -137,22 +140,29 @@ final class PublicKey implements HasPublicKey, Stringable
     {
         $nonce = 255;
 
-        while ($nonce !== 0) {
+        while ($nonce >= 0) {
             try {
+                $nonceSeed = pack('C', $nonce);
+
                 $address = self::createProgramAddress(
                     seeds: [
                         ...$seeds,
-                        $nonce,
+                        $nonceSeed,
                     ],
                     programId: $programId,
                 );
-            } catch (Exception) {
-                $nonce--;
 
-                continue;
+                return [$address, $nonce];
+
+            } catch (InputValidationException $e) {
+                if ($e->getMessage() === 'Invalid seeds, address must fall off the curve.') {
+                    $nonce--;
+
+                    continue;
+                }
+
+                throw $e;
             }
-
-            return [$address, $nonce];
         }
 
         throw new SolanaPhpSdkException('Unable to find a viable program address nonce.');
@@ -183,7 +193,7 @@ final class PublicKey implements HasPublicKey, Stringable
             $_ = ParagonIE_Sodium_Compat::crypto_sign_ed25519_pk_to_curve25519($binaryString);
 
             return true;
-        } catch (RangeException|\SodiumException) {
+        } catch (RangeException|SodiumException) {
             return false;
         }
     }
@@ -196,6 +206,30 @@ final class PublicKey implements HasPublicKey, Stringable
     public function toBinaryString(): string
     {
         return $this->buffer->toBinaryString();
+    }
+
+    /**
+     * Verify an ed25519 signature against a message using this public key.
+     *
+     * @param string $message Raw message bytes that were signed.
+     * @param string $signature Binary 64-byte ed25519 signature. Caller is responsible for any base58/base64/hex decoding.
+     * @throws InputValidationException When $signature is not exactly SIGNATURE_LENGTH bytes.
+     */
+    public function verify(string $message, string $signature): bool
+    {
+        $length = strlen($signature);
+
+        if ($length !== self::SIGNATURE_LENGTH) {
+            $expected = self::SIGNATURE_LENGTH;
+
+            throw new InputValidationException("Invalid signature length. Expected {$expected}. Found: {$length}");
+        }
+
+        try {
+            return sodium_crypto_sign_verify_detached($signature, $message, $this->toBinaryString());
+        } catch (SodiumException) {
+            return false;
+        }
     }
 
     public function toString(): string
