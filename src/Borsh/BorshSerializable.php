@@ -4,9 +4,6 @@ namespace Collectiq\SolanaPhpSdk\Borsh;
 
 interface BorshSerializable
 {
-    /**
-     * @return $this
-     */
     public static function borshConstructor(): static;
 
     public function __get(string $name): mixed;

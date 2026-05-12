@@ -17,16 +17,16 @@ class TestWithPrivateVariable implements BorshSerializable
 {
     use IsBorshObject;
 
-    private $m;
+    private mixed $m;
 
-    public function setM($m): void
+    public function setM(mixed $m): void
     {
-    $this->m = $m;
+        $this->m = $m;
     }
 
-    public function getM()
+    public function getM(): mixed
     {
-    return $this->m;
+        return $this->m;
     }
 }
 
@@ -34,11 +34,11 @@ class TestWithConstructorParameters implements BorshSerializable
 {
     use IsBorshObject;
 
-    public function __construct(private $m) {}
+    public function __construct(private mixed $m) {}
 
-    public function getM()
+    public function getM(): mixed
     {
-    return $this->m;
+        return $this->m;
     }
 
     public static function borshConstructor(): static
@@ -119,6 +119,52 @@ final class BorshTest extends TestCase
         $buffer = Borsh::serialize($schema, $value);
         $newValue = Borsh::deserialize($schema, TestObject::class, $buffer);
         self::assertNull($newValue->fields['x']);
+    }
+
+    /**
+     * Regression: previously `if (! $value)` treated falsey-but-present values
+     * (`''`, `0`, `0.0`) as `None`, dropping data. Only `null` should encode `None`.
+     */
+    #[Test]
+    public function option_preserves_empty_string(): void
+    {
+        $schema = [
+            TestObject::class => [
+                'kind' => 'struct',
+                'fields' => [
+                    ['x', ['kind' => 'option', 'type' => 'string']],
+                ],
+            ],
+        ];
+
+        $value = new TestObject();
+        $value->x = '';
+
+        $buffer = Borsh::serialize($schema, $value);
+        $newValue = Borsh::deserialize($schema, TestObject::class, $buffer);
+
+        self::assertSame('', $newValue->x);
+    }
+
+    #[Test]
+    public function option_preserves_zero_int(): void
+    {
+        $schema = [
+            TestObject::class => [
+                'kind' => 'struct',
+                'fields' => [
+                    ['x', ['kind' => 'option', 'type' => 'u32']],
+                ],
+            ],
+        ];
+
+        $value = new TestObject();
+        $value->x = 0;
+
+        $buffer = Borsh::serialize($schema, $value);
+        $newValue = Borsh::deserialize($schema, TestObject::class, $buffer);
+
+        self::assertSame(0, $newValue->x);
     }
 
     #[Test]

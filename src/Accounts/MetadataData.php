@@ -2,12 +2,19 @@
 
 namespace Collectiq\SolanaPhpSdk\Accounts;
 
-use Collectiq\SolanaPhpSdk\Borsh;
 use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
+use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
 
+/**
+ * @property string $name
+ * @property string $symbol
+ * @property string $uri
+ * @property int $sellerFeeBasisPoints
+ * @property array<int, Creator>|null $creators
+ */
 final class MetadataData implements BorshSerializable
 {
-    use Borsh\IsBorshObject;
+    use IsBorshObject;
 
     public const array SCHEMA = [
         Creator::class => Creator::SCHEMA[Creator::class],
@@ -26,7 +33,7 @@ final class MetadataData implements BorshSerializable
         ],
     ];
 
-    public function __set($name, $value): void
+    public function __set(string $name, mixed $value): void
     {
         $this->{$name} = is_string($value) ? preg_replace('/[[:cntrl:]]/', '', $value) : $value;
     }

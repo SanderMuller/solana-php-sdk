@@ -25,6 +25,8 @@ final readonly class Lamports
 
     public function toString(): string
     {
-        return Number::format($this->toSol());
+        $formatted = Number::format($this->toSol());
+
+        return is_string($formatted) ? $formatted : '0';
     }
 }

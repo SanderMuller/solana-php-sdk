@@ -7,6 +7,7 @@ use Collectiq\SolanaPhpSdk\Borsh\IsBorshDeserializable;
 use Collectiq\SolanaPhpSdk\Connection;
 use Collectiq\SolanaPhpSdk\PublicKey;
 use Collectiq\SolanaPhpSdk\Util\Buffer;
+use Exception;
 
 final class NtfRecordAccount
 {
@@ -25,6 +26,9 @@ final class NtfRecordAccount
         ],
     ];
 
+    /**
+     * @param array<int, int> $buffer
+     */
     public static function deserialize(array $buffer): self
     {
         return Borsh::deserialize(self::SCHEMA, self::class, $buffer);
@@ -33,16 +37,31 @@ final class NtfRecordAccount
     public static function retrieve(Connection $connection, PublicKey $key): self
     {
         $accountInfo = $connection->getAccountInfo($key);
-        if (! $accountInfo || ! $accountInfo['data']) {
-            throw new \Exception('NFT record not found');
+        $data = $accountInfo['data'] ?? null;
+
+        if (in_array($data, [null, '', []], true)) {
+            throw new Exception('NFT record not found');
         }
 
-        $base64String = base64_decode((string) $accountInfo['data']);
-        $uint8Array = array_values(unpack('C*', $base64String));
+        $encoded = is_array($data) ? ($data[0] ?? '') : $data;
+        if (! is_string($encoded) || $encoded === '') {
+            throw new Exception('NFT record data missing or not base64.');
+        }
+
+        $binary = base64_decode($encoded, true);
+        if ($binary === false) {
+            throw new Exception('NFT record data is not valid base64.');
+        }
+
+        $unpacked = unpack('C*', $binary);
+        $uint8Array = $unpacked === false ? [] : array_values($unpacked);
 
         return self::deserialize($uint8Array);
     }
 
+    /**
+     * @return array{0: PublicKey, 1: int}
+     */
     public static function findKey(PublicKey $nameAccount, PublicKey $programId): array
     {
         return PublicKey::findProgramAddress(

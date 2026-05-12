@@ -1,0 +1,86 @@
+includes:
+    - phpstan-baseline.neon
+    - phar://phpstan.phar/conf/bleedingEdge.neon
+    - vendor/spaze/phpstan-disallowed-calls/disallowed-dangerous-calls.neon
+    - vendor/spaze/phpstan-disallowed-calls/disallowed-execution-calls.neon
+    - vendor/spaze/phpstan-disallowed-calls/disallowed-insecure-calls.neon
+
+parameters:
+    tmpDir: .cache/phpstan
+
+    paths:
+        - src
+        - tests
+
+    level: max
+
+    type_coverage:
+        # Source still has untyped legacy code paths (Borsh / VersionedTransaction
+        # were ported from JS without param/return types). Threshold tracks
+        # current achievable coverage; ratchet up as code is cleaned.
+        return: 95
+        param: 95
+        property: 100
+        constant: 0
+        declare: 100
+
+    type_perfect:
+        null_over_false: true
+        no_mixed: false
+        narrow_param: false
+        narrow_return: true
+
+    cognitive_complexity:
+        # `Connection` legitimately fans out across ~50 typed JSON-RPC wrappers.
+        # Each method is small; the class-level metric is dominated by their
+        # count, not by per-method intricacy.
+        class: 150
+        function: 20
+
+    strictRules:
+        allRules: true
+
+    editorUrl: 'phpstorm://open?file=%%file%%&line=%%line%%'
+
+    treatPhpDocTypesAsCertain: false
+
+    ignoreErrors:
+        -
+            identifier: trait.unused
+            reportUnmatched: false
+
+        # PHPUnit's AssertionFailedError / ExpectationFailedException are
+        # marked @internal but legitimately referenced from tests.
+        -
+            identifier: classConstant.internalClass
+            path: tests/
+            reportUnmatched: false
+        -
+            identifier: missingType.iterableValue
+            path: tests/
+            reportUnmatched: false
+
+        # VersionedTransaction is a partial port of Solana's JS SDK; the
+        # buffer-driven deserialiser uses `mixed` array reads that PHPStan
+        # narrows poorly. Tracked for cleanup separately.
+        -
+            identifier: method.nonObject
+            path: src/VersionedTransaction.php
+            reportUnmatched: false
+        -
+            identifier: argument.type
+            path: src/VersionedTransaction.php
+            reportUnmatched: false
+        -
+            identifier: assignOp.invalid
+            path: src/VersionedTransaction.php
+            reportUnmatched: false
+        -
+            identifier: binaryOp.invalid
+            path: src/VersionedTransaction.php
+            reportUnmatched: false
+        -
+            identifier: missingType.iterableValue
+            path: src/VersionedTransaction.php
+            reportUnmatched: false
+

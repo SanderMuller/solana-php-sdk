@@ -10,6 +10,9 @@ final readonly class Account implements HasPublicKey, HasSecretKey
 {
     private Keypair $keypair;
 
+    /**
+     * @param array<int, int>|Buffer|null $secretKey
+     */
     public function __construct(array|Buffer|null $secretKey = null)
     {
         if ($secretKey) {

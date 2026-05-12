@@ -196,7 +196,7 @@ trait Instructions
             keys: $keys,
             data: Buffer::concat(
                 Buffer::fromArray([2]),
-                $newOwnerKey,
+                $newOwnerKey->getBuffer(),
             ),
         );
     }

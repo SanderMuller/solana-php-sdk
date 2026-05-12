@@ -12,21 +12,60 @@ use Collectiq\SolanaPhpSdk\Util\Buffer;
 
 trait Utils
 {
-    // config.json file should be in the same directory as this file
-    public mixed $config;
+    /**
+     * SNS configuration map loaded from `Constants/config.json`. Known keys
+     * include `NAME_PROGRAM_ID`, `REGISTER_PROGRAM_ID`, `ROOT_DOMAIN_ACCOUNT`,
+     * `REVERSE_LOOKUP_CLASS`, `SYSVAR_RENT_PUBKEY`, and `HASH_PREFIX`. The
+     * shape stays open (`array<string, mixed>`) so the JSON file can carry
+     * additional entries without breaking the constructor.
+     *
+     * @var array<string, mixed>
+     */
+    public array $config;
 
-    // Constructor
-
-    private function loadConstants(): mixed
+    /**
+     * @return array{
+     *     NAME_PROGRAM_ID: string,
+     *     REGISTER_PROGRAM_ID: string,
+     *     ROOT_DOMAIN_ACCOUNT: string,
+     *     REVERSE_LOOKUP_CLASS: string,
+     *     SYSVAR_RENT_PUBKEY: string,
+     *     HASH_PREFIX: string,
+     * }
+     */
+    private function loadConstants(): array
     {
         $jsonFilePath = dirname(__DIR__) . '/SNS/Constants/config.json';
+        $raw = file_get_contents($jsonFilePath);
 
-        return json_decode(file_get_contents($jsonFilePath), true);
+        if ($raw === false) {
+            throw new InputValidationException("SNS config not readable at {$jsonFilePath}");
+        }
+
+        $decoded = json_decode($raw, true);
+
+        $required = [
+            'NAME_PROGRAM_ID', 'REGISTER_PROGRAM_ID', 'ROOT_DOMAIN_ACCOUNT',
+            'REVERSE_LOOKUP_CLASS', 'SYSVAR_RENT_PUBKEY', 'HASH_PREFIX',
+        ];
+
+        if (! is_array($decoded)) {
+            throw new InputValidationException('SNS config JSON malformed.');
+        }
+
+        foreach ($required as $key) {
+            if (! isset($decoded[$key]) || ! is_string($decoded[$key])) {
+                throw new InputValidationException("SNS config missing string key `{$key}`.");
+            }
+        }
+
+        /** @var array{NAME_PROGRAM_ID: string, REGISTER_PROGRAM_ID: string, ROOT_DOMAIN_ACCOUNT: string, REVERSE_LOOKUP_CLASS: string, SYSVAR_RENT_PUBKEY: string, HASH_PREFIX: string} $decoded */
+        return $decoded;
     }
 
     public function getHashedNameSync(string $name): Buffer
     {
-        $input = $this->config['HASH_PREFIX'] . $name;
+        $input = ((string) $this->config['HASH_PREFIX']) . $name;
 
         $hash = hash('sha256', Buffer::fromString($input)->toString(), true);
 
@@ -43,7 +82,7 @@ trait Utils
         $seeds[] = $nameClass instanceof PublicKey ? $nameClass : PublicKey::generate();
         $seeds[] = $nameParent instanceof PublicKey ? $nameParent : PublicKey::generate();
 
-        $programIdPublicKey = PublicKey::from($this->config['NAME_PROGRAM_ID']);
+        $programIdPublicKey = PublicKey::from((string) $this->config['NAME_PROGRAM_ID']);
         [$nameAccountKey] = PublicKey::findProgramAddressSync(
             seeds: $seeds,
             programId: $programIdPublicKey,
@@ -53,34 +92,48 @@ trait Utils
     }
 
     /**
-     * This function can be used to perform a reverse look up
-     * @param connection The Solana RPC connection
-     * @param nameAccount The public key of the domain to look up
-     * @return string The human-readable domain name
+     * Perform a reverse lookup: resolve the human-readable name registered
+     * against $nameAccount.
+     *
+     * @throws SNSError When the reverse-lookup account has no data payload.
+     * @throws AccountNotFoundException
      */
     public function reverseLookup(Connection $connection, PublicKey $nameAccount): string
     {
         $hashedReverseLookup = $this->getHashedNameSync($nameAccount->toBase58());
-        $reverseLookupAccount = $this->getNameAccountKeySync($hashedReverseLookup, $this->config->REVERSE_LOOKUP_CLASS);
+        $reverseLookupAccount = $this->getNameAccountKeySync(
+            $hashedReverseLookup,
+            PublicKey::from((string) $this->config['REVERSE_LOOKUP_CLASS']),
+        );
 
         $registry = NameRegistryStateAccount::retrieve($connection, $reverseLookupAccount);
-        if (! $registry['data']) {
+        $data = $registry['registry']->data ?? null;
+
+        if (! $data instanceof Buffer || $data->length() === 0) {
             throw new SNSError(SNSError::NoAccountData);
         }
 
-        return $this->deserializeReverse($registry['data']);
+        $decoded = $this->deserializeReverse($data->toString());
+
+        if ($decoded === null) {
+            throw new SNSError(SNSError::NoAccountData);
+        }
+
+        return $decoded;
     }
 
-    public function deserializeReverse(
-        $data
-    ): ?string {
-        if (! $data) {
+    public function deserializeReverse(mixed $data): ?string
+    {
+        if (! is_string($data) || $data === '') {
             return null;
         }
 
-        $nameLength = unpack('V', substr((string) $data, 0, 4))[1];
+        $unpacked = unpack('V', substr($data, 0, 4));
+        if ($unpacked === false || ! isset($unpacked[1])) {
+            return null;
+        }
 
-        return substr((string) $data, 4, $nameLength);
+        return substr($data, 4, (int) $unpacked[1]);
     }
 
     /**
@@ -107,7 +160,7 @@ trait Utils
 
         $splitted = explode('.', $domain);
         if (count($splitted) === 2) {
-            $prefix = $record ?: "\x00";
+            $prefix = $record !== null && $record !== '' ? $record : "\x00";
             $parentKey = $this->_deriveSync($splitted[1])['pubkey'];
             $result = $this->_deriveSync(
                 name: $prefix . $splitted[0],
@@ -115,10 +168,16 @@ trait Utils
                 classKey: $recordClass,
             );
 
-            return array_merge($result, ['isSub' => true, 'parent' => $parentKey]);
+            return [
+                'pubkey' => $result['pubkey'],
+                'hashed' => $result['hashed'],
+                'isSub' => true,
+                'parent' => $parentKey,
+                'isSubRecord' => false,
+            ];
         }
 
-        if (count($splitted) === 3 && $record) {
+        if (count($splitted) === 3 && $record !== null && $record !== '') {
             // Parent key
             $parentKey = $this->_deriveSync($splitted[2])['pubkey'];
 
@@ -134,10 +193,16 @@ trait Utils
             $result = $this->_deriveSync(
                 name: $recordPrefix . $splitted[0],
                 parent: $subKey,
-                classKey: PublicKey::from($recordClass),
+                classKey: $recordClass,
             );
 
-            return array_merge($result, ['isSub' => true, 'parent' => $parentKey, 'isSubRecord' => true]);
+            return [
+                'pubkey' => $result['pubkey'],
+                'hashed' => $result['hashed'],
+                'isSub' => true,
+                'parent' => $parentKey,
+                'isSubRecord' => true,
+            ];
         }
 
         if (count($splitted) >= 3) {
@@ -146,10 +211,16 @@ trait Utils
 
         $result = $this->_deriveSync(
             name: $domain,
-            parent: PublicKey::from($this->config['ROOT_DOMAIN_ACCOUNT']),
+            parent: PublicKey::from((string) $this->config['ROOT_DOMAIN_ACCOUNT']),
         );
 
-        return array_merge($result, ['isSub' => false, 'parent' => null]);
+        return [
+            'pubkey' => $result['pubkey'],
+            'hashed' => $result['hashed'],
+            'isSub' => false,
+            'parent' => null,
+            'isSubRecord' => false,
+        ];
     }
 
     /**
@@ -163,7 +234,7 @@ trait Utils
             'pubkey' => $this->getNameAccountKeySync(
                 hashed_name: $hashedDomainName,
                 nameClass: $classKey,
-                nameParent: $parent ?: PublicKey::from($this->config['ROOT_DOMAIN_ACCOUNT']),
+                nameParent: $parent ?? PublicKey::from((string) $this->config['ROOT_DOMAIN_ACCOUNT']),
             ),
             'hashed' => $hashedDomainName,
         ];
@@ -186,12 +257,13 @@ trait Utils
 
         return $this->getNameAccountKeySync(
             hashed_name: $hashedReverseLookup,
-            nameClass: PublicKey::from($this->config['REVERSE_LOOKUP_CLASS']),
-            nameParent: $isSub ? $domainKeySync['parent'] : null,
+            nameClass: PublicKey::from((string) $this->config['REVERSE_LOOKUP_CLASS']),
+            nameParent: $isSub === true ? $domainKeySync['parent'] : null,
         );
     }
 
     /**
+     * @return array{registry: NameRegistryStateAccount, nftOwner: bool, nameAccountKey: PublicKey}
      * @throws SNSError
      * @throws AccountNotFoundException
      */

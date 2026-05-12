@@ -1,0 +1,77 @@
+name: run-tests
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - '**.php'
+      - '.github/workflows/run-tests.yml'
+      - 'phpunit.xml.dist'
+      - 'composer.json'
+      - 'composer.lock'
+  pull_request:
+    paths:
+      - '**.php'
+      - '.github/workflows/run-tests.yml'
+      - 'phpunit.xml.dist'
+      - 'composer.json'
+      - 'composer.lock'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Floor + ceiling on both PHP versions catches version-only regressions.
+          - { php: '8.3', laravel: '11.*', testbench: '9.*',  stability: prefer-lowest }
+          - { php: '8.3', laravel: '13.*', testbench: '11.*', stability: prefer-stable }
+          - { php: '8.4', laravel: '11.*', testbench: '9.*',  stability: prefer-lowest }
+          - { php: '8.4', laravel: '12.*', testbench: '10.*', stability: prefer-stable }
+          - { php: '8.4', laravel: '13.*', testbench: '11.*', stability: prefer-stable }
+          # `prefer-lowest @ ceiling` — catches floor/ceiling-resolve-fine-but-conflict-in-the-middle bugs.
+          - { php: '8.4', laravel: '13.*', testbench: '11.*', stability: prefer-lowest }
+
+    name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip, sodium
+          coverage: none
+
+      - name: Setup problem matchers
+        run: |
+          echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer update --${{ matrix.stability }} --prefer-dist --no-interaction
+
+      - name: List Installed Dependencies
+        run: composer show -D
+
+      - name: Cache PHPUnit results
+        uses: actions/cache@v5
+        with:
+          path: .cache/phpunit/
+          key: phpunit-cache-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.stability }}-${{ hashFiles('tests/**') }}
+          restore-keys: phpunit-cache-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.stability }}-
+
+      - name: Execute tests
+        run: vendor/bin/phpunit

@@ -19,4 +19,13 @@ enum Network: string
             default => 'https://api.mainnet-beta.solana.com',
         };
     }
+
+    public function pubsubEndpoint(): string
+    {
+        return match ($this) {
+            self::DEVNET => 'wss://api.devnet.solana.com',
+            self::TESTNET => 'wss://api.testnet.solana.com',
+            default => 'wss://api.mainnet-beta.solana.com',
+        };
+    }
 }

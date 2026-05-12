@@ -2,12 +2,12 @@
 
 namespace Collectiq\SolanaPhpSdk\Accounts\Did;
 
-use Collectiq\SolanaPhpSdk\Borsh;
 use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
+use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
 
 final class VerificationMethodStruct implements BorshSerializable
 {
-    use Borsh\IsBorshObject;
+    use IsBorshObject;
 
     public const array SCHEMA = [
         self::class => [

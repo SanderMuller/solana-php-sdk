@@ -14,19 +14,11 @@ use Collectiq\SolanaPhpSdk\TransactionInstruction;
 use Collectiq\SolanaPhpSdk\Util\Buffer;
 use Exception;
 
-/**
- * @method createInstruction($NAME_PROGRAM_ID, $programId, PublicKey $nameAccountKey, PublicKey $nameOwner, PublicKey $payerKey, Buffer $hashed_name, Buffer $param, Buffer $param1, PublicKey|null $nameClass, PublicKey|null $parentName, $nameParentOwner)
- * @method getReverseKeySync(string $subdomain, true $true)
-
- * @method getNameOwner(Connection $connection, PublicKey $parentName)
- * @method retrieve(Connection $connection, mixed $parent)
- * @method transferInstruction(mixed $NAME_PROGRAM_ID, mixed $pubkey, PublicKey $newOwner, PublicKey|null $owner, $null, mixed $nameParent, $nameParentOwner)
- */
 trait Bindings
 {
-//    use Utils;
-//    use Instructions;
-
+    /**
+     * @return array<int, mixed[]>
+     */
     public function createSubdomain(
         Connection $connection,
         string $subdomain,
@@ -61,7 +53,7 @@ trait Bindings
 
         $reverseKey = $this->getReverseKeySync($subdomain, true);
         $info = $connection->getAccountInfo($reverseKey);
-        if (! $info['data']) {
+        if (! isset($info['data']) || $info['data'] === []) {
             $reverseName = $this->createReverseName(
                 nameAccount: $pubkey,
                 name: "\0" . $sub,
@@ -76,6 +68,7 @@ trait Bindings
     }
 
     /**
+     * @return array<int, mixed[]>
      * @throws SNSError
      * @throws AccountNotFoundException
      * @throws Exception
@@ -95,9 +88,9 @@ trait Bindings
             throw new SNSError(SNSError::InvalidSubdomain);
         }
 
-//        $domainKeySync = $this->getDomainKeySync($subdomain);
-//        $parent = $domainKeySync['parent'];
-//        $pubkey = $domainKeySync['pubkey'];
+        //        $domainKeySync = $this->getDomainKeySync($subdomain);
+        //        $parent = $domainKeySync['parent'];
+        //        $pubkey = $domainKeySync['pubkey'];
 
         $lamports = (int) (0.01 * 10 ** 9); // 0.01 SOL
 
@@ -113,17 +106,17 @@ trait Bindings
         $ixs[] = $ix_create;
 
         // $reverseKey = $this->getReverseKeySync($subdomain, true);
-       // $info = $connection->getAccountInfo($reverseKey);
+        // $info = $connection->getAccountInfo($reverseKey);
         // if (!$info['data']) {
-            $reverseName = $this->createReverseName(
-                $subdomainPk,
-                "\0" . $sub,
-                $feePayer ?? $owner,
-                $parentPk,
-                $owner
-            );
-            $ixs = array_merge($ixs, $reverseName[1]);
-       // }
+        $reverseName = $this->createReverseName(
+            $subdomainPk,
+            "\0" . $sub,
+            $feePayer ?? $owner,
+            $parentPk,
+            $owner
+        );
+        $ixs = array_merge($ixs, $reverseName[1]);
+        // }
 
         return [[], $ixs];
     }
@@ -154,16 +147,16 @@ trait Bindings
         $hashed_name = $this->getHashedNameSync($name);
         $nameAccountKey = $this->getNameAccountKeySync($hashed_name, $nameClass, $parentName);
 
-        $balance = $lamports ?: $connection->getMinimumBalanceForRentExemption($space);
+        $balance = $lamports ?? $connection->getMinimumBalanceForRentExemption($space);
 
         $nameParentOwner = $parentName;
-        if ($parentName instanceof PublicKey) { // TODO review logic
+        if ($parentName instanceof PublicKey) {
             $parentAccount = $this->getNameOwner($connection, $parentName->toBase58());
             $nameParentOwner = $parentAccount['registry']->owner;
         }
 
         return $this->createInstruction(
-            nameProgramId: PublicKey::from($this->config['NAME_PROGRAM_ID']),
+            nameProgramId: PublicKey::from((string) $this->config['NAME_PROGRAM_ID']),
             systemProgramId: SystemProgram::programId(),
             nameKey: $nameAccountKey,
             nameOwnerKey: $nameOwner,
@@ -200,12 +193,12 @@ trait Bindings
         $isSub = $domainKeySync['isSub'];
         $parent = $domainKeySync['parent'];
 
-        if (! $parent || ! $isSub) {
+        if (! $parent instanceof PublicKey || ! $isSub) {
             throw new SNSError(SNSError::InvalidSubdomain);
         }
 
         if (! $owner instanceof PublicKey) {
-            $registry = $this->retrieve($connection, $pubkey);
+            $registry = NameRegistryStateAccount::retrieve($connection, $pubkey);
             $owner = $registry['registry']->owner;
         }
 
@@ -214,18 +207,20 @@ trait Bindings
 
         if ($isParentOwnerSigner) {
             $nameParent = $parent;
-            $parentAccount = $this->retrieve($connection, $parent);
+            $parentAccount = NameRegistryStateAccount::retrieve($connection, $parent);
             $nameParentOwner = $parentAccount['registry']->owner;
         }
 
+        assert($owner instanceof PublicKey, 'currentNameOwnerKey must resolve to a PublicKey by here.');
+
         return $this->transferInstruction(
-            NAME_PROGRAM_ID: $this->config['NAME_PROGRAM_ID'],
-            pubkey: $pubkey,
-            newOwner: $newOwner,
-            owner: $owner,
-            null: null,
+            nameProgramId: PublicKey::from((string) $this->config['NAME_PROGRAM_ID']),
+            nameAccountKey: $pubkey,
+            newOwnerKey: $newOwner,
+            currentNameOwnerKey: $owner,
+            nameClassKey: null,
             nameParent: $nameParent,
-            nameParentOwner: $nameParentOwner,
+            parentOwner: $nameParentOwner,
         );
     }
 
@@ -237,6 +232,7 @@ trait Bindings
      * @param PublicKey $feePayer The fee payer of the transaction
      * @param PublicKey|null $parentName The parent name account
      * @param PublicKey|null $parentNameOwner The parent name owner
+     * @return array<int, mixed[]|ReverseInstructionAccount[]>
      * @throws Exception
      */
     public function createReverseName(
@@ -246,10 +242,10 @@ trait Bindings
         ?PublicKey $parentName = null,
         ?PublicKey $parentNameOwner = null
     ): array {
-//        $centralState = $this->findProgramAddress(
-//            [$this->config['REGISTER_PROGRAM_ID']->toBuffer()],
-//            $this->config['REGISTER_PROGRAM_ID']
-//        )[0];
+        //        $centralState = $this->findProgramAddress(
+        //            [$this->config['REGISTER_PROGRAM_ID']->toBuffer()],
+        //            $this->config['REGISTER_PROGRAM_ID']
+        //        )[0];
 
         $hashedReverseLookup = $this->getHashedNameSync($nameAccount->toBase58());
         $reverseLookupAccount = $this->getNameAccountKeySync(
@@ -260,14 +256,14 @@ trait Bindings
 
         $initCentralStateInstruction = new ReverseInstructionAccount($name);
         $initCentralStateInstruction->getInstruction(
-            programId: PublicKey::from($this->config['REGISTER_PROGRAM_ID']),
-            namingServiceProgram: PublicKey::from($this->config['NAME_PROGRAM_ID']),
-            rootDomain: PublicKey::from($this->config['ROOT_DOMAIN_ACCOUNT']),
+            programId: PublicKey::from((string) $this->config['REGISTER_PROGRAM_ID']),
+            namingServiceProgram: PublicKey::from((string) $this->config['NAME_PROGRAM_ID']),
+            rootDomain: PublicKey::from((string) $this->config['ROOT_DOMAIN_ACCOUNT']),
             reverseLookup: $reverseLookupAccount,
             systemProgram: SystemProgram::programId(),
             centralState: $this->centralStateSNSRecords,
             feePayer: $feePayer,
-            rentSysvar: PublicKey::from($this->config['SYSVAR_RENT_PUBKEY']),
+            rentSysvar: PublicKey::from((string) $this->config['SYSVAR_RENT_PUBKEY']),
             parentName: $parentName,
             parentNameOwner: $parentNameOwner,
         );

@@ -7,6 +7,7 @@ use Collectiq\SolanaPhpSdk\Programs\SNS\Bindings;
 use Collectiq\SolanaPhpSdk\Programs\SNS\Instructions\Instructions;
 use Collectiq\SolanaPhpSdk\Programs\SNS\Utils;
 use Collectiq\SolanaPhpSdk\PublicKey;
+use SensitiveParameter;
 
 final class SnsProgram implements Program
 {
@@ -15,19 +16,20 @@ final class SnsProgram implements Program
     use IsProgram;
     use Utils;
 
-    public mixed $config;
+    // `$config` shape is declared on the `Utils` trait.
 
     public PublicKey $centralStateSNSRecords;
 
     public const string SYSVAR_RENT_PUBKEY = 'SysvarRent111111111111111111111111111111111';
 
     /**
+     * @param array<string, mixed>|null $config
      * @throws InputValidationException
      */
     public function __construct(
-        #[\SensitiveParameter] $config = null,
+        #[SensitiveParameter] ?array $config = null,
     ) {
-        $this->config = $config ?: $this->loadConstants();
+        $this->config = $config ?? $this->loadConstants();
 
         $sns_records_id = PublicKey::from('HP3D4D1ZCmohQGFVms2SS4LCANgJyksBf5s1F77FuFjZ');
 

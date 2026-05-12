@@ -14,6 +14,8 @@ use Stringable;
 
 /**
  * Convenience wrapper class around an array of bytes (integers).
+ *
+ * @implements Arrayable<int, int>
  */
 class Buffer implements Arrayable, Countable, Stringable
 {
@@ -21,10 +23,10 @@ class Buffer implements Arrayable, Countable, Stringable
 
     public static ?int $fixedLength = null;
 
+    /**
+     * @param array<int, int> $data
+     */
     final public function __construct(
-        /**
-         * @var array<int>
-         */
         private array                $data,
         private readonly ?BufferType $datatype = null,
         private readonly ?bool       $isDatatypeSigned = null,
@@ -36,14 +38,22 @@ class Buffer implements Arrayable, Countable, Stringable
         }
     }
 
+    /**
+     * @param Arrayable<int|string, int>|iterable<int, int> $value
+     */
     final public static function fromArray(Arrayable|iterable $value, ?BufferType $datatype = null, ?bool $isSignedValue = null): static
     {
         if ($value instanceof Arrayable) {
             $value = $value->toArray();
         }
 
+        if (! is_array($value)) {
+            $value = iterator_to_array($value, false);
+        }
+
+        /** @var array<int, int> $value */
         return new static(
-            data: (array) $value,
+            data: $value,
             datatype: $datatype,
             isDatatypeSigned: $isSignedValue,
         );
@@ -51,17 +61,16 @@ class Buffer implements Arrayable, Countable, Stringable
 
     final public static function fromString(string|Stringable $value, ?BufferType $datatype = null, ?bool $isSignedValue = null): static
     {
-        $datatype ??= BufferType::STRING;
-
         if ($value instanceof Stringable) {
             $value = $value->__toString();
         }
 
-        if (is_numeric($value) && $datatype !== BufferType::STRING) {
-            $value = pack(
-                static::computedFormat($datatype, $isSignedValue)->value,
+        if (is_numeric($value) && $datatype instanceof BufferType && $datatype !== BufferType::STRING) {
+            $packed = pack(
+                self::computedFormat($datatype, $isSignedValue)->value,
                 $value,
             );
+            $value = $packed;
         }
 
         if (static::$defaultsToBase58) {
@@ -69,12 +78,16 @@ class Buffer implements Arrayable, Countable, Stringable
 
             // if not binary string already, assumed to be a base58 string.
             if (! $isBinaryString) {
-                return static::fromBase58($value);
+                return self::fromBase58($value);
             }
         }
 
+        $unpacked = unpack('C*', $value);
+        /** @var array<int, int> $data */
+        $data = $unpacked === false ? [] : array_values($unpacked);
+
         return new static(
-            data: array_values(unpack('C*', $value)),
+            data: $data,
             datatype: $datatype,
             isDatatypeSigned: $isSignedValue,
         );
@@ -83,15 +96,15 @@ class Buffer implements Arrayable, Countable, Stringable
     final public static function fromInt(int $value, BufferType $datatype, ?bool $isSignedValue = null): static
     {
         if (static::$defaultsToBase58) {
-            return static::empty()->pad(PublicKey::$fixedLength, $value);
+            return self::empty()->pad(PublicKey::$fixedLength ?? 32, $value);
         }
 
-        return static::fromString((string) $value, $datatype, $isSignedValue);
+        return self::fromString((string) $value, $datatype, $isSignedValue);
     }
 
     final public static function fromFloat(float $value, BufferType $datatype, ?bool $isSignedValue = null): static
     {
-        return static::fromString((string) $value, $datatype, $isSignedValue);
+        return self::fromString((string) $value, $datatype, $isSignedValue);
     }
 
     final public static function fromBuffer(self $value, ?BufferType $datatype = null, ?bool $isSignedValue = null): static
@@ -106,7 +119,7 @@ class Buffer implements Arrayable, Countable, Stringable
     final public static function from(mixed $value, ?BufferType $datatype = null, ?bool $isSignedValue = null): static
     {
         if ($value === null) {
-            return static::empty(
+            return self::empty(
                 datatype: $datatype,
                 isSignedValue: $isSignedValue,
             );
@@ -117,7 +130,7 @@ class Buffer implements Arrayable, Countable, Stringable
         }
 
         if ($value instanceof self) {
-            return static::fromBuffer(
+            return self::fromBuffer(
                 value: $value,
                 datatype: $datatype,
                 isSignedValue: $isSignedValue,
@@ -129,6 +142,7 @@ class Buffer implements Arrayable, Countable, Stringable
         }
 
         if (is_array($value)) {
+            /** @var array<int, int> $value */
             return new static(
                 data: $value,
                 datatype: $datatype,
@@ -141,7 +155,7 @@ class Buffer implements Arrayable, Countable, Stringable
                 throw new InputValidationException('datatype is required for values of type int');
             }
 
-            return static::fromInt(
+            return self::fromInt(
                 value: $value,
                 datatype: $datatype,
                 isSignedValue: $isSignedValue,
@@ -153,7 +167,7 @@ class Buffer implements Arrayable, Countable, Stringable
                 throw new InputValidationException('datatype is required for values of type float');
             }
 
-            return static::fromFloat(
+            return self::fromFloat(
                 value: $value,
                 datatype: $datatype,
                 isSignedValue: $isSignedValue,
@@ -165,7 +179,7 @@ class Buffer implements Arrayable, Countable, Stringable
         }
 
         if (is_string($value)) {
-            return static::fromString(
+            return self::fromString(
                 value: $value,
                 datatype: $datatype,
                 isSignedValue: $isSignedValue,
@@ -195,7 +209,7 @@ class Buffer implements Arrayable, Countable, Stringable
 
     final public static function fromBase58(string $value, ?BufferType $datatype = null, ?bool $isSignedValue = null): static
     {
-        return static::fromString(
+        return self::fromString(
             value: new Base58()->decode($value),
             datatype: $datatype,
             isSignedValue: $isSignedValue,
@@ -213,10 +227,10 @@ class Buffer implements Arrayable, Countable, Stringable
     {
         $sourceAsBuffer = $source instanceof self
             ? $source
-            : static::from($source);
+            : self::from($source);
 
-//        array_push($this->data, ...$sourceAsBuffer->toArray());
-//
+        //        array_push($this->data, ...$sourceAsBuffer->toArray());
+        //
         $this->data = [
             ...$this->data,
             ...$sourceAsBuffer->toArray(),
@@ -253,13 +267,17 @@ class Buffer implements Arrayable, Countable, Stringable
         $fixedSizeData = SplFixedArray::fromArray($this->data);
         $fixedSizeData->setSize($size);
 
-        $this->data = $fixedSizeData->toArray();
+        /** @var array<int, int> $resized */
+        $resized = $fixedSizeData->toArray();
+        $this->data = $resized;
 
         return $this;
     }
 
     /**
      * Return binary representation of $value.
+     *
+     * @return array<int, int>
      */
     final public function toArray(): array
     {
@@ -268,6 +286,8 @@ class Buffer implements Arrayable, Countable, Stringable
 
     /**
      * Return the byte array representation of the public key
+     *
+     * @return array<int, int>
      */
     final public function toBytes(): array
     {
@@ -337,7 +357,7 @@ class Buffer implements Arrayable, Countable, Stringable
         }
 
         $unpacked = unpack(
-            format: static::computedFormat($this->datatype, $this->isDatatypeSigned)->value,
+            format: self::computedFormat($this->datatype, $this->isDatatypeSigned)->value,
             string: $this->toBinaryString(),
         );
 
@@ -354,12 +374,14 @@ class Buffer implements Arrayable, Countable, Stringable
             throw new InputValidationException('Trying to calculate format of unspecified buffer. Please specify a datatype.');
         }
 
+        $signed = $isSignedValue === true;
+
         return match ($dataType) {
             BufferType::STRING => BufferFormat::CHAR_UNSIGNED,
-            BufferType::BYTE => $isSignedValue ? BufferFormat::CHAR_SIGNED : BufferFormat::CHAR_UNSIGNED,
-            BufferType::SHORT => $isSignedValue ? BufferFormat::SHORT_16_SIGNED : BufferFormat::SHORT_16_UNSIGNED,
-            BufferType::INT => $isSignedValue ? BufferFormat::LONG_32_SIGNED : BufferFormat::LONG_32_UNSIGNED,
-            BufferType::LONG => $isSignedValue ? BufferFormat::LONG_LONG_64_SIGNED : BufferFormat::LONG_LONG_64_UNSIGNED,
+            BufferType::BYTE => $signed ? BufferFormat::CHAR_SIGNED : BufferFormat::CHAR_UNSIGNED,
+            BufferType::SHORT => $signed ? BufferFormat::SHORT_16_SIGNED : BufferFormat::SHORT_16_UNSIGNED,
+            BufferType::INT => $signed ? BufferFormat::LONG_32_SIGNED : BufferFormat::LONG_32_UNSIGNED,
+            BufferType::LONG => $signed ? BufferFormat::LONG_LONG_64_SIGNED : BufferFormat::LONG_LONG_64_UNSIGNED,
             BufferType::FLOAT => BufferFormat::FLOAT,
         };
     }

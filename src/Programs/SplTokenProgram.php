@@ -41,11 +41,20 @@ final class SplTokenProgram implements Program
             throw new TokenOwnerOffCurveError();
         }
 
-        $address = PublicKey::findProgramAddressSync(
-            seeds: [$owner, $programId ?? PublicKey::from(self::TOKEN_PROGRAM_ID), $mint],
-            programId: $atPid ?? PublicKey::from(self::ASSOCIATED_TOKEN_PROGRAM_ID),
+        $tokenProgramId = $programId ?? PublicKey::from(self::TOKEN_PROGRAM_ID);
+        $ataProgramId = $atPid ?? PublicKey::from(self::ASSOCIATED_TOKEN_PROGRAM_ID);
+
+        $seeds = [
+            $owner->getBuffer(),
+            $tokenProgramId->getBuffer(),
+            $mint->getBuffer(),
+        ];
+
+        $result = PublicKey::findProgramAddressSync(
+            seeds: $seeds,
+            programId: $ataProgramId,
         );
 
-        return $address[0];
+        return $result[0];
     }
 }

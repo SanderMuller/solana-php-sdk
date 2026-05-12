@@ -8,8 +8,8 @@ use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
 use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
 use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use Collectiq\SolanaPhpSdk\Transaction;
+use Mockery;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\MockObject;
 
 final class ConnectionTest extends TestCase
 {
@@ -46,18 +46,17 @@ final class ConnectionTest extends TestCase
         $pubKey = '3Wnd5Df69KitZfUoPYZU438eFRNwGHkhLnSAWL65PxJX';
         $balance = 100;
 
-        $clientMock = $this->createMock(SolanaRpcClient::class);
-        $clientMock->expects($this->once())
-            ->method('call')
+        $clientMock = Mockery::mock(SolanaRpcClient::class);
+        $clientMock->expects('call')
             ->with('getBalance', [$pubKey])
-            ->willReturn(['value' => $balance]);
+            ->andReturn(['value' => $balance]);
 
-        $this->container->bind(SolanaRpcClient::class, fn (): MockObject => $clientMock);
+        $this->container->bind(SolanaRpcClient::class, static fn (): SolanaRpcClient => $clientMock);
 
         $connection = $this->container->get(Connection::class);
 
         $result = $connection->getBalance($pubKey);
 
-        self::assertEquals($balance, $result);
+        self::assertSame((float) $balance, $result);
     }
 }

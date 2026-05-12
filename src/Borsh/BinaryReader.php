@@ -53,20 +53,20 @@ final class BinaryReader
         return $this->readSignedInt(8, BufferType::LONG);
     }
 
-    private function readUnsignedInt(?int $length, ?BufferType $datatype): int
+    private function readUnsignedInt(int $length, BufferType $datatype): int
     {
         $value = $this->buffer->slice($this->offset, $length, $datatype, false)->value();
         $this->offset += $length;
 
-        return $value;
+        return (int) $value;
     }
 
-    private function readSignedInt(?int $length, ?BufferType $datatype): int
+    private function readSignedInt(int $length, BufferType $datatype): int
     {
         $value = $this->buffer->slice($this->offset, $length, $datatype, true)->value();
         $this->offset += $length;
 
-        return $value;
+        return (int) $value;
     }
 
     public function readF32(): float
@@ -74,7 +74,7 @@ final class BinaryReader
         $value = $this->buffer->slice($this->offset, 4, BufferType::FLOAT, true)->value();
         $this->offset += 4;
 
-        return $value;
+        return (float) $value;
     }
 
     public function readF64(): float
@@ -82,7 +82,7 @@ final class BinaryReader
         $value = $this->buffer->slice($this->offset, 8, BufferType::FLOAT, true)->value();
         $this->offset += 8;
 
-        return $value;
+        return (float) $value;
     }
 
     /**
@@ -95,6 +95,9 @@ final class BinaryReader
         return $this->readBuffer($length)->toString();
     }
 
+    /**
+     * @return array<int, int>
+     */
     public function readFixedArray(int $length): array
     {
         return $this->readBuffer($length)->toArray();
@@ -110,6 +113,10 @@ final class BinaryReader
         return $this->readPubKey()->toBase58();
     }
 
+    /**
+     * @param Closure(): mixed $readEachItem
+     * @return array<int, mixed>
+     */
     public function readArray(Closure $readEachItem): array
     {
         $length = $this->readU32();

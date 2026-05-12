@@ -132,6 +132,7 @@ final class BinaryWriter
     }
 
     /**
+     * @param array<int, int> $array
      * @return $this
      */
     public function writeFixedArray(array $array): self
@@ -140,6 +141,8 @@ final class BinaryWriter
     }
 
     /**
+     * @param array<int, mixed> $array
+     * @param Closure(mixed): void $writeFn
      * @return $this
      */
     public function writeArray(array $array, Closure $writeFn): self
@@ -165,6 +168,9 @@ final class BinaryWriter
         return $this;
     }
 
+    /**
+     * @return array<int, int>
+     */
     public function toArray(): array
     {
         return $this->buffer

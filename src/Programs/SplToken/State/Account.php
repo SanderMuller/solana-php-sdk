@@ -5,7 +5,6 @@ namespace Collectiq\SolanaPhpSdk\Programs\SplToken\State;
 use Collectiq\SolanaPhpSdk\Borsh\Borsh;
 use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
 use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
-use Collectiq\SolanaPhpSdk\Buffer;
 use Collectiq\SolanaPhpSdk\Connection;
 use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
 use Collectiq\SolanaPhpSdk\PublicKey;
@@ -27,10 +26,9 @@ final class Account implements BorshSerializable
 {
     use IsBorshObject;
 
-    private static PublicKey $address;
-
-    private static mixed $tlvData;
-
+    /**
+     * @var array<class-string, array<string, mixed>>
+     */
     private const array SCHEMA = [
         self::class => [
             'kind' => 'struct',
@@ -50,6 +48,9 @@ final class Account implements BorshSerializable
         ],
     ];
 
+    /**
+     * @param array<int, int> $buffer
+     */
     public static function fromBuffer(array $buffer): self
     {
         return Borsh::deserialize(self::SCHEMA, self::class, $buffer);
@@ -62,42 +63,47 @@ final class Account implements BorshSerializable
         Connection $connection,
         PublicKey  $accountPublicKeyOnbject,
     ): Account {
-        try {
-            $info = $connection->getAccountInfo($accountPublicKeyOnbject);
-            self::$address = $accountPublicKeyOnbject;
-            self::$tlvData = $info['data'];
-            $base64Data = $info['data']['0'];
-            $base64String = base64_decode((string) $base64Data);
-            $uint8Array = array_values(unpack('C*', $base64String));
+        $info = $connection->getAccountInfo($accountPublicKeyOnbject);
+        $data = $info['data'] ?? null;
 
-            return self::fromBuffer($uint8Array);
-        } catch (AccountNotFoundException) {
-            throw new AccountNotFoundException();
+        if (! is_array($data) || ! isset($data[0]) || ! is_string($data[0])) {
+            throw new AccountNotFoundException('Account data missing or not base64-encoded.');
         }
+
+        $binary = base64_decode($data[0], true);
+        if ($binary === false) {
+            throw new AccountNotFoundException('Account data is not valid base64.');
+        }
+
+        $unpacked = unpack('C*', $binary);
+        /** @var array<int, int> $bytes */
+        $bytes = $unpacked === false ? [] : array_values($unpacked);
+
+        return self::fromBuffer($bytes);
     }
 
     public function getMint(): ?PublicKey
     {
-        return $this->mint !== null ? PublicKey::from(Buffer::from($this->mint)) : null;
+        return $this->mint instanceof PublicKey ? $this->mint : null;
     }
 
     public function getOwner(): ?PublicKey
     {
-        return $this->owner !== null ? PublicKey::from(Buffer::from($this->owner)) : null;
+        return $this->owner instanceof PublicKey ? $this->owner : null;
     }
 
     public function getDelegate(): ?PublicKey
     {
-        return $this->delegate !== null ? PublicKey::from(Buffer::from($this->delegate)) : null;
+        return $this->delegate instanceof PublicKey ? $this->delegate : null;
     }
 
     public function getCloseAuthority(): ?PublicKey
     {
-        return $this->closeAuthority !== null ? PublicKey::from(Buffer::from($this->closeAuthority)) : null;
+        return $this->closeAuthority instanceof PublicKey ? $this->closeAuthority : null;
     }
 
-    public function getNativeBalance(): ?int
+    public function getNativeBalance(): int
     {
-        return $this->isNative;
+        return (int) $this->isNative;
     }
 }

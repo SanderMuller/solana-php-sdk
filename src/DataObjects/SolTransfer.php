@@ -13,18 +13,33 @@ final readonly class SolTransfer
     }
 
     /**
+     * @param array<string, mixed> $response
      * @return list<self>
      */
     public static function fromTransactionStatement(array $response): array
     {
-        return collect($response['transaction']['message']['instructions'])
-            ->filter(fn (array $instruction): bool => data_get($instruction, 'parsed.type') === 'transfer')
-            ->map(fn (array $instruction): self => new self(
-                from: data_get($instruction, 'parsed.info.source'),
-                to: data_get($instruction, 'parsed.info.destination'),
-                amount: new Lamports(data_get($instruction, 'parsed.info.lamports'))
-            ))
-            ->values()
-            ->all();
+        $instructions = data_get($response, 'transaction.message.instructions');
+        if (! is_array($instructions)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($instructions as $instruction) {
+            if (! is_array($instruction) || data_get($instruction, 'parsed.type') !== 'transfer') {
+                continue;
+            }
+
+            $source = data_get($instruction, 'parsed.info.source');
+            $destination = data_get($instruction, 'parsed.info.destination');
+            $lamports = data_get($instruction, 'parsed.info.lamports');
+
+            $out[] = new self(
+                from: is_string($source) ? $source : '',
+                to: is_string($destination) ? $destination : '',
+                amount: new Lamports(is_numeric($lamports) ? (int) $lamports : 0),
+            );
+        }
+
+        return $out;
     }
 }

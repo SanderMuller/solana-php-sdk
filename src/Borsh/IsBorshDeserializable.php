@@ -3,64 +3,80 @@
 namespace Collectiq\SolanaPhpSdk\Borsh;
 
 use ReflectionClass;
+use ReflectionProperty;
 
 trait IsBorshDeserializable
 {
     /**
+     * Backing store for dynamic Borsh-deserialised properties.
+     *
+     * Private properties declared on the host class are written directly via
+     * reflection in {@see __set} and live as real class properties; everything
+     * else is stored here.
+     *
+     * @var array<string, mixed>
+     */
+    public array $fields = [];
+
+    /**
      * Create a new instance of this object.
      *
      * Note: must override when the default constructor required parameters!
-     *
-     * @return $this
      */
     public static function borshConstructor(): static
     {
         return new static();
     }
 
-    /**
-     * Magic setter to dynamically set properties.
-     */
     public function __set(string $name, mixed $value): void
     {
-        // Set the value in the dynamic properties if it's not private
-        if (! $this->isPrivateProperty($name)) {
-            $this->fields[$name] = $value;
+        if ($this->isPrivateProperty($name)) {
+            $this->reflectionPropertyFor($name)->setValue($this, $value);
+
+            return;
         }
 
-        // Check if the property exists as a private property
-        if ($this->isPrivateProperty($name)) {
-            // Use reflection to set the value of the private property
-            $reflectionClass = new ReflectionClass($this);
-            $property = $reflectionClass->getProperty($name);
-            $property->setAccessible(true);
-            $property->setValue($this, $value);
-        }
+        $this->fields[$name] = $value;
     }
 
     public function __isset(string $name): bool
     {
-        return isset($this->fields[$name]) || isset($this->private[$name]);
+        if (array_key_exists($name, $this->fields)) {
+            return true;
+        }
+
+        if (! $this->isPrivateProperty($name)) {
+            return false;
+        }
+
+        return $this->reflectionPropertyFor($name)->isInitialized($this);
     }
 
     public function __unset(string $name): void
     {
-        if (isset($this->fields[$name])) {
+        if (array_key_exists($name, $this->fields)) {
             unset($this->fields[$name]);
-        } elseif (isset($this->private[$name])) {
-            unset($this->privateProperties[$name]);
+
+            return;
         }
+
+        if (! $this->isPrivateProperty($name)) {
+            return;
+        }
+
+        $this->reflectionPropertyFor($name)->setValue($this, null);
     }
 
     private function isPrivateProperty(string $name): bool
     {
-        // Get the class name ( whatever class is implementing this trait, e.g. Any Schema/Struct based object
-        $className = static::class;
+        $reflectionClass = new ReflectionClass(static::class);
 
-        // Create a ReflectionClass instance for the class
-        $reflectionClass = new ReflectionClass($className);
+        return $reflectionClass->hasProperty($name)
+            && $reflectionClass->getProperty($name)->isPrivate();
+    }
 
-        // Check if the property is declared in the class and is private
-        return $reflectionClass->hasProperty($name) && $reflectionClass->getProperty($name)->isPrivate();
+    private function reflectionPropertyFor(string $name): ReflectionProperty
+    {
+        return new ReflectionClass(static::class)->getProperty($name);
     }
 }

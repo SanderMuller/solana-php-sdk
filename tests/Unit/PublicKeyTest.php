@@ -57,11 +57,11 @@ final class PublicKeyTest extends TestCase
     {
         $key1 = PublicKey::from('CiDwVBFgWV9E5MvXWoLgnEgn2hK7rJikbvfWavzAQz3');
         self::assertSame('CiDwVBFgWV9E5MvXWoLgnEgn2hK7rJikbvfWavzAQz3', $key1->toBase58());
-        self::assertSame('CiDwVBFgWV9E5MvXWoLgnEgn2hK7rJikbvfWavzAQz3', $key1);
+        self::assertSame('CiDwVBFgWV9E5MvXWoLgnEgn2hK7rJikbvfWavzAQz3', (string) $key1);
 
         $key2 = PublicKey::from('1111111111111111111111111111BukQL');
         self::assertSame('1111111111111111111111111111BukQL', $key2->toBase58());
-        self::assertSame('1111111111111111111111111111BukQL', $key2);
+        self::assertSame('1111111111111111111111111111BukQL', (string) $key2);
 
         $key3 = PublicKey::from('11111111111111111111111111111111');
         self::assertSame('11111111111111111111111111111111', $key3->toBase58());

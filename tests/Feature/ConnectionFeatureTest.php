@@ -32,11 +32,10 @@ final class ConnectionFeatureTest extends TestCase
     {
         $connection = $this->container->get(Connection::class);
 
-        // Act: Call the getAccountInfo method with a real public key
         $txn = '3ScP26YbYarMTQBA6i3a9NynrXj845FNX3afmgTWiZAAhqVrZwyw5YbMhuqczamjBLwWZ3XNY91nrRCeVNMjtexE';
         $result = $connection->getTransaction($txn);
 
-        self::assertEquals('3ScP26YbYarMTQBA6i3a9NynrXj845FNX3afmgTWiZAAhqVrZwyw5YbMhuqczamjBLwWZ3XNY91nrRCeVNMjtexE', $result['transaction']['signatures'][0]);
+        self::assertSame($txn, $result?->signature);
     }
 
     #[Test]
@@ -65,7 +64,7 @@ final class ConnectionFeatureTest extends TestCase
 
         $result = $this->container->get(Connection::class)->getTransaction($txn);
 
-        self::assertEquals($txn, $result['transaction']['signatures'][0]);
+        self::assertSame($txn, $result?->signature);
     }
 
     #[Test]

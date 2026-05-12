@@ -46,46 +46,36 @@ final readonly class DiDUri implements \Collectiq\SolanaPhpSdk\Util\Stringable, 
             throw new DidEncodingException('ID cannot be empty');
         }
 
-        $this->ids->ensure('string');
+        foreach ($this->ids as $id) {
+            if (! is_string($id)) {
+                throw new DidEncodingException('DID ids must all be strings.');
+            }
+        }
 
-        $this->path = $path instanceof \Illuminate\Support\Stringable
+        $this->path = $path instanceof Stringable
             ? $this->normalizePath($path)
             : null;
-        $this->fragment = $fragment instanceof \Illuminate\Support\Stringable
+        $this->fragment = $fragment instanceof Stringable
             ? $this->normalizeFragment($fragment)
             : null;
     }
 
     public static function parse(Uri $uri): self
     {
-        $matches = str($uri->__toString())->matchAll(self::REGEX);
+        $input = $uri->__toString();
 
-        dd($matches, $uri);
-
-        if ($matches->isEmpty()) {
-            throw new DidEncodingException("URI \"{$uri}\" is not a a valid DID");
+        if (preg_match(self::REGEX, $input, $matches) !== 1) {
+            throw new DidEncodingException("URI \"{$uri}\" is not a valid DID");
         }
 
-        $scheme = $matches->shift();
-        if ($scheme !== self::SCHEME) {
-            throw new DidEncodingException("Scheme \"{$scheme}\" is not a DID scheme");
-        }
+        [, $method, $ids, $path, $fragment] = $matches + [null, null, null, '', ''];
 
-        $method = $matches->shift();
-        assert(is_string($method));
-
-        $matches->shift();
-
-        [
-            $scheme,
-            $method,
-            $ids,
-            $path,
-            $fragment,
-        ] = $matches->all();
-
-        // $matches[2] is one or more colon-delimited ids, break into array for ctor
-        return new self(str($method), explode(':', (string) $matches[2]), $matches[3], $matches[4]);
+        return new self(
+            method: str($method),
+            ids: new Collection(explode(':', $ids)),
+            path: $path !== '' ? str($path) : null,
+            fragment: $fragment !== '' ? str($fragment) : null,
+        );
     }
 
     public static function isDid(Uri $uri): bool
@@ -159,7 +149,7 @@ final readonly class DiDUri implements \Collectiq\SolanaPhpSdk\Util\Stringable, 
             $this->method,
             $this->ids->implode(':'),
             $this->path,
-            $this->fragment instanceof \Illuminate\Support\Stringable
+            $this->fragment instanceof Stringable
                 ? $this->fragment->ltrim(self::FRAGMENT_DELIMITER)->prepend(self::FRAGMENT_DELIMITER)
                 : '',
         );

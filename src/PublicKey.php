@@ -7,10 +7,9 @@ use Collectiq\SolanaPhpSdk\Exceptions\SolanaPhpSdkException;
 use Collectiq\SolanaPhpSdk\Util\Buffer;
 use Collectiq\SolanaPhpSdk\Util\HasPublicKey;
 use Collectiq\SolanaPhpSdk\Util\Stringable;
-use Exception;
 use ParagonIE_Sodium_Compat;
-use RangeException;
 use SodiumException;
+use Throwable;
 
 final class PublicKey implements HasPublicKey, Stringable
 {
@@ -77,6 +76,9 @@ final class PublicKey implements HasPublicKey, Stringable
         return $this->buffer->toBase58String();
     }
 
+    /**
+     * @return array<int, int>
+     */
     public function toBytes(): array
     {
         return $this->buffer->toBytes();
@@ -106,6 +108,8 @@ final class PublicKey implements HasPublicKey, Stringable
 
     /**
      * Derive a program address from seeds and a program ID.
+     *
+     * @param array<mixed> $seeds
      */
     public static function createProgramAddress(array $seeds, self $programId): self
     {
@@ -133,6 +137,7 @@ final class PublicKey implements HasPublicKey, Stringable
     }
 
     /**
+     * @param array<mixed> $seeds
      * @return array{0: PublicKey, 1: int} 2 elements, [0] = PublicKey, [1] = nonce
      * @throws SolanaPhpSdkException
      */
@@ -169,6 +174,7 @@ final class PublicKey implements HasPublicKey, Stringable
     }
 
     /**
+     * @param array<mixed> $seeds
      * @return array{0: PublicKey, 1: int} 2 elements, [0] = PublicKey, [1] = nonce
      */
     public static function findProgramAddressSync(array $seeds, self $programId): array
@@ -181,19 +187,20 @@ final class PublicKey implements HasPublicKey, Stringable
      */
     public static function isOnCurve(mixed $publicKey): bool
     {
-        try {
-            $binaryString = $publicKey instanceof self
-                ? $publicKey->toBinaryString()
-                : $publicKey;
+        $binaryString = $publicKey instanceof self ? $publicKey->toBinaryString() : $publicKey;
 
-            /**
-             * Sodium extension method sometimes returns "conversion failed" exception.
-             * $_ = sodium_crypto_sign_ed25519_pk_to_curve25519($binaryString);
-             */
-            $_ = ParagonIE_Sodium_Compat::crypto_sign_ed25519_pk_to_curve25519($binaryString);
+        if (! is_string($binaryString)) {
+            return false;
+        }
+
+        try {
+            // Sodium-Compat throws SodiumException for invalid inputs; the
+            // native ext-sodium can also throw RangeException — both come up
+            // as Throwable subclasses, caught generically here.
+            ParagonIE_Sodium_Compat::crypto_sign_ed25519_pk_to_curve25519($binaryString);
 
             return true;
-        } catch (RangeException|SodiumException) {
+        } catch (Throwable) {
             return false;
         }
     }
@@ -225,8 +232,11 @@ final class PublicKey implements HasPublicKey, Stringable
             throw new InputValidationException("Invalid signature length. Expected {$expected}. Found: {$length}");
         }
 
+        $public = $this->toBinaryString();
+        assert($public !== '', 'PublicKey produced an empty binary string.');
+
         try {
-            return sodium_crypto_sign_verify_detached($signature, $message, $this->toBinaryString());
+            return sodium_crypto_sign_verify_detached($signature, $message, $public);
         } catch (SodiumException) {
             return false;
         }

@@ -24,7 +24,6 @@ trait IsBorshSerializable
             // Use reflection to access the private property
             $reflectionClass = new ReflectionClass($this);
             $property = $reflectionClass->getProperty($name);
-            $property->setAccessible(true);
 
             return $property->getValue($this);
         }

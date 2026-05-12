@@ -2,8 +2,8 @@
 
 namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs;
 
+use Collectiq\SolanaPhpSdk\Connection;
 use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
 use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -14,7 +14,7 @@ final class MetaPlexProgramTest extends TestCase
     {
         $this->expectException(AccountNotFoundException::class);
 
-        $this->container->get(SystemProgram::class)
+        $this->container->get(Connection::class)
             ->getAccountInfo('abc123');
     }
 }

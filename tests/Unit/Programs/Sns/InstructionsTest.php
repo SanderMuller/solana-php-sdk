@@ -16,21 +16,21 @@ final class InstructionsTest extends TestCase
     public function create_instruction(): void
     {
         $instruction = $this->container->get(SnsProgram::class)->createInstruction(
-            NAME_PROGRAM_ID: PublicKey::generate(),
-            programId: PublicKey::generate(),
-            nameAccountKey: PublicKey::generate(),
-            nameOwner: PublicKey::generate(),
+            nameProgramId: PublicKey::generate(),
+            systemProgramId: PublicKey::generate(),
+            nameKey: PublicKey::generate(),
+            nameOwnerKey: PublicKey::generate(),
             payerKey: PublicKey::generate(),
             hashed_name: Buffer::fromInt(32, BufferType::INT, false),
-            param: Buffer::fromInt(1000000, BufferType::INT, false),
-            param1: Buffer::fromInt(2000, BufferType::INT, false),
-            nameClass: PublicKey::generate(),
-            parentName: PublicKey::generate(),
+            lamports: Buffer::fromInt(1000000, BufferType::INT, false),
+            space: Buffer::fromInt(2000, BufferType::INT, false),
+            nameClassKey: PublicKey::generate(),
+            nameParent: PublicKey::generate(),
             nameParentOwner: PublicKey::generate(),
         );
 
         self::assertInstanceOf(TransactionInstruction::class, $instruction);
-        self::assertEquals(0, $instruction->data->toArray()[0]);
+        self::assertSame(0, $instruction->data->toArray()[0]);
 
         // TODO: Add more assertions here to verify the properties of the returned TransactionInstruction
     }
@@ -46,24 +46,21 @@ final class InstructionsTest extends TestCase
             nameUpdateSigner: PublicKey::generate(),
         );
 
-        self::assertEquals(1, $instruction->data->toArray()[0]);
+        self::assertSame(1, $instruction->data->toArray()[0]);
     }
 
     #[Test]
     public function transfer_instruction(): void
     {
         $instruction = $this->container->get(SnsProgram::class)->transferInstruction(
-            NAME_PROGRAM_ID: PublicKey::generate(),
-            pubkey: PublicKey::generate(),
-            newOwner: PublicKey::generate(),
-            owner: PublicKey::generate(),
-            null: null,
-            nameParent: null,
-            nameParentOwner: null,
+            nameProgramId: PublicKey::generate(),
+            nameAccountKey: PublicKey::generate(),
+            newOwnerKey: PublicKey::generate(),
+            currentNameOwnerKey: PublicKey::generate(),
         );
 
         self::assertInstanceOf(TransactionInstruction::class, $instruction);
-        self::assertEquals(2, $instruction->data->toArray()[0]);
+        self::assertSame(2, $instruction->data->toArray()[0]);
     }
 
     #[Test]
@@ -80,7 +77,7 @@ final class InstructionsTest extends TestCase
             space: Buffer::fromInt(2000, BufferType::INT, false),
         );
 
-        self::assertEquals(4, $instruction->data->toArray()[0]);
+        self::assertSame(4, $instruction->data->toArray()[0]);
     }
 
     #[Test]
@@ -95,6 +92,6 @@ final class InstructionsTest extends TestCase
             nameOwnerKey: $currentNameOwnerKey
         );
 
-        self::assertEquals(3, $instruction->data->toArray()[0]);
+        self::assertSame(3, $instruction->data->toArray()[0]);
     }
 }

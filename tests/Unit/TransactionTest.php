@@ -15,6 +15,7 @@ use Collectiq\SolanaPhpSdk\Util\AccountMeta;
 use Collectiq\SolanaPhpSdk\Util\Buffer;
 use Collectiq\SolanaPhpSdk\Util\CompiledInstruction;
 use Collectiq\SolanaPhpSdk\Util\MessageHeader;
+use Collectiq\SolanaPhpSdk\Util\Signer;
 use PHPUnit\Framework\Attributes\Test;
 
 final class TransactionTest extends TestCase
@@ -290,7 +291,7 @@ final class TransactionTest extends TestCase
         $expectedTransaction->serializeMessage(); // no exception
 
         $expectedTransaction->feePayer = null;
-//        $expectedTransaction->setSigners($sender->getPublicKey());
+        //        $expectedTransaction->setSigners($sender->getPublicKey());
         self::assertCount(1, $expectedTransaction->signatures);
 
         // Serializing without signatures is allowed if sigverify disabled.
@@ -313,11 +314,43 @@ final class TransactionTest extends TestCase
     #[Test]
     public function externally_signed_stake_delegate(): void
     {
-//        $authority = Keypair::fromSeed(array_pad([], 32, 1));
-//        $stake = PublicKey::fromInt(2, BufferType::INT),
-//        $recentBlockhash = PublicKey::fromInt(3, BufferType::INT),
-//        $vote = PublicKey::fromInt(4, BufferType::INT),
+        //        $authority = Keypair::fromSeed(array_pad([], 32, 1));
+        //        $stake = PublicKey::fromInt(2, BufferType::INT),
+        //        $recentBlockhash = PublicKey::fromInt(3, BufferType::INT),
+        //        $vote = PublicKey::fromInt(4, BufferType::INT),
 
         self::markTestSkipped('TODO once StakeProgram is implemented');
+    }
+
+    #[Test]
+    public function signer_external_secret_materializes_signature(): void
+    {
+        // Use a known keypair via Keypair to derive matching public + secret,
+        // then re-package the secret bytes through Util\Signer (mimicking an
+        // HSM-style external signer) and verify Transaction::sign() actually
+        // signs through that branch instead of leaving the slot null.
+        $sender = Keypair::fromSeed(array_fill(0, 32, 9));
+        $recipient = Keypair::generate()->getPublicKey();
+        $recentBlockhash = $sender->getPublicKey()->toBase58();
+
+        $signer = new Signer(
+            $sender->getPublicKey(),
+            Buffer::fromString($sender->getSecretKey()->toBinaryString()),
+        );
+
+        $transaction = new Transaction($recentBlockhash, null, $sender->getPublicKey());
+        $transaction->addInstructions(SystemProgram::transfer($sender->getPublicKey(), $recipient, 1));
+        $transaction->sign($signer);
+
+        self::assertNotNull($transaction->signatures[0]->signature);
+        self::assertSame(Transaction::SIGNATURE_LENGTH, strlen((string) $transaction->signatures[0]->signature));
+        $sig = (string) $transaction->signatures[0]->signature;
+        $pubKey = $sender->getPublicKey()->toBinaryString();
+        self::assertNotSame('', $sig);
+        self::assertNotSame('', $pubKey);
+        self::assertTrue(
+            sodium_crypto_sign_verify_detached($sig, $transaction->serializeMessage(), $pubKey),
+            'External Signer must produce a valid detached signature.',
+        );
     }
 }

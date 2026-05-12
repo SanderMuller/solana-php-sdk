@@ -1,0 +1,5 @@
+laravel: '@testbench'
+
+providers:
+  - SanderMuller\PackageBoost\PackageBoostServiceProvider
+  - Collectiq\SolanaPhpSdk\ServiceProvider

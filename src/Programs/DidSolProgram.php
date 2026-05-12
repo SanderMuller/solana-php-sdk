@@ -4,6 +4,7 @@ namespace Collectiq\SolanaPhpSdk\Programs;
 
 use Collectiq\SolanaPhpSdk\Accounts\DidData;
 use Collectiq\SolanaPhpSdk\Did\DiDUri;
+use Collectiq\SolanaPhpSdk\Enum\Network;
 use Collectiq\SolanaPhpSdk\Exceptions\SolanaPhpSdkException;
 use Collectiq\SolanaPhpSdk\PublicKey;
 use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
@@ -18,30 +19,38 @@ final class DidSolProgram implements Program
     private const string DIDSOL_DEFAULT_SEED = 'did-account';
 
     /**
-     * getDidDataAcccountInfo
+     * Fetch the on-chain account info for the DID data account associated with
+     * $base58SubjectPk. Returns the RPC `value` payload (account info dict) or
+     * null when the account does not exist.
      *
-     * @param SolanaRpcClient|string $client The RPC client or the custom RPC endpoint URL to use.
-     * @param string $base58SubjectPk The Public Key of the DID.
-     * @return string (JSON) The account info of the DID data account as it comes from the RPC
-     * @example DidSolProgram::getDidDataAcccountInfo($client, 'did:sol:3Js7k6xYQbvXv6qUYLapYV7Sptfg37Tss9GcAyVEuUqk', false);
+     * @return array<string, mixed>|null
+     * @throws SolanaPhpSdkException
      */
-    public static function getDidDataAcccountInfo($client, $base58SubjectPk)
+    public static function getDidDataAcccountInfo(SolanaRpcClient $client, string $base58SubjectPk): ?array
     {
         $pdaPublicKey = self::getDidDataAccountId($base58SubjectPk);
 
-        return $client->call('getAccountInfo', [$pdaPublicKey, ['encoding' => 'jsonParsed']])['value'];
-        // Data is always returned in base54 because it exceeds 128 bytes
+        $response = $client->call('getAccountInfo', [$pdaPublicKey, ['encoding' => 'jsonParsed']]);
+
+        if (! is_array($response)) {
+            return null;
+        }
+
+        $value = $response['value'] ?? null;
+        if (! is_array($value)) {
+            return null;
+        }
+
+        /** @var array<string, mixed> $value */
+        return $value;
     }
 
     /**
-     * getDidDataAccountId
+     * Derive the DID data account PDA for $base58SubjectPk.
      *
-     * @param string $did 'did:sol:[cluster]....'
-     * @return string The base58 encoded public key of the DID data account
      * @throws SolanaPhpSdkException
-     * @example DidSolProgram::getDidDataAccountId('did:sol:devnet:3Js7k6xYQbvXv6qUYLapYV7Sptfg37Tss9GcAyVEuUqk');
      */
-    public static function getDidDataAccountId($base58SubjectPk): string
+    public static function getDidDataAccountId(string $base58SubjectPk): string
     {
         $seeds = [
             self::DIDSOL_DEFAULT_SEED,
@@ -55,32 +64,43 @@ final class DidSolProgram implements Program
     }
 
     /**
-     * deserializeDidData
-     *
-     * @param string $dataBase64 The base64 encoded data of the DID data account
-     * @return DidData The deserialized DID data object
-     * @example DidSolProgram::deserializeDidData('TVjvjfsd7fMA/gAAAA...');
+     * Decode a base64-encoded DID data account payload into a populated
+     * {@see DidData}, replacing the raw byte array `keyData` with its base58
+     * encoding (matching the on-chain authority pubkey representation).
      */
-    public static function deserializeDidData($dataBase64)
+    public static function deserializeDidData(string $dataBase64): DidData
     {
-        $base64String = base64_decode($dataBase64);
-        $uint8Array = array_values(unpack('C*', $base64String));
+        $binary = base64_decode($dataBase64, true);
+        if ($binary === false) {
+            throw new SolanaPhpSdkException('DID data is not valid base64.');
+        }
+
+        $unpacked = unpack('C*', $binary);
+        $uint8Array = $unpacked === false ? [] : array_values($unpacked);
+
         $didData = DidData::fromBuffer($uint8Array);
 
         $keyData = $didData->keyData;
+        if (! is_array($keyData)) {
+            return $didData;
+        }
 
-        $binaryString = pack('C*', ...$keyData);
-
-        $b58 = new Base58();
-        $base58String = $b58->encode($binaryString);
-        $didData->keyData = $base58String;
+        $didData->keyData = new Base58()->encode(pack('C*', ...$keyData));
 
         return $didData;
     }
 
+    /**
+     * @return array{network: Network, base58SubjectPK: string|null, dataAccountId: string, rpcEndpoint: string}
+     * @throws SolanaPhpSdkException
+     */
     public function parse(DiDUri $did): array
     {
         $pk = $did->base58SubjectPK();
+
+        if ($pk === null) {
+            throw new SolanaPhpSdkException('DID URI is missing the subject public key.');
+        }
 
         $network = $did->toNetwork();
 

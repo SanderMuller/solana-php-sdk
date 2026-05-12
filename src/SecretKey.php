@@ -14,8 +14,9 @@ final class SecretKey extends Buffer implements HasSecretKey
 
     public function getPublicKey(): PublicKey
     {
-        $publicKey = sodium_crypto_sign_publickey_from_secretkey($this->toString());
+        $secret = $this->toString();
+        assert($secret !== '', 'SecretKey is empty.');
 
-        return PublicKey::from($publicKey);
+        return PublicKey::from(sodium_crypto_sign_publickey_from_secretkey($secret));
     }
 }

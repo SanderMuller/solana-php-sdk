@@ -1,5 +1,7 @@
-/node_modules
+# Dependencies
+composer.lock
 /vendor
+/node_modules
 auth.json
 
 # Environment
@@ -8,23 +10,32 @@ auth.json
 !.env.example
 !.env.ci
 
-# MacOS
-.DS_STORE
-
-# JS compilation
+# Logs
 npm-debug.log
 yarn-error.log
 
+# OS
+.DS_Store
+
+# Caches
+.cache
+/build
+/coverage
+
 # IDE
-.phpstorm.meta.php
-_ide_helper_models.php
 _ide_helper.php
-_ide_macros.php
-.idea/*
-!/.idea/codeStyles
+_ide_helper_models.php
+.phpstorm.meta.php
+.phpactor.json
+
+# Editors
+/.idea
 /.fleet
-/.nova
 /.vscode
+/.cursor
+/.nova
 /.zed
 
-.phpactor.json
+# Local overrides
+phpunit.xml
+phpstan.neon

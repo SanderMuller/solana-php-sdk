@@ -3,8 +3,19 @@
 namespace Collectiq\SolanaPhpSdk\Util;
 
 use Collectiq\SolanaPhpSdk\PublicKey;
+use Collectiq\SolanaPhpSdk\SecretKey;
 
-final readonly class Signer implements HasPublicKey, HasSecretKey
+/**
+ * Holder for an externally-managed signer.
+ *
+ * `getSecretKey()` returns a raw {@see Buffer} (rather than a typed
+ * {@see SecretKey}) because callers that produce
+ * `Signer` instances often hold secret material as bytes from outside the SDK
+ * (HSM exports, wallet adapters). The class therefore does **not** implement
+ * {@see HasSecretKey} — `HasSecretKey::getSecretKey(): SecretKey` is the
+ * SDK-internal contract used by `Keypair`.
+ */
+final readonly class Signer implements HasPublicKey
 {
     public function __construct(private PublicKey $publicKey, private Buffer $secretKey) {}
 

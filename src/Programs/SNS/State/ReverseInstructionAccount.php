@@ -70,11 +70,17 @@ final class ReverseInstructionAccount implements BorshSerializable
         );
     }
 
+    /**
+     * @param array<int, int> $buffer
+     */
     public static function deserialize(array $buffer): self
     {
         return Borsh::deserialize(self::SCHEMA, self::class, $buffer);
     }
 
+    /**
+     * @return array<int, int>
+     */
     public function serialize(): array
     {
         return Borsh::serialize(self::SCHEMA, $this);

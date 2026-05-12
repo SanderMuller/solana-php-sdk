@@ -25,6 +25,9 @@ final class Mint implements BorshSerializable
         ],
     ];
 
+    /**
+     * @param array<int, int> $buffer
+     */
     public static function fromBuffer(array $buffer): self
     {
         return Borsh::deserialize(self::SCHEMA, self::class, $buffer);

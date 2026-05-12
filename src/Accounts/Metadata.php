@@ -6,6 +6,14 @@ use Collectiq\SolanaPhpSdk\Borsh\Borsh;
 use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
 use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
 
+/**
+ * @property int $key
+ * @property string $updateAuthority
+ * @property string $mint
+ * @property MetadataData $data
+ * @property int $primarySaleHappened
+ * @property int $isMutable
+ */
 final class Metadata implements BorshSerializable
 {
     use IsBorshObject;
@@ -26,6 +34,9 @@ final class Metadata implements BorshSerializable
         ],
     ];
 
+    /**
+     * @param array<int, int> $buffer
+     */
     public static function fromBuffer(array $buffer): self
     {
         return Borsh::deserialize(self::SCHEMA, self::class, $buffer);

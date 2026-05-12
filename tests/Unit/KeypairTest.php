@@ -65,4 +65,34 @@ final class KeypairTest extends TestCase
 
         self::assertSame($publicKey, $valueAsString);
     }
+
+    #[Test]
+    public function it_can_sign_and_verify_messages(): void
+    {
+        // 1. Generate a new keypair
+        $keypair = Keypair::generate();
+
+        // 2. Define a message
+        $message = 'This is a test message for authentication.';
+
+        // 3. Sign the message using the Keypair method
+        $signature = $keypair->sign($message);
+
+        // 4. Verify the signature using the Keypair method (should be true)
+        $isValid = $keypair->verify($message, $signature);
+        self::assertTrue($isValid, 'Signature should be valid with correct keypair and message.');
+
+        // 5. Verify with wrong message (should be false)
+        $isInvalidMessage = $keypair->verify('This is a wrong message.', $signature);
+        self::assertFalse($isInvalidMessage, 'Signature should be invalid with incorrect message.');
+
+        // 6. Verify with wrong keypair (should be false)
+        $wrongKeypair = Keypair::generate();
+        $isInvalidKey = $wrongKeypair->verify($message, $signature);
+        self::assertFalse($isInvalidKey, 'Signature should be invalid with incorrect keypair.');
+
+        // 7. Verify with invalid signature format (optional, but good practice)
+        $isInvalidFormat = $keypair->verify($message, 'an_invalid_signature_string');
+        self::assertFalse($isInvalidFormat, 'Signature should be invalid with incorrect format.');
+    }
 }

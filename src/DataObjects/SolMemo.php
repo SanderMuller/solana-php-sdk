@@ -11,14 +11,25 @@ final readonly class SolMemo
     }
 
     /**
+     * @param array<string, mixed> $response
      * @return list<self>
      */
     public static function fromTransactionStatement(array $response): array
     {
-        return collect($response['transaction']['message']['instructions'])
-            ->filter(fn (array $instruction): bool => data_get($instruction, 'program') === 'spl-memo')
-            ->map(fn (array $instruction): self => new self(data_get($instruction, 'parsed')))
-            ->values()
-            ->all();
+        $instructions = data_get($response, 'transaction.message.instructions');
+        if (! is_array($instructions)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($instructions as $instruction) {
+            if (! is_array($instruction) || data_get($instruction, 'program') !== 'spl-memo') {
+                continue;
+            }
+
+            $out[] = new self((string) data_get($instruction, 'parsed'));
+        }
+
+        return $out;
     }
 }

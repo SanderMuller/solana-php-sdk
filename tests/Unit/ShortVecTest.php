@@ -69,13 +69,19 @@ final class ShortVecTest extends TestCase
         self::assertCount($prevLength, $array);
     }
 
+    /**
+     * @param int[] $array
+     */
     private function checkDecodedArray(array $array, int $expectedLength, int $expectedValue): void
     {
         [$value, $length] = ShortVec::decodeLength($array);
-        self::assertEquals($expectedValue, $value);
-        self::assertEquals($expectedLength, $length);
+        self::assertSame($expectedValue, $value);
+        self::assertSame($expectedLength, $length);
     }
 
+    /**
+     * @param int[] $expectedArray
+     */
     private function checkEncodedArray(array &$array, int $length, int $prevLength, array $expectedArray): void
     {
         self::assertSame(count($array), $prevLength);

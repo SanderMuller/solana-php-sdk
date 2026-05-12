@@ -50,14 +50,22 @@ final class NameRegistryStateAccount implements BorshSerializable
             throw new SNSError(SNSError::AccountDoesNotExist);
         }
 
-        $base64String = base64_decode((string) $nameAccount['data'][0]);
+        $data = $nameAccount['data'] ?? null;
+        $encoded = is_array($data) ? ($data[0] ?? null) : null;
+
+        if (! is_string($encoded) || $encoded === '') {
+            throw new SNSError(SNSError::NoAccountData);
+        }
+
+        $base64String = base64_decode($encoded, true);
+        if ($base64String === false) {
+            throw new SNSError(SNSError::NoAccountData);
+        }
+
         $dataBuffer = Buffer::fromString($base64String);
 
         $registry = self::deserialize($dataBuffer);
-
         $registry->data = $dataBuffer->slice(self::SOL_RECORD_SIG_LEN);
-        // TODO: Implement retrieveNftOwner
-        // $nftOwner = retrieveNftOwner($connection, $nameAccountKey);
 
         return [
             'registry' => $registry,

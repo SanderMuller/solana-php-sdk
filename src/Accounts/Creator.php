@@ -2,11 +2,11 @@
 
 namespace Collectiq\SolanaPhpSdk\Accounts;
 
-use Collectiq\SolanaPhpSdk\Borsh;
+use Collectiq\SolanaPhpSdk\Borsh\IsBorshDeserializable;
 
 final class Creator
 {
-    use Borsh\IsBorshDeserializable;
+    use IsBorshDeserializable;
 
     public const array SCHEMA = [
         self::class => [

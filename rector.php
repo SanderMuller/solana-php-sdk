@@ -7,11 +7,11 @@ use Rector\CodingStyle\Rector\Encapsed\EncapsedStringsToSprintfRector;
 use Rector\CodingStyle\Rector\PostInc\PostIncDecToPreIncDecRector;
 use Rector\CodingStyle\Rector\Use_\SeparateMultiUseImportsRector;
 use Rector\Config\RectorConfig;
+use Rector\DeadCode\Rector\FunctionLike\NarrowWideUnionReturnTypeRector;
 use Rector\EarlyReturn\Rector\If_\ChangeOrIfContinueToMultiContinueRector;
 use Rector\EarlyReturn\Rector\Return_\ReturnBinaryOrToEarlyReturnRector;
 use Rector\Php74\Rector\Closure\ClosureToArrowFunctionRector;
 use Rector\Php74\Rector\Property\RestoreDefaultNullToNullableTypePropertyRector;
-use Rector\Php81\Rector\Array_\FirstClassCallableRector;
 use Rector\Php82\Rector\Param\AddSensitiveParameterAttributeRector;
 use Rector\Php83\Rector\ClassMethod\AddOverrideAttributeToOverriddenMethodsRector;
 use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitSelfCallRector;
@@ -57,7 +57,10 @@ return RectorConfig::configure()
         ChangeOrIfContinueToMultiContinueRector::class,
         ClosureToArrowFunctionRector::class,
         EncapsedStringsToSprintfRector::class,
-        FirstClassCallableRector::class,
+        // Mangles generic-template returns (`@return TClass|null` →
+        // fully-qualifies `TClass` and drops `|null`) on
+        // `Borsh::deserialize()`.
+        NarrowWideUnionReturnTypeRector::class,
         PostIncDecToPreIncDecRector::class,
         PreferPHPUnitThisCallRector::class,
         PrivatizeLocalGetterToPropertyRector::class,
@@ -78,6 +81,7 @@ return RectorConfig::configure()
         codeQuality: true,
         codingStyle: true,
         typeDeclarations: true,
+        typeDeclarationDocblocks: true,
         privatization: true,
         instanceOf: true,
         earlyReturn: true,
@@ -85,5 +89,8 @@ return RectorConfig::configure()
         rectorPreset: true,
         phpunitCodeQuality: true,
     )
+    ->withAttributesSets()
+    ->withImportNames()
+    ->withFluentCallNewLine()
     ->withMemoryLimit('3G')
     ->withPhpSets(php84: true);

@@ -67,16 +67,16 @@ trait SPLTokenActions
             }
         }
 
-        if (! $account->mint->equals($mint)) {
-            throw new TokenInvalidMintError(
-                "{$account->mint->toBase58()} != {$mint->toBase58()}"
-            );
+        $accountMint = $account->mint;
+        if (! $accountMint instanceof PublicKey || ! $accountMint->equals($mint)) {
+            $found = $accountMint instanceof PublicKey ? $accountMint->toBase58() : 'null';
+            throw new TokenInvalidMintError("{$found} != {$mint->toBase58()}");
         }
 
-        if (! $account->owner->equals($owner)) {
-            throw new TokenInvalidAccountOwnerError(
-                "{$account->owner->toBase58()} != {$owner->toBase58()}"
-            );
+        $accountOwner = $account->owner;
+        if (! $accountOwner instanceof PublicKey || ! $accountOwner->equals($owner)) {
+            $found = $accountOwner instanceof PublicKey ? $accountOwner->toBase58() : 'null';
+            throw new TokenInvalidAccountOwnerError("{$found} != {$owner->toBase58()}");
         }
 
         return $account;
