@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Borsh;
+namespace SanderMuller\SolanaPhpSdk\Borsh;
 
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 /**
  * Borsh (https://borsh.io) (de)serializer with Solana-flavoured extensions
@@ -150,6 +150,7 @@ final class Borsh
         }
 
         if (is_array($fieldType) && isset($fieldType['kind'])) {
+            /** @var array<string, mixed> $fieldType */
             self::serializeOptionField($schema, $fieldType, $value, $writer);
 
             return;
@@ -234,7 +235,9 @@ final class Borsh
             throw new BorshException('Dynamic-length Borsh array expects an array value.');
         }
 
-        $writer->writeArray($value, static function (mixed $item) use ($schema, $fieldType, $writer): void {
+        /** @var array<int, mixed> $items */
+        $items = array_values($value);
+        $writer->writeArray($items, static function (mixed $item) use ($schema, $fieldType, $writer): void {
             self::serializeField(
                 schema: $schema,
                 value: $item,

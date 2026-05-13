@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs\SplToken\Instructions;
+namespace SanderMuller\SolanaPhpSdk\Programs\SplToken\Instructions;
 
 final class TokenInstruction
 {

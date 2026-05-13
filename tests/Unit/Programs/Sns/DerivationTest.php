@@ -1,11 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs\SNS;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit\Programs\SNS;
 
-use Collectiq\SolanaPhpSdk\Programs\SnsProgram;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Programs\SnsProgram;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
 
 final class DerivationTest extends TestCase
 {
@@ -55,7 +54,6 @@ final class DerivationTest extends TestCase
         $sns = new SnsProgram();
         foreach ($this->items as $item) {
             $result = $sns->getDomainKeySync($item['domain']);
-            self::assertInstanceOf(PublicKey::class, $result['pubkey']);
             self::assertSame($item['address'], $result['pubkey']->toBase58());
         }
     }
@@ -66,7 +64,6 @@ final class DerivationTest extends TestCase
         $sns = new SnsProgram();
         foreach ($this->items as $item) {
             $result = $sns->getReverseKeySync($item['domain']);
-            self::assertInstanceOf(PublicKey::class, $result);
             self::assertTrue($result->toBase58() === 'DqgmWxe2PPrfy45Ja3UPyFGwcbRzkRuwXt3NyxjX8krg' ||
             $result->toBase58() === 'BrRErziYEA9oBoDyYrdVF9p6Gs1QtdpaZ6AQpaybeZgf');
         }

@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit;
 
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
-use Collectiq\SolanaPhpSdk\TransactionInstruction;
-use Collectiq\SolanaPhpSdk\Util\AccountMeta;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
+use SanderMuller\SolanaPhpSdk\TransactionInstruction;
+use SanderMuller\SolanaPhpSdk\Util\AccountMeta;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 final class TransactionInstructionTest extends TestCase
 {

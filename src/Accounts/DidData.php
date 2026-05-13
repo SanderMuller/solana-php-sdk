@@ -1,18 +1,24 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Accounts;
+namespace SanderMuller\SolanaPhpSdk\Accounts;
 
-use Collectiq\SolanaPhpSdk\Accounts\Did\ServiceStruct;
-use Collectiq\SolanaPhpSdk\Accounts\Did\VerificationMethodStruct;
-use Collectiq\SolanaPhpSdk\Borsh\Borsh;
-use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
-use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
+use SanderMuller\SolanaPhpSdk\Accounts\Did\ServiceStruct;
+use SanderMuller\SolanaPhpSdk\Accounts\Did\VerificationMethodStruct;
+use SanderMuller\SolanaPhpSdk\Borsh\Borsh;
+use SanderMuller\SolanaPhpSdk\Borsh\BorshSerializable;
+use SanderMuller\SolanaPhpSdk\Borsh\IsBorshObject;
 
 final class DidData implements BorshSerializable
 {
     use IsBorshObject;
 
-    public $keyData;
+    /**
+     * Authority pubkey bytes — populated by Borsh deserialisation as a u8[]
+     * byte array, then re-encoded to base58 by {@see Programs\DidSolProgram::deserializeDidData()}.
+     *
+     * @var array<int, int>|string|null
+     */
+    public array|string|null $keyData = null;
 
     private const array SCHEMA = [
         VerificationMethodStruct::class => VerificationMethodStruct::SCHEMA[VerificationMethodStruct::class],

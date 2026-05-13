@@ -1,22 +1,22 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit;
 
-use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferType;
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\Message;
-use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Support\PublicKeyCollection;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
-use Collectiq\SolanaPhpSdk\Transaction;
-use Collectiq\SolanaPhpSdk\TransactionInstruction;
-use Collectiq\SolanaPhpSdk\Util\AccountMeta;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
-use Collectiq\SolanaPhpSdk\Util\CompiledInstruction;
-use Collectiq\SolanaPhpSdk\Util\MessageHeader;
-use Collectiq\SolanaPhpSdk\Util\Signer;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Enum\Buffer\BufferType;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Message;
+use SanderMuller\SolanaPhpSdk\Programs\SystemProgram;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Support\PublicKeyCollection;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
+use SanderMuller\SolanaPhpSdk\Transaction;
+use SanderMuller\SolanaPhpSdk\TransactionInstruction;
+use SanderMuller\SolanaPhpSdk\Util\AccountMeta;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Util\CompiledInstruction;
+use SanderMuller\SolanaPhpSdk\Util\MessageHeader;
+use SanderMuller\SolanaPhpSdk\Util\Signer;
 
 final class TransactionTest extends TestCase
 {
@@ -342,11 +342,10 @@ final class TransactionTest extends TestCase
         $transaction->addInstructions(SystemProgram::transfer($sender->getPublicKey(), $recipient, 1));
         $transaction->sign($signer);
 
-        self::assertNotNull($transaction->signatures[0]->signature);
-        self::assertSame(Transaction::SIGNATURE_LENGTH, strlen((string) $transaction->signatures[0]->signature));
-        $sig = (string) $transaction->signatures[0]->signature;
+        $sig = $transaction->signatures[0]->signature;
+        self::assertNotNull($sig);
+        self::assertSame(Transaction::SIGNATURE_LENGTH, strlen($sig));
         $pubKey = $sender->getPublicKey()->toBinaryString();
-        self::assertNotSame('', $sig);
         self::assertNotSame('', $pubKey);
         self::assertTrue(
             sodium_crypto_sign_verify_detached($sig, $transaction->serializeMessage(), $pubKey),

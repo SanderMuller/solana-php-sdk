@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "collectiq/solana-php-sdk",
+    "name": "sandermuller/solana-php-sdk",
     "description": "PHP SDK for Solana — keypairs, transactions, RPC client, and program bindings (SPL Token, SNS, System).",
     "keywords": [
         "blockchain",
@@ -12,13 +12,13 @@
         "sns",
         "web3"
     ],
-    "homepage": "https://github.com/collectiq/solana-php-sdk",
+    "homepage": "https://github.com/sandermuller/solana-php-sdk",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
             "name": "Sander Muller",
-            "email": "sander@hihaho.com",
+            "email": "github@scode.nl",
             "role": "Developer"
         }
     ],
@@ -48,16 +48,18 @@
         "rector/rector": "^2.0",
         "rector/swiss-knife": "^2.1",
         "rector/type-perfect": "^2.0",
-        "roave/security-advisories": "dev-latest",
-        "sandermuller/package-boost": "^0.14.0",
+        "sandermuller/package-boost": "^0.15.0",
         "spaze/phpstan-disallowed-calls": "^4.10",
         "symplify/phpstan-extensions": "^12.0",
         "tomasvotruba/cognitive-complexity": "^1.1",
         "tomasvotruba/type-coverage": "^2.1"
     },
+    "suggest": {
+        "ext-zstd": "Required to decode `base64+zstd` account-data payloads from getAccountInfo / getProgramAccounts when callers request the compressed encoding."
+    },
     "autoload": {
         "psr-4": {
-            "Collectiq\\SolanaPhpSdk\\": "src/"
+            "SanderMuller\\SolanaPhpSdk\\": "src/"
         },
         "files": [
             "src/Bootstrap.php"
@@ -65,7 +67,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Collectiq\\SolanaPhpSdk\\Tests\\": "tests/"
+            "SanderMuller\\SolanaPhpSdk\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -86,7 +88,7 @@
             "@composer format",
             "vendor/bin/swiss-knife finalize-classes src",
             "vendor/bin/swiss-knife privatize-constants src",
-            "vendor/bin/swiss-knife namespace-to-psr-4 src --namespace-root \"Collectiq\\SolanaPhpSdk\\\"",
+            "vendor/bin/swiss-knife namespace-to-psr-4 src --namespace-root \"SanderMuller\\SolanaPhpSdk\\\"",
             "@composer rector"
         ],
         "qa": [
@@ -98,7 +100,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Collectiq\\SolanaPhpSdk\\ServiceProvider"
+                "SanderMuller\\SolanaPhpSdk\\ServiceProvider"
             ]
         }
     },

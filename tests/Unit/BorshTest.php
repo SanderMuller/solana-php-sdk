@@ -1,19 +1,22 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit;
 
-use Collectiq\SolanaPhpSdk\Borsh\Borsh;
-use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
-use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Borsh\Borsh;
+use SanderMuller\SolanaPhpSdk\Borsh\BorshSerializable;
+use SanderMuller\SolanaPhpSdk\Borsh\IsBorshObject;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
 
-class TestObject implements BorshSerializable
+/**
+ * @property mixed $x
+ */
+final class TestObject implements BorshSerializable
 {
     use IsBorshObject;
 }
 
-class TestWithPrivateVariable implements BorshSerializable
+final class TestWithPrivateVariable implements BorshSerializable
 {
     use IsBorshObject;
 
@@ -30,7 +33,7 @@ class TestWithPrivateVariable implements BorshSerializable
     }
 }
 
-class TestWithConstructorParameters implements BorshSerializable
+final class TestWithConstructorParameters implements BorshSerializable
 {
     use IsBorshObject;
 
@@ -43,7 +46,7 @@ class TestWithConstructorParameters implements BorshSerializable
 
     public static function borshConstructor(): static
     {
-        return new static(null);
+        return new self(null);
     }
 }
 

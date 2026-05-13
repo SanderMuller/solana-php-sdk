@@ -44,6 +44,13 @@ parameters:
 
     treatPhpDocTypesAsCertain: false
 
+    excludePaths:
+        # Optional opt-in test helper — defines `expect()->extend(...)` closures
+        # whose `$this` binds to `Pest\Expectation` at runtime. Pest is a dev
+        # optional dependency; the file is dormant when Pest is absent. PHPStan
+        # cannot reason about Pest's expectation-binding DSL.
+        - src/Testing/PestExpectations.php
+
     ignoreErrors:
         -
             identifier: trait.unused
@@ -82,5 +89,13 @@ parameters:
         -
             identifier: missingType.iterableValue
             path: src/VersionedTransaction.php
+            reportUnmatched: false
+
+        # Borsh's (de)serialiser is schema-driven: field/variant names come from
+        # the schema at runtime, so dynamic property access is intrinsic to the
+        # design and not a refactor candidate.
+        -
+            identifier: property.dynamicName
+            path: src/Borsh/Borsh.php
             reportUnmatched: false
 

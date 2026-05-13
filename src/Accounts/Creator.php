@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Accounts;
+namespace SanderMuller\SolanaPhpSdk\Accounts;
 
-use Collectiq\SolanaPhpSdk\Borsh\IsBorshDeserializable;
+use SanderMuller\SolanaPhpSdk\Borsh\IsBorshDeserializable;
 
 final class Creator
 {

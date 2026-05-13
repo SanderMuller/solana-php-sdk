@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit\Programs;
 
-use Collectiq\SolanaPhpSdk\Programs\ComputeBudgetProgram;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Programs\ComputeBudgetProgram;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
 
 final class ComputeBudgetProgramTest extends TestCase
 {

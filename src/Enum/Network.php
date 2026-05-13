@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Enum;
+namespace SanderMuller\SolanaPhpSdk\Enum;
 
 /**
  * @see https://solana.com/docs/core/clusters#on-a-high-level

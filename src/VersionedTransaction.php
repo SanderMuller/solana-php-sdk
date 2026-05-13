@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk;
+namespace SanderMuller\SolanaPhpSdk;
 
-use Collectiq\SolanaPhpSdk\Exceptions\GenericException;
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
-use Collectiq\SolanaPhpSdk\Util\ShortVec;
-use Collectiq\SolanaPhpSdk\Util\Signer;
+use SanderMuller\SolanaPhpSdk\Exceptions\GenericException;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Util\ShortVec;
+use SanderMuller\SolanaPhpSdk\Util\Signer;
 
 /**
  * Envelope around a {@see VersionedMessage} (legacy or v0) with detached

@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit\Anchor;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit\Anchor;
 
-use Collectiq\SolanaPhpSdk\Anchor\AnchorIdl;
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Anchor\AnchorIdl;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
 
 /**
  * Drives `AnchorIdl` against `tests/Fixtures/anchor_idl_minimal.json`, a

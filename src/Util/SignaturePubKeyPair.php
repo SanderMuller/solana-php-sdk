@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Util;
+namespace SanderMuller\SolanaPhpSdk\Util;
 
-use Collectiq\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\PublicKey;
 
 final class SignaturePubKeyPair implements HasPublicKey
 {

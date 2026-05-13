@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit\Programs;
 
-use Collectiq\SolanaPhpSdk\Programs\SplTokenProgram;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Programs\SplTokenProgram;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
 
 final class SplProgramTest extends TestCase
 {

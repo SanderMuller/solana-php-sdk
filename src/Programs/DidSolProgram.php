@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs;
+namespace SanderMuller\SolanaPhpSdk\Programs;
 
-use Collectiq\SolanaPhpSdk\Accounts\DidData;
-use Collectiq\SolanaPhpSdk\Did\DiDUri;
-use Collectiq\SolanaPhpSdk\Enum\Network;
-use Collectiq\SolanaPhpSdk\Exceptions\SolanaPhpSdkException;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
+use SanderMuller\SolanaPhpSdk\Accounts\DidData;
+use SanderMuller\SolanaPhpSdk\Did\DiDUri;
+use SanderMuller\SolanaPhpSdk\Enum\Network;
+use SanderMuller\SolanaPhpSdk\Exceptions\SolanaPhpSdkException;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Services\SolanaRpcClient;
 use StephenHill\Base58;
 
 final class DidSolProgram implements Program
@@ -76,6 +76,7 @@ final class DidSolProgram implements Program
         }
 
         $unpacked = unpack('C*', $binary);
+        /** @var array<int, int> $uint8Array */
         $uint8Array = $unpacked === false ? [] : array_values($unpacked);
 
         $didData = DidData::fromBuffer($uint8Array);

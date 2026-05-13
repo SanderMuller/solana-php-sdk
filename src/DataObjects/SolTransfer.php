@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\DataObjects;
+namespace SanderMuller\SolanaPhpSdk\DataObjects;
 
 final readonly class SolTransfer
 {

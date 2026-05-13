@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\DataObjects;
+namespace SanderMuller\SolanaPhpSdk\DataObjects;
 
 use Illuminate\Support\Number;
 

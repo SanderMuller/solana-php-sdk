@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit;
 
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 final class KeypairTest extends TestCase
 {

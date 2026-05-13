@@ -1,16 +1,16 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit;
 
-use Collectiq\SolanaPhpSdk\Exceptions\MethodNotFoundException;
-use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Exceptions\MethodNotFoundException;
+use SanderMuller\SolanaPhpSdk\Services\SolanaRpcClient;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
 
 final class SolanaRpcClientTest extends TestCase
 {
     #[Test]
-    public function generates_random_key(): void
+    public function generates_a_fresh_nonce_per_call(): void
     {
         $client = $this->assembleClient('POST', ['error' => [
             'code' => SolanaRpcClient::ERROR_CODE_METHOD_NOT_FOUND,
@@ -20,16 +20,7 @@ final class SolanaRpcClientTest extends TestCase
         $rpc1 = $client->buildRpc('doStuff', []);
         $rpc2 = $client->buildRpc('doStuff', []);
 
-        $client = $this->assembleClient('POST', ['result' => [
-            'data' => 'SOMEDATABASE64ORJSON',
-        ]]);
-
-        $rpc3 = $client->buildRpc('doStuff', []);
-        $rpc4 = $client->buildRpc('doStuff', []);
-
-        self::assertSame($rpc1['id'], $rpc2['id']);
-        self::assertSame($rpc3['id'], $rpc4['id']);
-        self::assertNotSame($rpc1['id'], $rpc4['id']);
+        self::assertNotSame($rpc1['id'], $rpc2['id']);
     }
 
     #[Test]

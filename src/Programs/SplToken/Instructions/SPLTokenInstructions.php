@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs\SplToken\Instructions;
+namespace SanderMuller\SolanaPhpSdk\Programs\SplToken\Instructions;
 
-use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\TransactionInstruction;
-use Collectiq\SolanaPhpSdk\Util\AccountMeta;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Programs\SystemProgram;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\TransactionInstruction;
+use SanderMuller\SolanaPhpSdk\Util\AccountMeta;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 /**
  * Builders for SPL Token program instructions. Layouts mirror

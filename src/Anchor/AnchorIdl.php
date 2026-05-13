@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Anchor;
+namespace SanderMuller\SolanaPhpSdk\Anchor;
 
-use Collectiq\SolanaPhpSdk\Exceptions\GenericException;
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
 use JsonException;
+use SanderMuller\SolanaPhpSdk\Exceptions\GenericException;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
 
 /**
  * Anchor IDL (Interface Definition Language) — runtime representation of a
@@ -17,7 +17,7 @@ use JsonException;
  *   $idl = AnchorIdl::fromFile(__DIR__ . '/my_program.json');
  *   $ix  = $idl->instruction('initialize')->build(
  *       accounts: ['state' => $state, 'user' => $user],
- *       args:     ['amount' => 1_000_000, 'name' => 'collectiq'],
+ *       args:     ['amount' => 1_000_000, 'name' => 'sandermuller'],
  *   );
  *
  * The returned `TransactionInstruction` can be fed into `Transaction` or

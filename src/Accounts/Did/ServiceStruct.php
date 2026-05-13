@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Accounts\Did;
+namespace SanderMuller\SolanaPhpSdk\Accounts\Did;
 
-use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
-use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
+use SanderMuller\SolanaPhpSdk\Borsh\BorshSerializable;
+use SanderMuller\SolanaPhpSdk\Borsh\IsBorshObject;
 
 final class ServiceStruct implements BorshSerializable
 {

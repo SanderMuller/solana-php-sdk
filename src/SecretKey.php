@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk;
+namespace SanderMuller\SolanaPhpSdk;
 
-use Collectiq\SolanaPhpSdk\Util\Buffer;
-use Collectiq\SolanaPhpSdk\Util\HasSecretKey;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Util\HasSecretKey;
 
 final class SecretKey extends Buffer implements HasSecretKey
 {

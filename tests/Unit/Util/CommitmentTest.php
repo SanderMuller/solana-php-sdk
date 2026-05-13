@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit\Util;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit\Util;
 
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
-use Collectiq\SolanaPhpSdk\Util\Commitment;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
+use SanderMuller\SolanaPhpSdk\Util\Commitment;
 
 final class CommitmentTest extends TestCase
 {

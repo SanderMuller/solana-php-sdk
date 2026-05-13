@@ -7,8 +7,52 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- **Namespace + package rename: `Collectiq\SolanaPhpSdk` → `SanderMuller\SolanaPhpSdk`.**
+  Composer name moves from `collectiq/solana-php-sdk` to
+  `sandermuller/solana-php-sdk`. See `UPGRADING.md` for the migration steps.
 - **License: `proprietary` → `MIT`.** Package is now open source. `LICENSE`,
   `composer.json`, and `README.md` updated accordingly.
+
+### Added
+- `Programs\MemoProgram` — SPL Memo v2 / v1 instruction builder.
+- `Programs\AddressLookupTableProgram` — `createLookupTable` /
+  `extendLookupTable` / `freezeLookupTable` / `deactivateLookupTable` /
+  `closeLookupTable` plus canonical PDA derivation. Returns the new
+  `DataObjects\CreateLookupTableResult` DTO from `createLookupTable()`.
+- `Programs\StakeProgram` — initialize, authorize, delegate, deactivate,
+  split, withdraw, merge.
+- `Programs\VoteProgram` — authorize, withdraw, updateValidatorIdentity,
+  updateCommission (operator-facing subset).
+- `Programs\Token2022Program` — full SPL-Token-instruction parity against
+  the Token-2022 program id (separate ATA derivation included).
+- `Util\PriorityFee` — `estimate()` percentile sampler over
+  `getRecentPrioritizationFees` + `buildInstructions()` helper emitting
+  the `setComputeUnitLimit` + `setComputeUnitPrice` pair.
+- `TransactionBuilder` — fluent, sanitize-safe builder that catches missing
+  fee payer, missing blockhash, conflicting `isSigner` flags, and signer
+  accounts without a matching keypair before the RPC round-trip.
+- `Contracts\MessageSigner` — interface for KMS / HSM / hardware-wallet
+  signers. Wraps Ed25519 detached-signing through a single
+  `signMessage(string): string` method. `Signing\InMemoryMessageSigner`
+  ships as the local adapter; hosts implement custom backends.
+- `Connection::sendAndConfirmTransaction()` + versioned variant — one-shot
+  send + blockhash-expiry-aware poll. `Connection::latestBlockhash()`,
+  `Connection::accountInfo()`, `Connection::multipleAccounts()`,
+  `Connection::programAccounts()` — typed DTO companions to the raw RPC
+  helpers.
+- `DataObjects\BlockhashInfo`, `AccountInfo`, `ProgramAccount`,
+  `CreateLookupTableResult`, `GpaFilter` — typed wrappers + filter
+  builders for the most-used RPC return shapes.
+- `Exceptions\BlockhashExpiredException`,
+  `ConfirmationTimeoutException`, `TransactionFailedOnChainException`,
+  `UnsanitizedTransactionException` — typed exceptions carrying the
+  signature and on-chain `err` payload so callers can `catch` by intent
+  instead of grepping messages.
+- `Enum\Encoding`, `StakeAuthorize`, `VoteAuthorize` — replace magic
+  ints / strings. Legacy `int` arguments still accepted.
+- `SolanaPubSubClient::enableAutoReconnect()` — exponential-backoff
+  reconnect-on-drop with automatic resubscribe of every active
+  subscription. `maxRetries: 0` retries forever.
 
 ### Added
 - `PublicKey::verify()` for Ed25519 signature verification.

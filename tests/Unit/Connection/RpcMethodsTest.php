@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit\Connection;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit\Connection;
 
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
-use Collectiq\SolanaPhpSdk\Util\Commitment;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
+use SanderMuller\SolanaPhpSdk\Util\Commitment;
 
 /**
  * Smoke-tests for each typed JSON-RPC wrapper on {@see Connection}. Mocks the

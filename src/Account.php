@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk;
+namespace SanderMuller\SolanaPhpSdk;
 
-use Collectiq\SolanaPhpSdk\Util\Buffer;
-use Collectiq\SolanaPhpSdk\Util\HasPublicKey;
-use Collectiq\SolanaPhpSdk\Util\HasSecretKey;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Util\HasPublicKey;
+use SanderMuller\SolanaPhpSdk\Util\HasSecretKey;
 
 final readonly class Account implements HasPublicKey, HasSecretKey
 {
@@ -15,7 +15,7 @@ final readonly class Account implements HasPublicKey, HasSecretKey
      */
     public function __construct(array|Buffer|null $secretKey = null)
     {
-        if ($secretKey) {
+        if ($secretKey instanceof Buffer || (is_array($secretKey) && $secretKey !== [])) {
             $this->keypair = Keypair::fromSecretKey(
                 Buffer::from($secretKey)->toString()
             );

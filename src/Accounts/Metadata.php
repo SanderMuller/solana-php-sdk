@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Accounts;
+namespace SanderMuller\SolanaPhpSdk\Accounts;
 
-use Collectiq\SolanaPhpSdk\Borsh\Borsh;
-use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
-use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
+use SanderMuller\SolanaPhpSdk\Borsh\Borsh;
+use SanderMuller\SolanaPhpSdk\Borsh\BorshSerializable;
+use SanderMuller\SolanaPhpSdk\Borsh\IsBorshObject;
 
 /**
  * @property int $key

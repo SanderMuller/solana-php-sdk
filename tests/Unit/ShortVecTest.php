@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit;
 
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
-use Collectiq\SolanaPhpSdk\Util\ShortVec;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
+use SanderMuller\SolanaPhpSdk\Util\ShortVec;
 
 final class ShortVecTest extends TestCase
 {
@@ -70,7 +70,7 @@ final class ShortVecTest extends TestCase
     }
 
     /**
-     * @param int[] $array
+     * @param array<int, int> $array
      */
     private function checkDecodedArray(array $array, int $expectedLength, int $expectedValue): void
     {

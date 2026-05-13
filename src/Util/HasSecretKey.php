@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Util;
+namespace SanderMuller\SolanaPhpSdk\Util;
 
-use Collectiq\SolanaPhpSdk\SecretKey;
+use SanderMuller\SolanaPhpSdk\SecretKey;
 
 interface HasSecretKey
 {

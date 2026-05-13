@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Enum\Buffer;
+namespace SanderMuller\SolanaPhpSdk\Enum\Buffer;
 
 enum BufferType: string
 {

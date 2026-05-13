@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit\Programs;
 
-use Collectiq\SolanaPhpSdk\Programs\DidSolProgram;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Programs\DidSolProgram;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
 
 final class DidSolProgramTest extends TestCase
 {
@@ -24,7 +24,7 @@ final class DidSolProgramTest extends TestCase
         $base64Data = self::DID_DATA;
         $didData = DidSolProgram::deserializeDidData($base64Data);
 
-        self::assertEquals(self::DID_SUBJECT_PK, $didData->keyData);
+        self::assertSame(self::DID_SUBJECT_PK, $didData->keyData);
 
     }
 

@@ -1,25 +1,29 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs\SNS;
+namespace SanderMuller\SolanaPhpSdk\Programs\SNS;
 
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\Exceptions\SNSError;
-use Collectiq\SolanaPhpSdk\Programs\SNS\State\NameRegistryStateAccount;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Exceptions\SNSError;
+use SanderMuller\SolanaPhpSdk\Programs\SNS\State\NameRegistryStateAccount;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 trait Utils
 {
     /**
-     * SNS configuration map loaded from `Constants/config.json`. Known keys
-     * include `NAME_PROGRAM_ID`, `REGISTER_PROGRAM_ID`, `ROOT_DOMAIN_ACCOUNT`,
-     * `REVERSE_LOOKUP_CLASS`, `SYSVAR_RENT_PUBKEY`, and `HASH_PREFIX`. The
-     * shape stays open (`array<string, mixed>`) so the JSON file can carry
-     * additional entries without breaking the constructor.
+     * SNS configuration map loaded from `Constants/config.json`.
+     * `loadConstants()` validates that the six required keys exist as strings.
      *
-     * @var array<string, mixed>
+     * @var array{
+     *     NAME_PROGRAM_ID: string,
+     *     REGISTER_PROGRAM_ID: string,
+     *     ROOT_DOMAIN_ACCOUNT: string,
+     *     REVERSE_LOOKUP_CLASS: string,
+     *     SYSVAR_RENT_PUBKEY: string,
+     *     HASH_PREFIX: string,
+     * }
      */
     public array $config;
 
@@ -65,7 +69,8 @@ trait Utils
 
     public function getHashedNameSync(string $name): Buffer
     {
-        $input = ((string) $this->config['HASH_PREFIX']) . $name;
+        $prefix = $this->config['HASH_PREFIX'] ?? '';
+        $input = (is_string($prefix) ? $prefix : '') . $name;
 
         $hash = hash('sha256', Buffer::fromString($input)->toString(), true);
 
@@ -129,11 +134,11 @@ trait Utils
         }
 
         $unpacked = unpack('V', substr($data, 0, 4));
-        if ($unpacked === false || ! isset($unpacked[1])) {
+        if ($unpacked === false || ! isset($unpacked[1]) || ! is_int($unpacked[1])) {
             return null;
         }
 
-        return substr($data, 4, (int) $unpacked[1]);
+        return substr($data, 4, $unpacked[1]);
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Util;
+namespace SanderMuller\SolanaPhpSdk\Util;
 
 final class ConfirmOptions
 {

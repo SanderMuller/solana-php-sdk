@@ -1,15 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Did;
+namespace SanderMuller\SolanaPhpSdk\Did;
 
-use Collectiq\SolanaPhpSdk\Enum\Network;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Stringable;
 use Illuminate\Support\Uri;
 use JsonSerializable;
+use SanderMuller\SolanaPhpSdk\Enum\Network;
 
-final readonly class DiDUri implements \Collectiq\SolanaPhpSdk\Util\Stringable, JsonSerializable
+final readonly class DiDUri implements \SanderMuller\SolanaPhpSdk\Util\Stringable, JsonSerializable
 {
     /**
      * DID scheme.
@@ -119,7 +119,9 @@ final readonly class DiDUri implements \Collectiq\SolanaPhpSdk\Util\Stringable, 
         }
 
         if ($this->ids->count() === 4) {
-            return Network::tryFrom($this->ids->offsetGet(2)) ?? Network::MAINNET;
+            $cluster = $this->ids->offsetGet(2);
+
+            return is_string($cluster) ? (Network::tryFrom($cluster) ?? Network::MAINNET) : Network::MAINNET;
         }
 
         return Network::MAINNET;

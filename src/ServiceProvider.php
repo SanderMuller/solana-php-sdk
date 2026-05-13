@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk;
+namespace SanderMuller\SolanaPhpSdk;
 
 final class ServiceProvider extends \Illuminate\Support\ServiceProvider
 {

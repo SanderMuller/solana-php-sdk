@@ -1,20 +1,20 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk;
+namespace SanderMuller\SolanaPhpSdk;
 
-use Collectiq\SolanaPhpSdk\Exceptions\GenericException;
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\Support\PublicKeyCollection;
-use Collectiq\SolanaPhpSdk\Util\AccountMeta;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
-use Collectiq\SolanaPhpSdk\Util\CompiledInstruction;
-use Collectiq\SolanaPhpSdk\Util\HasPublicKey;
-use Collectiq\SolanaPhpSdk\Util\MessageHeader;
-use Collectiq\SolanaPhpSdk\Util\NonceInformation;
-use Collectiq\SolanaPhpSdk\Util\ShortVec;
-use Collectiq\SolanaPhpSdk\Util\SignaturePubKeyPair;
-use Collectiq\SolanaPhpSdk\Util\Signer;
 use Deprecated;
+use SanderMuller\SolanaPhpSdk\Exceptions\GenericException;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Support\PublicKeyCollection;
+use SanderMuller\SolanaPhpSdk\Util\AccountMeta;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Util\CompiledInstruction;
+use SanderMuller\SolanaPhpSdk\Util\HasPublicKey;
+use SanderMuller\SolanaPhpSdk\Util\MessageHeader;
+use SanderMuller\SolanaPhpSdk\Util\NonceInformation;
+use SanderMuller\SolanaPhpSdk\Util\ShortVec;
+use SanderMuller\SolanaPhpSdk\Util\SignaturePubKeyPair;
+use SanderMuller\SolanaPhpSdk\Util\Signer;
 use SodiumException;
 
 final class Transaction
@@ -259,13 +259,13 @@ final class Transaction
 
         foreach ($uniqueMetas as $accountMeta) {
             if ($accountMeta->isSigner) {
-                $signedKeys[] = $accountMeta->getPublicKey();
+                $signedKeys->push($accountMeta->getPublicKey());
                 $numRequiredSignatures++;
                 if (! $accountMeta->isWritable) {
                     $numReadonlySignedAccounts++;
                 }
             } else {
-                $unsignedKeys[] = $accountMeta->getPublicKey();
+                $unsignedKeys->push($accountMeta->getPublicKey());
                 if (! $accountMeta->isWritable) {
                     $numReadonlyUnsignedAccounts++;
                 }

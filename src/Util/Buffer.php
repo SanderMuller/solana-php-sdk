@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Util;
+namespace SanderMuller\SolanaPhpSdk\Util;
 
-use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferFormat;
-use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferType;
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\PublicKey;
 use Countable;
 use Illuminate\Contracts\Support\Arrayable;
+use SanderMuller\SolanaPhpSdk\Enum\Buffer\BufferFormat;
+use SanderMuller\SolanaPhpSdk\Enum\Buffer\BufferType;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\PublicKey;
 use SplFixedArray;
 use StephenHill\Base58;
 use Stringable;

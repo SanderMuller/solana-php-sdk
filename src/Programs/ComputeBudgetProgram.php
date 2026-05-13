@@ -1,10 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs;
+namespace SanderMuller\SolanaPhpSdk\Programs;
 
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\TransactionInstruction;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Fees\AutoComputeBudget;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\TransactionInstruction;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 /**
  * Builder for ComputeBudget program instructions.
@@ -32,6 +33,31 @@ final class ComputeBudgetProgram
     public static function programId(): PublicKey
     {
         return PublicKey::from(self::PROGRAM_ID);
+    }
+
+    /**
+     * True when the instruction targets ComputeBudget and its opcode is
+     * `setComputeUnitLimit` or `setComputeUnitPrice` — the two
+     * instructions {@see AutoComputeBudget}
+     * auto-manages. `requestHeapFrame` (1) and
+     * `setLoadedAccountsDataSizeLimit` (4) return false so caller-authored
+     * versions of those survive auto-budget injection.
+     */
+    public static function isManagedBudgetInstruction(TransactionInstruction $ix): bool
+    {
+        if ($ix->programId->toBase58() !== self::PROGRAM_ID) {
+            return false;
+        }
+
+        $bytes = $ix->data->toArray();
+        if ($bytes === []) {
+            return false;
+        }
+
+        $opcode = $bytes[0];
+
+        return $opcode === self::IX_SET_COMPUTE_UNIT_LIMIT
+            || $opcode === self::IX_SET_COMPUTE_UNIT_PRICE;
     }
 
     /**

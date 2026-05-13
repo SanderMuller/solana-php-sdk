@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Anchor;
+namespace SanderMuller\SolanaPhpSdk\Anchor;
 
-use Collectiq\SolanaPhpSdk\Borsh\BinaryWriter;
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Borsh\BinaryWriter;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\PublicKey;
 
 /**
  * Encodes a single IDL-typed value into the supplied `BinaryWriter` using

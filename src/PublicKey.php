@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk;
+namespace SanderMuller\SolanaPhpSdk;
 
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\Exceptions\SolanaPhpSdkException;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
-use Collectiq\SolanaPhpSdk\Util\HasPublicKey;
-use Collectiq\SolanaPhpSdk\Util\Stringable;
 use ParagonIE_Sodium_Compat;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Exceptions\SolanaPhpSdkException;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Util\HasPublicKey;
+use SanderMuller\SolanaPhpSdk\Util\Stringable;
 use SodiumException;
 use Throwable;
 
@@ -231,6 +231,11 @@ final class PublicKey implements HasPublicKey, Stringable
 
             throw new InputValidationException("Invalid signature length. Expected {$expected}. Found: {$length}");
         }
+
+        // $signature has exactly SIGNATURE_LENGTH (64) bytes by the check above,
+        // so it is non-empty by construction — the assertion here just gives
+        // PHPStan a non-empty-string fact at the libsodium call site.
+        assert($signature !== '', 'Signature must be non-empty at this point.');
 
         $public = $this->toBinaryString();
         assert($public !== '', 'PublicKey produced an empty binary string.');

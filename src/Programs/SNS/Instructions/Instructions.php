@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs\SNS\Instructions;
+namespace SanderMuller\SolanaPhpSdk\Programs\SNS\Instructions;
 
-use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferType;
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\TransactionInstruction;
-use Collectiq\SolanaPhpSdk\Util\AccountMeta;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Enum\Buffer\BufferType;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\TransactionInstruction;
+use SanderMuller\SolanaPhpSdk\Util\AccountMeta;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 trait Instructions
 {

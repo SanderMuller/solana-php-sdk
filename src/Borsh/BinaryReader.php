@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Borsh;
+namespace SanderMuller\SolanaPhpSdk\Borsh;
 
 use Closure;
-use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferType;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Enum\Buffer\BufferType;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 final class BinaryReader
 {
@@ -58,7 +58,7 @@ final class BinaryReader
         $value = $this->buffer->slice($this->offset, $length, $datatype, false)->value();
         $this->offset += $length;
 
-        return (int) $value;
+        return is_int($value) ? $value : 0;
     }
 
     private function readSignedInt(int $length, BufferType $datatype): int
@@ -66,7 +66,7 @@ final class BinaryReader
         $value = $this->buffer->slice($this->offset, $length, $datatype, true)->value();
         $this->offset += $length;
 
-        return (int) $value;
+        return is_int($value) ? $value : 0;
     }
 
     public function readF32(): float
@@ -74,7 +74,7 @@ final class BinaryReader
         $value = $this->buffer->slice($this->offset, 4, BufferType::FLOAT, true)->value();
         $this->offset += 4;
 
-        return (float) $value;
+        return is_numeric($value) ? (float) $value : 0.0;
     }
 
     public function readF64(): float
@@ -82,7 +82,7 @@ final class BinaryReader
         $value = $this->buffer->slice($this->offset, 8, BufferType::FLOAT, true)->value();
         $this->offset += 8;
 
-        return (float) $value;
+        return is_numeric($value) ? (float) $value : 0.0;
     }
 
     /**

@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs;
+namespace SanderMuller\SolanaPhpSdk\Programs;
 
-use Collectiq\SolanaPhpSdk\Exceptions\TokenOwnerOffCurveError;
-use Collectiq\SolanaPhpSdk\Programs\SplToken\Actions\SPLTokenActions;
-use Collectiq\SolanaPhpSdk\Programs\SplToken\Instructions\SPLTokenInstructions;
-use Collectiq\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Programs\SplToken\Actions\SPLTokenActions;
+use SanderMuller\SolanaPhpSdk\Programs\SplToken\Instructions\SPLTokenInstructions;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Util\Ata;
 
 final class SplTokenProgram implements Program
 {
@@ -37,24 +37,12 @@ final class SplTokenProgram implements Program
         ?PublicKey $programId = null,
         ?PublicKey $atPid = null,
     ): PublicKey {
-        if (! $allowOwnerOffCurve && ! PublicKey::isOnCurve($owner->toBinaryString())) {
-            throw new TokenOwnerOffCurveError();
-        }
-
-        $tokenProgramId = $programId ?? PublicKey::from(self::TOKEN_PROGRAM_ID);
-        $ataProgramId = $atPid ?? PublicKey::from(self::ASSOCIATED_TOKEN_PROGRAM_ID);
-
-        $seeds = [
-            $owner->getBuffer(),
-            $tokenProgramId->getBuffer(),
-            $mint->getBuffer(),
-        ];
-
-        $result = PublicKey::findProgramAddressSync(
-            seeds: $seeds,
-            programId: $ataProgramId,
+        return Ata::derive(
+            owner: $owner,
+            mint: $mint,
+            tokenProgram: $programId ?? PublicKey::from(self::TOKEN_PROGRAM_ID),
+            allowOwnerOffCurve: $allowOwnerOffCurve,
+            associatedTokenProgram: $atPid ?? PublicKey::from(self::ASSOCIATED_TOKEN_PROGRAM_ID),
         );
-
-        return $result[0];
     }
 }

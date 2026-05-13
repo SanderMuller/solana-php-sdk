@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Support;
+namespace SanderMuller\SolanaPhpSdk\Support;
 
-use Collectiq\SolanaPhpSdk\PublicKey;
 use Illuminate\Support\Collection;
+use SanderMuller\SolanaPhpSdk\PublicKey;
 
 /**
  * @extends Collection<array-key, PublicKey>

@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit\Programs;
 
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
 
 final class MetaPlexProgramTest extends TestCase
 {

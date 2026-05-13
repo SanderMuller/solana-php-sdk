@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Accounts;
+namespace SanderMuller\SolanaPhpSdk\Accounts;
 
-use Collectiq\SolanaPhpSdk\Borsh\Borsh;
-use Collectiq\SolanaPhpSdk\Borsh\IsBorshDeserializable;
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
 use Exception;
+use SanderMuller\SolanaPhpSdk\Borsh\Borsh;
+use SanderMuller\SolanaPhpSdk\Borsh\IsBorshDeserializable;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 final class NtfRecordAccount
 {
@@ -54,6 +54,7 @@ final class NtfRecordAccount
         }
 
         $unpacked = unpack('C*', $binary);
+        /** @var array<int, int> $uint8Array */
         $uint8Array = $unpacked === false ? [] : array_values($unpacked);
 
         return self::deserialize($uint8Array);

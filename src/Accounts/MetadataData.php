@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Accounts;
+namespace SanderMuller\SolanaPhpSdk\Accounts;
 
-use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
-use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
+use SanderMuller\SolanaPhpSdk\Borsh\BorshSerializable;
+use SanderMuller\SolanaPhpSdk\Borsh\IsBorshObject;
 
 /**
  * @property string $name
@@ -35,6 +35,9 @@ final class MetadataData implements BorshSerializable
 
     public function __set(string $name, mixed $value): void
     {
-        $this->{$name} = is_string($value) ? preg_replace('/[[:cntrl:]]/', '', $value) : $value;
+        $cleaned = is_string($value) ? preg_replace('/[[:cntrl:]]/', '', $value) : $value;
+
+        /** @phpstan-ignore property.dynamicName */
+        $this->{$name} = $cleaned;
     }
 }

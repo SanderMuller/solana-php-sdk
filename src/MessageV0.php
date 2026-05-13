@@ -1,15 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk;
+namespace SanderMuller\SolanaPhpSdk;
 
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\Support\PublicKeyCollection;
-use Collectiq\SolanaPhpSdk\Util\AccountMeta;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
-use Collectiq\SolanaPhpSdk\Util\CompiledInstruction;
-use Collectiq\SolanaPhpSdk\Util\MessageAddressTableLookup;
-use Collectiq\SolanaPhpSdk\Util\MessageHeader;
-use Collectiq\SolanaPhpSdk\Util\ShortVec;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Support\PublicKeyCollection;
+use SanderMuller\SolanaPhpSdk\Util\AccountMeta;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Util\CompiledInstruction;
+use SanderMuller\SolanaPhpSdk\Util\MessageAddressTableLookup;
+use SanderMuller\SolanaPhpSdk\Util\MessageHeader;
+use SanderMuller\SolanaPhpSdk\Util\ShortVec;
 
 /**
  * Solana versioned (v0) message. Supports Address Lookup Tables.
@@ -123,22 +123,20 @@ final readonly class MessageV0 implements VersionedMessage
                     true,
                 );
 
-                if ($programIdIndex === false) {
+                if (! is_int($programIdIndex)) {
                     throw new InputValidationException("Program id {$ix->programId->toBase58()} missing from static account keys.");
                 }
 
-                $accounts = array_map(
-                    static function (AccountMeta $am) use ($accountKeyIndexes): int {
-                        $idx = $accountKeyIndexes[$am->getPublicKey()->toBase58()] ?? null;
+                /** @var array<int, int> $accounts */
+                $accounts = [];
+                foreach ($ix->keys as $am) {
+                    $idx = $accountKeyIndexes[$am->getPublicKey()->toBase58()] ?? null;
+                    if (! is_int($idx)) {
+                        throw new InputValidationException("Account {$am->getPublicKey()->toBase58()} missing from compiled account keys.");
+                    }
 
-                        if ($idx === null) {
-                            throw new InputValidationException("Account {$am->getPublicKey()->toBase58()} missing from compiled account keys.");
-                        }
-
-                        return $idx;
-                    },
-                    $ix->keys,
-                );
+                    $accounts[] = $idx;
+                }
 
                 return new CompiledInstruction(
                     programIdIndex: $programIdIndex,
@@ -265,16 +263,18 @@ final readonly class MessageV0 implements VersionedMessage
 
         $header = new MessageHeader($numRequiredSignatures, $numReadonlySigned, $numReadonlyUnsigned);
 
+        $pubkeyLength = PublicKey::$fixedLength ?? 32;
+
         [$staticCount, $offset] = ShortVec::decodeLength($buffer);
         $buffer = $buffer->slice((int) $offset);
         $staticKeys = PublicKeyCollection::empty();
         for ($i = 0; $i < $staticCount; $i++) {
-            $staticKeys->add(PublicKey::from($buffer->slice(0, PublicKey::$fixedLength)));
-            $buffer = $buffer->slice(PublicKey::$fixedLength);
+            $staticKeys->add(PublicKey::from($buffer->slice(0, $pubkeyLength)));
+            $buffer = $buffer->slice($pubkeyLength);
         }
 
-        $recentBlockhash = $buffer->slice(0, PublicKey::$fixedLength)->toBase58String();
-        $buffer = $buffer->slice(PublicKey::$fixedLength);
+        $recentBlockhash = $buffer->slice(0, $pubkeyLength)->toBase58String();
+        $buffer = $buffer->slice($pubkeyLength);
 
         [$ixCount, $offset] = ShortVec::decodeLength($buffer);
         $buffer = $buffer->slice((int) $offset);
@@ -302,8 +302,8 @@ final readonly class MessageV0 implements VersionedMessage
         $buffer = $buffer->slice((int) $offset);
         $lookups = [];
         for ($i = 0; $i < $lookupCount; $i++) {
-            $accountKey = PublicKey::from($buffer->slice(0, PublicKey::$fixedLength));
-            $buffer = $buffer->slice(PublicKey::$fixedLength);
+            $accountKey = PublicKey::from($buffer->slice(0, $pubkeyLength));
+            $buffer = $buffer->slice($pubkeyLength);
 
             [$wLen, $offset] = ShortVec::decodeLength($buffer);
             $buffer = $buffer->slice((int) $offset);

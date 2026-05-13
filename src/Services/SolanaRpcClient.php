@@ -1,15 +1,16 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Services;
+namespace SanderMuller\SolanaPhpSdk\Services;
 
-use Collectiq\SolanaPhpSdk\Enum\Network;
-use Collectiq\SolanaPhpSdk\Exceptions\GenericException;
-use Collectiq\SolanaPhpSdk\Exceptions\InvalidIdResponseException;
-use Collectiq\SolanaPhpSdk\Exceptions\MethodNotFoundException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use SanderMuller\SolanaPhpSdk\Enum\Network;
+use SanderMuller\SolanaPhpSdk\Exceptions\InvalidIdResponseException;
+use SanderMuller\SolanaPhpSdk\Exceptions\MethodNotFoundException;
+use SanderMuller\SolanaPhpSdk\Exceptions\RpcException;
+use SanderMuller\SolanaPhpSdk\Rpc\RpcTransport;
 
 /**
  * @mixin Http
@@ -21,26 +22,31 @@ final class SolanaRpcClient extends Factory
     // The method does not exist / is not available.
     public const int ERROR_CODE_METHOD_NOT_FOUND = -32601;
 
-    private ?string $nonce = null;
-
-    public function __construct(public readonly Network $network = Network::MAINNET)
-    {
+    /**
+     * Pass a {@see RpcTransport} to route requests through a fallback /
+     * round-robin / retry stack. When null, the client posts directly to
+     * the network's default RPC endpoint via Laravel's HTTP client.
+     */
+    public function __construct(
+        public readonly Network $network = Network::MAINNET,
+        private readonly ?RpcTransport $transport = null,
+    ) {
         parent::__construct();
     }
 
     /**
-     * Build the JSON-RPC payload for $method/$params. Uses a per-instance nonce.
+     * Build the JSON-RPC payload for $method/$params. Each call gets a
+     * fresh UUID so a stale proxy response cannot satisfy the id-check on
+     * a later request.
      *
      * @param array<mixed> $params
      * @return array{jsonrpc: string, id: string, method: string, params: array<mixed>}
      */
     public function buildRpc(string $method, array $params = []): array
     {
-        $this->nonce ??= Str::uuid()->toString();
-
         return [
             'jsonrpc' => '2.0',
-            'id' => $this->nonce,
+            'id' => Str::uuid()->toString(),
             'method' => $method,
             'params' => $params,
         ];
@@ -54,29 +60,46 @@ final class SolanaRpcClient extends Factory
         $payload = $this->buildRpc($method, $params);
         $nonce = $payload['id'];
 
-        $response = $this
-            ->throw()
-            ->asJson()
-            ->acceptJson()
-            ->post('/', $payload);
+        $body = $this->transport instanceof RpcTransport
+            ? $this->transport->send($payload)
+            : $this->sendViaHttp($payload);
 
-        $error = $response->json('params.error') ?? $response->json('error');
+        $error = $body['error'] ?? null;
 
         if (is_array($error)) {
             if (($error['code'] ?? null) === self::ERROR_CODE_METHOD_NOT_FOUND) {
                 throw new MethodNotFoundException("API Error: Method {$method} not found.");
             }
 
-            $message = $error['message'] ?? 'Unknown RPC error';
-            throw new GenericException(is_string($message) ? $message : 'Unknown RPC error');
+            $message = is_string($error['message'] ?? null) ? $error['message'] : 'Unknown RPC error';
+            $code = is_int($error['code'] ?? null) ? $error['code'] : 0;
+
+            throw new RpcException($message, $code, $error['data'] ?? null);
         }
 
-        // If 'id' doesn't match the expected value, throw an exception
-        if ($response->json('id') !== $nonce) {
+        if (($body['id'] ?? null) !== $nonce) {
             throw new InvalidIdResponseException($nonce);
         }
 
-        return $response->json('result');
+        return $body['result'] ?? null;
+    }
+
+    /**
+     * @param array{jsonrpc: string, id: string, method: string, params: array<mixed>} $payload
+     * @return array<string, mixed>
+     */
+    private function sendViaHttp(array $payload): array
+    {
+        $response = $this->createPendingRequest()
+            ->throw()
+            ->asJson()
+            ->acceptJson()
+            ->post('/', $payload);
+
+        $body = $response->json();
+
+        /** @var array<string, mixed> $body */
+        return is_array($body) ? $body : [];
     }
 
     protected function newPendingRequest(): PendingRequest

@@ -1,11 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit;
 
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\SecretKey;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
 
 final class SecretKeyTest extends TestCase
 {
@@ -15,7 +14,6 @@ final class SecretKeyTest extends TestCase
         $keypair = Keypair::generate();
         $secretKey = $keypair->getSecretKey();
 
-        self::assertInstanceOf(SecretKey::class, $secretKey);
         self::assertTrue(
             $secretKey->getPublicKey()->equals($keypair->getPublicKey()),
             'SecretKey::getPublicKey() must derive the same pubkey as the parent Keypair.',

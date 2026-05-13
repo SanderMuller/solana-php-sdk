@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Borsh;
+namespace SanderMuller\SolanaPhpSdk\Borsh;
 
 /**
  * Composite trait for objects that round-trip through Borsh. The dynamic

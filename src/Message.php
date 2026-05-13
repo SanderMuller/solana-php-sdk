@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk;
+namespace SanderMuller\SolanaPhpSdk;
 
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\Support\PublicKeyCollection;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
-use Collectiq\SolanaPhpSdk\Util\CompiledInstruction;
-use Collectiq\SolanaPhpSdk\Util\MessageHeader;
-use Collectiq\SolanaPhpSdk\Util\ShortVec;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Support\PublicKeyCollection;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Util\CompiledInstruction;
+use SanderMuller\SolanaPhpSdk\Util\MessageHeader;
+use SanderMuller\SolanaPhpSdk\Util\ShortVec;
 
 final readonly class Message implements VersionedMessage
 {

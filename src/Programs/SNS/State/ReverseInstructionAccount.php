@@ -1,20 +1,25 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs\SNS\State;
+namespace SanderMuller\SolanaPhpSdk\Programs\SNS\State;
 
-use Collectiq\SolanaPhpSdk\Borsh\Borsh;
-use Collectiq\SolanaPhpSdk\Borsh\BorshSerializable;
-use Collectiq\SolanaPhpSdk\Borsh\IsBorshObject;
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\TransactionInstruction;
-use Collectiq\SolanaPhpSdk\Util\AccountMeta;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Borsh\Borsh;
+use SanderMuller\SolanaPhpSdk\Borsh\BorshSerializable;
+use SanderMuller\SolanaPhpSdk\Borsh\IsBorshObject;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\TransactionInstruction;
+use SanderMuller\SolanaPhpSdk\Util\AccountMeta;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 final class ReverseInstructionAccount implements BorshSerializable
 {
     use IsBorshObject;
 
+    /**
+     * Read indirectly by {@see Borsh::serializeObject()} via reflection.
+     *
+     * @phpstan-ignore property.onlyWritten
+     */
     private int $tag = 12;
 
     private const array SCHEMA = [
@@ -27,7 +32,19 @@ final class ReverseInstructionAccount implements BorshSerializable
         ],
     ];
 
+    /**
+     * @phpstan-ignore property.onlyWritten
+     */
     public function __construct(private string $name) {}
+
+    /**
+     * Override the trait default — Borsh wants a no-arg constructor before
+     * populating fields via reflection.
+     */
+    public static function borshConstructor(): static
+    {
+        return new self('');
+    }
 
     /**
      * @throws InputValidationException

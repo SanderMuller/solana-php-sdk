@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs;
+namespace SanderMuller\SolanaPhpSdk\Programs;
 
-use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
 use Illuminate\Container\Container;
 use LogicException;
+use SanderMuller\SolanaPhpSdk\Services\SolanaRpcClient;
 
 /**
  * Shared shape for "program-like" classes (the `Program` interface).

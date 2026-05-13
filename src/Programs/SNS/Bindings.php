@@ -1,18 +1,18 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs\SNS;
+namespace SanderMuller\SolanaPhpSdk\Programs\SNS;
 
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferType;
-use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Collectiq\SolanaPhpSdk\Exceptions\SNSError;
-use Collectiq\SolanaPhpSdk\Programs\SNS\State\NameRegistryStateAccount;
-use Collectiq\SolanaPhpSdk\Programs\SNS\State\ReverseInstructionAccount;
-use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\TransactionInstruction;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
 use Exception;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\Enum\Buffer\BufferType;
+use SanderMuller\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use SanderMuller\SolanaPhpSdk\Exceptions\SNSError;
+use SanderMuller\SolanaPhpSdk\Programs\SNS\State\NameRegistryStateAccount;
+use SanderMuller\SolanaPhpSdk\Programs\SNS\State\ReverseInstructionAccount;
+use SanderMuller\SolanaPhpSdk\Programs\SystemProgram;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\TransactionInstruction;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 trait Bindings
 {

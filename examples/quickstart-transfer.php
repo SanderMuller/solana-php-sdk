@@ -19,12 +19,12 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Collectiq\SolanaPhpSdk\Bootstrap;
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\Enum\Network;
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
-use Collectiq\SolanaPhpSdk\Transaction;
+use SanderMuller\SolanaPhpSdk\Bootstrap;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\Enum\Network;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Programs\SystemProgram;
+use SanderMuller\SolanaPhpSdk\Transaction;
 
 // Tiny inline config so the script is fully self-contained.
 $configPath = sys_get_temp_dir() . '/solana-php-sdk-example.php';

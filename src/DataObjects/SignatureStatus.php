@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\DataObjects;
+namespace SanderMuller\SolanaPhpSdk\DataObjects;
 
-use Collectiq\SolanaPhpSdk\Util\Commitment;
+use SanderMuller\SolanaPhpSdk\Util\Commitment;
 
 /**
  * The status of a signature on chain. Mirrors the value array returned by

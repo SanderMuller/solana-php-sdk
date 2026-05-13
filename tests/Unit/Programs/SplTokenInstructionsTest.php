@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit\Programs;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit\Programs;
 
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\Programs\SplToken\Instructions\AuthorityType;
-use Collectiq\SolanaPhpSdk\Programs\SplToken\Instructions\TokenInstruction;
-use Collectiq\SolanaPhpSdk\Programs\SplTokenProgram;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Programs\SplToken\Instructions\AuthorityType;
+use SanderMuller\SolanaPhpSdk\Programs\SplToken\Instructions\TokenInstruction;
+use SanderMuller\SolanaPhpSdk\Programs\SplTokenProgram;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
 
 final class SplTokenInstructionsTest extends TestCase
 {
@@ -64,7 +64,9 @@ final class SplTokenInstructionsTest extends TestCase
         $bytes = $ix->data->toArray();
 
         self::assertSame(TokenInstruction::MintTo, $bytes[0]);
-        self::assertSame(500, unpack('P', pack('C*', ...array_slice($bytes, 1, 8)))[1]);
+        $unpacked = unpack('P', pack('C*', ...array_slice($bytes, 1, 8)));
+        self::assertIsArray($unpacked);
+        self::assertSame(500, $unpacked[1]);
         self::assertTrue($ix->keys[0]->isWritable); // mint writable
         self::assertTrue($ix->keys[1]->isWritable); // dest writable
         self::assertTrue($ix->keys[2]->isSigner);   // authority

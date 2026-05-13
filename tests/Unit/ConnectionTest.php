@@ -1,15 +1,16 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit;
 
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
-use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
-use Collectiq\SolanaPhpSdk\Transaction;
 use Mockery;
+use Mockery\Expectation;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Programs\SystemProgram;
+use SanderMuller\SolanaPhpSdk\Services\SolanaRpcClient;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
+use SanderMuller\SolanaPhpSdk\Transaction;
 
 final class ConnectionTest extends TestCase
 {
@@ -47,9 +48,10 @@ final class ConnectionTest extends TestCase
         $balance = 100;
 
         $clientMock = Mockery::mock(SolanaRpcClient::class);
-        $clientMock->expects('call')
-            ->with('getBalance', [$pubKey])
-            ->andReturn(['value' => $balance]);
+        /** @var Expectation $expectation */
+        $expectation = $clientMock->expects('call');
+        $expectation->with('getBalance', [$pubKey]);
+        $expectation->andReturn(['value' => $balance]);
 
         $this->container->bind(SolanaRpcClient::class, static fn (): SolanaRpcClient => $clientMock);
 

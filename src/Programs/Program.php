@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs;
+namespace SanderMuller\SolanaPhpSdk\Programs;
 
 interface Program {}

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\DataObjects;
+namespace SanderMuller\SolanaPhpSdk\DataObjects;
 
 final readonly class SolMemo
 {
@@ -27,7 +27,8 @@ final readonly class SolMemo
                 continue;
             }
 
-            $out[] = new self((string) data_get($instruction, 'parsed'));
+            $parsed = data_get($instruction, 'parsed');
+            $out[] = new self(is_string($parsed) ? $parsed : '');
         }
 
         return $out;

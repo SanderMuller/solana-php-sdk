@@ -9,4 +9,31 @@ order.
 
 ## Unreleased
 
-No host-side migration required yet.
+### Namespace + package rename
+
+The package and its root namespace have moved:
+
+| Before | After |
+|---|---|
+| `collectiq/solana-php-sdk` | `sandermuller/solana-php-sdk` |
+| `Collectiq\SolanaPhpSdk\*` | `SanderMuller\SolanaPhpSdk\*` |
+
+`composer.json`:
+
+```diff
+- "collectiq/solana-php-sdk": "^x"
++ "sandermuller/solana-php-sdk": "^x"
+```
+
+Code:
+
+```bash
+# search-and-replace at the project root
+grep -rl 'Collectiq\\SolanaPhpSdk' src tests | \
+  xargs sed -i '' 's/Collectiq\\SolanaPhpSdk/SanderMuller\\SolanaPhpSdk/g'
+```
+
+No public-API methods changed in this rename — class names, method
+signatures, and exception types are identical. The Laravel service
+provider auto-discovery picks up the new FQCN on the next
+`composer dump-autoload`.

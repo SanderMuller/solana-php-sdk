@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests;
+namespace SanderMuller\SolanaPhpSdk\Tests;
 
-use Collectiq\SolanaPhpSdk\Bootstrap;
-use Collectiq\SolanaPhpSdk\Services\SolanaRpcClient;
 use DG\BypassFinals;
 use Illuminate\Container\Container;
 use Illuminate\Http\Client\Request;
 use Orchestra\Testbench\TestCase as Orchestra;
+use SanderMuller\SolanaPhpSdk\Bootstrap;
+use SanderMuller\SolanaPhpSdk\Services\SolanaRpcClient;
 
 abstract class TestCase extends Orchestra
 {
@@ -19,7 +19,7 @@ abstract class TestCase extends Orchestra
     {
         BypassFinals::enable(bypassReadOnly: false);
 
-        if (str_contains(static::class, '\\Tests\\Feature\\') && ! getenv('SOLANA_RUN_FEATURE_TESTS')) {
+        if (str_contains(static::class, '\\Tests\\Feature\\') && ! filter_var(getenv('SOLANA_RUN_FEATURE_TESTS'), FILTER_VALIDATE_BOOLEAN)) {
             self::markTestSkipped('Feature tests require a live Solana RPC. Set SOLANA_RUN_FEATURE_TESTS=1 to run.');
         }
 
@@ -64,7 +64,7 @@ abstract class TestCase extends Orchestra
 
         $client->fake(static function (Request $request) use ($byMethod, $default) {
             $body = $request->data();
-            $method = $body['method'] ?? '';
+            $method = is_string($body['method'] ?? null) ? $body['method'] : '';
             $handler = $byMethod[$method] ?? $default;
             $result = is_callable($handler) ? $handler($body) : $handler;
 

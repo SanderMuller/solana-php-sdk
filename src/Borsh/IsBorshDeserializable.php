@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Borsh;
+namespace SanderMuller\SolanaPhpSdk\Borsh;
 
 use ReflectionClass;
 use ReflectionProperty;
@@ -21,7 +21,14 @@ trait IsBorshDeserializable
     /**
      * Create a new instance of this object.
      *
-     * Note: must override when the default constructor required parameters!
+     * `new static()` is the documented extension point of this trait — every
+     * Borsh-serialisable class is expected to expose a no-arg constructor (or
+     * override `borshConstructor()`). PHPStan's "unsafe new static" check
+     * doesn't model that contract, so we intentionally suppress it here.
+     *
+     * Note: must override when the default constructor takes required parameters!
+     *
+     * @phpstan-ignore-next-line new.static
      */
     public static function borshConstructor(): static
     {

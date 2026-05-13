@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Anchor;
+namespace SanderMuller\SolanaPhpSdk\Anchor;
 
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
 
 /**
  * Account spec for an IDL instruction. Mirrors the Anchor 0.30+ shape but

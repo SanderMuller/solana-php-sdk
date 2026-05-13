@@ -1,12 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit;
 
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\Exceptions\GenericException;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
-use Collectiq\SolanaPhpSdk\Util\Commitment;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\Exceptions\BlockhashExpiredException;
+use SanderMuller\SolanaPhpSdk\Exceptions\ConfirmationTimeoutException;
+use SanderMuller\SolanaPhpSdk\Exceptions\GenericException;
+use SanderMuller\SolanaPhpSdk\Exceptions\TransactionFailedOnChainException;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
+use SanderMuller\SolanaPhpSdk\Util\Commitment;
 
 final class ConfirmTransactionTest extends TestCase
 {
@@ -51,11 +54,41 @@ final class ConfirmTransactionTest extends TestCase
             ],
         ]);
 
-        $this->expectException(GenericException::class);
+        $this->expectException(TransactionFailedOnChainException::class);
         $this->expectExceptionMessageMatches('/failed on-chain/');
 
         $this->container->get(Connection::class)
             ->confirmTransaction('sigBad', Commitment::confirmed(), timeoutSeconds: 5, pollIntervalMs: 10);
+    }
+
+    #[Test]
+    public function on_chain_failure_exception_extends_generic_for_back_compat(): void
+    {
+        // Hosts still catching the legacy `GenericException` must keep
+        // working after the typed exception was introduced. Verified at
+        // the class-string level so PHPStan does not fold the assertion.
+        $parents = class_parents(TransactionFailedOnChainException::class);
+        self::assertIsArray($parents);
+        self::assertContains(GenericException::class, $parents);
+
+        $this->fakeRpcByMethod([
+            'getSignatureStatuses' => [
+                'context' => ['slot' => 1],
+                'value' => [[
+                    'slot' => 1, 'confirmations' => null, 'confirmationStatus' => 'finalized',
+                    'err' => ['InstructionError' => [0, 'Custom']],
+                ]],
+            ],
+        ]);
+
+        try {
+            $this->container->get(Connection::class)
+                ->confirmTransaction('sigBC', Commitment::confirmed(), timeoutSeconds: 5, pollIntervalMs: 10);
+            self::fail('expected exception');
+        } catch (TransactionFailedOnChainException $transactionFailedOnChainException) {
+            self::assertSame('sigBC', $transactionFailedOnChainException->signature);
+            self::assertSame(['InstructionError' => [0, 'Custom']], $transactionFailedOnChainException->err);
+        }
     }
 
     #[Test]
@@ -69,11 +102,31 @@ final class ConfirmTransactionTest extends TestCase
             'getBlockHeight' => 9_999,
         ]);
 
-        $this->expectException(GenericException::class);
+        $this->expectException(BlockhashExpiredException::class);
         $this->expectExceptionMessageMatches('/Blockhash expired/');
 
         $this->container->get(Connection::class)
             ->confirmTransaction('sigStale', Commitment::confirmed(), lastValidBlockHeight: 100, timeoutSeconds: 5, pollIntervalMs: 10);
+    }
+
+    #[Test]
+    public function raises_timeout_with_typed_exception(): void
+    {
+        $this->fakeRpcByMethod([
+            'getSignatureStatuses' => [
+                'context' => ['slot' => 1],
+                'value' => [null],
+            ],
+        ]);
+
+        try {
+            $this->container->get(Connection::class)
+                ->confirmTransaction('sigSlow', Commitment::confirmed(), timeoutSeconds: 1, pollIntervalMs: 10);
+            self::fail('expected exception');
+        } catch (ConfirmationTimeoutException $confirmationTimeoutException) {
+            self::assertSame('sigSlow', $confirmationTimeoutException->signature);
+            self::assertSame(1, $confirmationTimeoutException->timeoutSeconds);
+        }
     }
 
     #[Test]
@@ -91,15 +144,18 @@ final class ConfirmTransactionTest extends TestCase
                 'value' => [null],
             ],
             'getBlockHeight' => static function (array $body) use (&$calls): int {
-                $commitment = $body['params'][0]['commitment'] ?? 'default';
-                $calls[] = $commitment;
+                $params = $body['params'] ?? [];
+                $first = is_array($params) ? ($params[0] ?? []) : [];
+                $commitment = is_array($first) ? ($first['commitment'] ?? 'default') : 'default';
+                $commitmentStr = is_string($commitment) ? $commitment : 'default';
+                $calls[] = $commitmentStr;
 
                 // Live tip ('processed') already past expiry; finalized still behind.
-                return $commitment === 'finalized' ? 80 : 250;
+                return $commitmentStr === 'finalized' ? 80 : 250;
             },
         ]);
 
-        $this->expectException(GenericException::class);
+        $this->expectException(BlockhashExpiredException::class);
         $this->expectExceptionMessageMatches('/Blockhash expired/');
 
         try {

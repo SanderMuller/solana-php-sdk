@@ -13,8 +13,8 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Collectiq\SolanaPhpSdk\Enum\Network;
-use Collectiq\SolanaPhpSdk\Services\SolanaPubSubClient;
+use SanderMuller\SolanaPhpSdk\Enum\Network;
+use SanderMuller\SolanaPhpSdk\Services\SolanaPubSubClient;
 
 $signature = $argv[1] ?? null;
 if ($signature === null) {

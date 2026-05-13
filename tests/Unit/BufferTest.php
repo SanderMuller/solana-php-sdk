@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Unit;
+namespace SanderMuller\SolanaPhpSdk\Tests\Unit;
 
-use Collectiq\SolanaPhpSdk\Enum\Buffer\BufferType;
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Enum\Buffer\BufferType;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Programs\SystemProgram;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 final class BufferTest extends TestCase
 {
@@ -18,14 +18,15 @@ final class BufferTest extends TestCase
         $space = 6;
         $programId = Keypair::generate()->getPublicKey();
 
+        $u32 = unpack('C*', pack('V', SystemProgram::PROGRAM_INDEX_CREATE_ACCOUNT));
+        $lamportsBytes = unpack('C*', pack('P', $lamports));
+        $spaceBytes = unpack('C*', pack('P', $space));
+        assert(is_array($u32) && is_array($lamportsBytes) && is_array($spaceBytes));
+
         $rawCreateAccountBinary = [
-            // uint32
-            ...unpack('C*', pack('V', SystemProgram::PROGRAM_INDEX_CREATE_ACCOUNT)),
-            // int64
-            ...unpack('C*', pack('P', $lamports)),
-            // int64
-            ...unpack('C*', pack('P', $space)),
-            //
+            ...$u32,
+            ...$lamportsBytes,
+            ...$spaceBytes,
             ...$programId->toBytes(),
         ];
 

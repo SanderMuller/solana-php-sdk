@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Anchor;
+namespace SanderMuller\SolanaPhpSdk\Anchor;
 
-use Collectiq\SolanaPhpSdk\Borsh\BinaryWriter;
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\TransactionInstruction;
-use Collectiq\SolanaPhpSdk\Util\AccountMeta;
-use Collectiq\SolanaPhpSdk\Util\Buffer;
+use SanderMuller\SolanaPhpSdk\Borsh\BinaryWriter;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\TransactionInstruction;
+use SanderMuller\SolanaPhpSdk\Util\AccountMeta;
+use SanderMuller\SolanaPhpSdk\Util\Buffer;
 
 /**
  * One IDL instruction definition — discriminator, expected accounts (with
@@ -40,8 +40,13 @@ final readonly class IdlInstruction
 
         $discriminator = self::resolveDiscriminator($payload, $name);
 
+        $accountsPayload = $payload['accounts'] ?? [];
+        if (! is_array($accountsPayload)) {
+            throw new InputValidationException("Instruction {$name} `accounts` must be an array.");
+        }
+
         $accounts = [];
-        foreach ($payload['accounts'] ?? [] as $entry) {
+        foreach ($accountsPayload as $entry) {
             if (! is_array($entry) || ! isset($entry['name']) || ! is_string($entry['name'])) {
                 throw new InputValidationException("Malformed account entry on instruction {$name}.");
             }
@@ -50,8 +55,13 @@ final readonly class IdlInstruction
             $accounts[] = IdlAccount::fromArray($entry);
         }
 
+        $argsPayload = $payload['args'] ?? [];
+        if (! is_array($argsPayload)) {
+            throw new InputValidationException("Instruction {$name} `args` must be an array.");
+        }
+
         $args = [];
-        foreach ($payload['args'] ?? [] as $entry) {
+        foreach ($argsPayload as $entry) {
             if (! is_array($entry) || ! isset($entry['name']) || ! is_string($entry['name'])) {
                 throw new InputValidationException("Malformed arg entry on instruction {$name}.");
             }

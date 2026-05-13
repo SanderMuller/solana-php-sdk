@@ -12,12 +12,12 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Collectiq\SolanaPhpSdk\Anchor\AnchorIdl;
-use Collectiq\SolanaPhpSdk\Bootstrap;
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\Enum\Network;
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\Transaction;
+use SanderMuller\SolanaPhpSdk\Anchor\AnchorIdl;
+use SanderMuller\SolanaPhpSdk\Bootstrap;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\Enum\Network;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Transaction;
 
 $configPath = sys_get_temp_dir() . '/solana-php-sdk-example.php';
 file_put_contents($configPath, '<?php return ' . var_export([

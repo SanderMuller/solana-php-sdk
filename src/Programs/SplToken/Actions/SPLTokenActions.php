@@ -1,19 +1,19 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs\SplToken\Actions;
+namespace SanderMuller\SolanaPhpSdk\Programs\SplToken\Actions;
 
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Collectiq\SolanaPhpSdk\Exceptions\TokenInvalidAccountOwnerError;
-use Collectiq\SolanaPhpSdk\Exceptions\TokenInvalidMintError;
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\Programs\SplToken\State\Account;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Transaction;
-use Collectiq\SolanaPhpSdk\Util\Commitment;
-use Collectiq\SolanaPhpSdk\Util\ConfirmOptions;
-use Collectiq\SolanaPhpSdk\Util\Signer;
 use Exception;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use SanderMuller\SolanaPhpSdk\Exceptions\TokenInvalidAccountOwnerError;
+use SanderMuller\SolanaPhpSdk\Exceptions\TokenInvalidMintError;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Programs\SplToken\State\Account;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Transaction;
+use SanderMuller\SolanaPhpSdk\Util\Commitment;
+use SanderMuller\SolanaPhpSdk\Util\ConfirmOptions;
+use SanderMuller\SolanaPhpSdk\Util\Signer;
 
 trait SPLTokenActions
 {

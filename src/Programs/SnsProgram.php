@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Programs;
+namespace SanderMuller\SolanaPhpSdk\Programs;
 
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
-use Collectiq\SolanaPhpSdk\Programs\SNS\Bindings;
-use Collectiq\SolanaPhpSdk\Programs\SNS\Instructions\Instructions;
-use Collectiq\SolanaPhpSdk\Programs\SNS\Utils;
-use Collectiq\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Programs\SNS\Bindings;
+use SanderMuller\SolanaPhpSdk\Programs\SNS\Instructions\Instructions;
+use SanderMuller\SolanaPhpSdk\Programs\SNS\Utils;
+use SanderMuller\SolanaPhpSdk\PublicKey;
 use SensitiveParameter;
 
 final class SnsProgram implements Program
@@ -23,7 +23,14 @@ final class SnsProgram implements Program
     public const string SYSVAR_RENT_PUBKEY = 'SysvarRent111111111111111111111111111111111';
 
     /**
-     * @param array<string, mixed>|null $config
+     * @param array{
+     *     NAME_PROGRAM_ID: string,
+     *     REGISTER_PROGRAM_ID: string,
+     *     ROOT_DOMAIN_ACCOUNT: string,
+     *     REVERSE_LOOKUP_CLASS: string,
+     *     SYSVAR_RENT_PUBKEY: string,
+     *     HASH_PREFIX: string,
+     * }|null $config
      * @throws InputValidationException
      */
     public function __construct(

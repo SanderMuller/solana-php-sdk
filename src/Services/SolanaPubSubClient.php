@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Services;
+namespace SanderMuller\SolanaPhpSdk\Services;
 
 use Closure;
-use Collectiq\SolanaPhpSdk\Enum\Network;
-use Collectiq\SolanaPhpSdk\Exceptions\GenericException;
-use Collectiq\SolanaPhpSdk\PublicKey;
 use Generator;
+use SanderMuller\SolanaPhpSdk\Enum\Network;
+use SanderMuller\SolanaPhpSdk\Exceptions\GenericException;
+use SanderMuller\SolanaPhpSdk\PublicKey;
 use Throwable;
 use WebSocket\Client;
 use WebSocket\Message\Text;
@@ -49,6 +49,28 @@ class SolanaPubSubClient
     private array $subscriptions = [];
 
     /**
+     * Subscription id → original `(method, params)` so the client can
+     * replay subscribes after an unexpected socket drop. Only populated
+     * when {@see enableAutoReconnect()} has been called.
+     *
+     * @var array<int, array{method: string, params: array<int|string, mixed>}>
+     */
+    private array $subscriptionSpecs = [];
+
+    private bool $autoReconnect = false;
+
+    private int $reconnectMaxRetries = 5;
+
+    private int $reconnectBaseDelayMs = 500;
+
+    /**
+     * Whether a reconnect attempt is currently in flight. Used to short
+     * circuit re-entrant calls from `awaitConfirmation()` during the
+     * resubscribe replay.
+     */
+    private bool $reconnecting = false;
+
+    /**
      * @param Closure(): Client|null $clientFactory Optional factory that
      *        returns a `WebSocket\Client` (or a test subclass that scripts
      *        responses). Defaults to a real `WebSocket\Client` pointed at
@@ -82,7 +104,35 @@ class SolanaPubSubClient
         $subscriptionId = $reply['result'];
         $this->subscriptions[$subscriptionId] = $this->subscribeMethodToUnsubscribe($method);
 
+        if ($this->autoReconnect && ! $this->reconnecting) {
+            $this->subscriptionSpecs[$subscriptionId] = ['method' => $method, 'params' => $params];
+        }
+
         return $subscriptionId;
+    }
+
+    /**
+     * Enable transparent reconnect-on-drop with exponential backoff. When
+     * the underlying socket throws on `receive()`, the client will spin a
+     * fresh socket, replay every active subscription, and resume yielding
+     * notifications. Subscription ids may change across the reconnect —
+     * callers that key per-id state on the integer subscription id should
+     * NOT enable auto-reconnect; the `subscription` field in each emitted
+     * notification carries the current id.
+     *
+     * Must be called BEFORE any `subscribe*()` calls — only subscriptions
+     * opened while auto-reconnect was enabled can be replayed, because the
+     * client needs the original `(method, params)` tuple to re-issue them.
+     *
+     * `$maxRetries` is the cap before {@see listen()} stops trying; each
+     * attempt waits `$baseDelayMs * 2^attempt` milliseconds with full
+     * jitter. Pass `$maxRetries = 0` to retry forever.
+     */
+    public function enableAutoReconnect(int $maxRetries = 5, int $baseDelayMs = 500): void
+    {
+        $this->autoReconnect = true;
+        $this->reconnectMaxRetries = $maxRetries;
+        $this->reconnectBaseDelayMs = $baseDelayMs;
     }
 
     /**
@@ -97,7 +147,7 @@ class SolanaPubSubClient
         $this->pending[$id] = 'unsubscribe';
 
         $reply = $this->awaitConfirmation($id);
-        unset($this->subscriptions[$subscriptionId]);
+        unset($this->subscriptions[$subscriptionId], $this->subscriptionSpecs[$subscriptionId]);
 
         return ($reply['result'] ?? false) === true;
     }
@@ -118,6 +168,10 @@ class SolanaPubSubClient
             $frame = $this->readFrame();
 
             if ($frame === null) {
+                if ($this->autoReconnect && $this->tryReconnect()) {
+                    continue;
+                }
+
                 return;
             }
 
@@ -232,8 +286,10 @@ class SolanaPubSubClient
             return ($this->clientFactory)();
         }
 
-        return new Client($this->endpointOverride ?? $this->network->pubsubEndpoint())
-            ->setTimeout($this->timeoutSeconds);
+        $client = new Client($this->endpointOverride ?? $this->network->pubsubEndpoint());
+        $client->getConfiguration()->setTimeout($this->timeoutSeconds);
+
+        return $client;
     }
 
     /**
@@ -279,8 +335,16 @@ class SolanaPubSubClient
             if (($frame['id'] ?? null) === $expectedId) {
                 unset($this->pending[$expectedId]);
 
-                if (isset($frame['error'])) {
-                    $err = is_array($frame['error']) ? json_encode($frame['error']) : (string) $frame['error'];
+                $error = $frame['error'] ?? null;
+                if ($error !== null) {
+                    if (is_array($error)) {
+                        $err = json_encode($error);
+                    } elseif (is_scalar($error)) {
+                        $err = (string) $error;
+                    } else {
+                        $err = 'non-stringable error payload';
+                    }
+
                     throw new GenericException("JSON-RPC error on request {$expectedId}: {$err}");
                 }
 
@@ -322,5 +386,66 @@ class SolanaPubSubClient
         // 'accountSubscribe' → 'accountUnsubscribe' etc.
         return preg_replace('/Subscribe$/', 'Unsubscribe', $method)
             ?? throw new GenericException("Cannot derive unsubscribe method for {$method}");
+    }
+
+    /**
+     * Spin a fresh socket, replay every recorded subscription spec, and
+     * resume reading. Returns true when the resubscribe completes cleanly.
+     *
+     * Backoff: full jitter exponential (`baseDelayMs * 2^attempt`, randomly
+     * shrunk to avoid thundering-herd reconnect on a cluster outage).
+     */
+    private function tryReconnect(): bool
+    {
+        if ($this->reconnecting) {
+            return false;
+        }
+
+        $this->reconnecting = true;
+
+        try {
+            $attempt = 0;
+            while (true) {
+                if ($this->reconnectMaxRetries > 0 && $attempt >= $this->reconnectMaxRetries) {
+                    return false;
+                }
+
+                $cap = $this->reconnectBaseDelayMs * (2 ** $attempt);
+                usleep(random_int(0, $cap) * 1000);
+
+                try {
+                    if ($this->client instanceof Client) {
+                        try {
+                            $this->client->disconnect();
+                        } catch (Throwable) {
+                            // best-effort — previous socket is already dead
+                        }
+                    }
+
+                    $this->client = $this->buildClient();
+
+                    $specs = $this->subscriptionSpecs;
+                    $this->subscriptions = [];
+                    $this->subscriptionSpecs = [];
+                    $this->pending = [];
+
+                    foreach ($specs as $spec) {
+                        // Re-issue the subscribe; the server allocates a new
+                        // subscription id. `subscribe()` skips spec-recording
+                        // while `$reconnecting` is true (to avoid re-entry
+                        // through this same path), so we record the spec
+                        // here so a subsequent disconnect can replay it too.
+                        $newSubId = $this->subscribe($spec['method'], $spec['params']);
+                        $this->subscriptionSpecs[$newSubId] = $spec;
+                    }
+
+                    return true;
+                } catch (Throwable) {
+                    $attempt++;
+                }
+            }
+        } finally {
+            $this->reconnecting = false;
+        }
     }
 }

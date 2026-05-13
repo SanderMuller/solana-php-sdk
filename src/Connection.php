@@ -1,15 +1,25 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk;
+namespace SanderMuller\SolanaPhpSdk;
 
-use Collectiq\SolanaPhpSdk\DataObjects\SignatureStatus;
-use Collectiq\SolanaPhpSdk\DataObjects\TransactionStatement;
-use Collectiq\SolanaPhpSdk\Exceptions\AccountNotFoundException;
-use Collectiq\SolanaPhpSdk\Exceptions\GenericException;
-use Collectiq\SolanaPhpSdk\Programs\IsProgram;
-use Collectiq\SolanaPhpSdk\Programs\Program;
-use Collectiq\SolanaPhpSdk\Util\Commitment;
-use Collectiq\SolanaPhpSdk\Util\Signer;
+use Generator;
+use SanderMuller\SolanaPhpSdk\DataObjects\AccountInfo;
+use SanderMuller\SolanaPhpSdk\DataObjects\BlockhashInfo;
+use SanderMuller\SolanaPhpSdk\DataObjects\ProgramAccount;
+use SanderMuller\SolanaPhpSdk\DataObjects\SignatureStatus;
+use SanderMuller\SolanaPhpSdk\DataObjects\TransactionStatement;
+use SanderMuller\SolanaPhpSdk\Enum\Encoding;
+use SanderMuller\SolanaPhpSdk\Exceptions\AccountNotFoundException;
+use SanderMuller\SolanaPhpSdk\Exceptions\BlockhashExpiredException;
+use SanderMuller\SolanaPhpSdk\Exceptions\ConfirmationTimeoutException;
+use SanderMuller\SolanaPhpSdk\Exceptions\GenericException;
+use SanderMuller\SolanaPhpSdk\Exceptions\RpcException;
+use SanderMuller\SolanaPhpSdk\Exceptions\SendTransactionError;
+use SanderMuller\SolanaPhpSdk\Exceptions\TransactionFailedOnChainException;
+use SanderMuller\SolanaPhpSdk\Programs\IsProgram;
+use SanderMuller\SolanaPhpSdk\Programs\Program;
+use SanderMuller\SolanaPhpSdk\Util\Commitment;
+use SanderMuller\SolanaPhpSdk\Util\Signer;
 
 /**
  * Class Connection
@@ -35,6 +45,49 @@ final class Connection implements Program
 
         /** @var array<string, mixed> $accountResponse */
         return $accountResponse;
+    }
+
+    /**
+     * Typed companion to {@see getAccountInfo()}. Returns an {@see AccountInfo}
+     * DTO with the data field decoded to a {@see Buffer}
+     * so callers do not have to remember the `[base64-payload, "base64"]`
+     * tuple shape.
+     *
+     * @throws AccountNotFoundException when the account does not exist.
+     */
+    public function accountInfo(string|PublicKey $walletAddress, Encoding|string $encoding = Encoding::BASE64): AccountInfo
+    {
+        $response = $this->client->call('getAccountInfo', [
+            (string) $walletAddress,
+            ['encoding' => $this->encodingValue($encoding)],
+        ]);
+
+        $value = is_array($response) ? ($response['value'] ?? null) : null;
+
+        if (! is_array($value)) {
+            throw new AccountNotFoundException("API Error: Account {$walletAddress} not found.");
+        }
+
+        /** @var array<string, mixed> $value */
+        return AccountInfo::fromValue($value);
+    }
+
+    /**
+     * Typed companion to {@see getMultipleAccounts()}. Each entry is either
+     * an {@see AccountInfo} DTO or `null` when the slot reports no account
+     * at that address.
+     *
+     * @param array<PublicKey|string> $publicKeys
+     * @return array<int, AccountInfo|null>
+     */
+    public function multipleAccounts(array $publicKeys, Encoding|string $encoding = Encoding::BASE64): array
+    {
+        $rows = $this->getMultipleAccounts($publicKeys, $encoding);
+
+        return array_values(array_map(
+            static fn (?array $row): ?AccountInfo => $row === null ? null : AccountInfo::fromValue($row),
+            $rows,
+        ));
     }
 
     public function getBalance(string $walletAddress): float
@@ -90,6 +143,16 @@ final class Connection implements Program
     }
 
     /**
+     * Typed companion to {@see getLatestBlockhash()}. Returns a
+     * {@see BlockhashInfo} DTO so callers do not have to remember the array
+     * shape.
+     */
+    public function latestBlockhash(?Commitment $commitment = null): BlockhashInfo
+    {
+        return BlockhashInfo::fromValue($this->getLatestBlockhash($commitment));
+    }
+
+    /**
      * @param array<Keypair|Signer> $signers
      * @param array<string, mixed> $params
      */
@@ -104,8 +167,12 @@ final class Connection implements Program
             $transaction->recentBlockhash = $blockhash;
         }
 
-        foreach ($signers as $signer) {
-            $transaction->sign($signer);
+        // Pass every signer in a single `sign(...)` call. `Transaction::sign`
+        // rebuilds the signature vector from the provided list per call, so
+        // looping `sign($signer)` per signer would overwrite earlier slots and
+        // emit a 1-of-N transaction for any multisig flow.
+        if ($signers !== []) {
+            $transaction->sign(...$signers);
         }
 
         $rawBinaryString = $transaction->serialize(false);
@@ -118,7 +185,11 @@ final class Connection implements Program
             $send_params[$k] = $v;
         }
 
-        return $this->client->call('sendTransaction', [$hashString, $send_params]);
+        try {
+            return $this->client->call('sendTransaction', [$hashString, $send_params]);
+        } catch (RpcException $rpcException) {
+            throw SendTransactionError::tryFromRpc($rpcException) ?? $rpcException;
+        }
     }
 
     /**
@@ -128,8 +199,8 @@ final class Connection implements Program
      */
     public function simulateTransaction(Transaction $transaction, array $signers, array $params = []): array
     {
-        foreach ($signers as $signer) {
-            $transaction->sign($signer);
+        if ($signers !== []) {
+            $transaction->sign(...$signers);
         }
 
         $rawBinaryString = $transaction->serialize(false);
@@ -142,7 +213,11 @@ final class Connection implements Program
             $send_params[$k] = $v;
         }
 
-        $response = $this->client->call('simulateTransaction', [$hashString, $send_params]);
+        try {
+            $response = $this->client->call('simulateTransaction', [$hashString, $send_params]);
+        } catch (RpcException $rpcException) {
+            throw SendTransactionError::tryFromRpc($rpcException) ?? $rpcException;
+        }
 
         if (! is_array($response)) {
             return [];
@@ -170,13 +245,13 @@ final class Connection implements Program
      * @param array<string, mixed> $extraConfig Additional config keys forwarded verbatim.
      */
     public function getProgramAccounts(
-        string  $programIdBs58,
-        ?array  $dataSlice = null,
-        ?array  $filters = null,
-        string  $encoding = 'base64',
-        array   $extraConfig = [],
+        string             $programIdBs58,
+        ?array             $dataSlice = null,
+        ?array             $filters = null,
+        Encoding|string    $encoding = Encoding::BASE64,
+        array              $extraConfig = [],
     ): mixed {
-        $config = ['encoding' => $encoding];
+        $config = ['encoding' => $this->encodingValue($encoding)];
 
         if ($dataSlice !== null) {
             $config['dataSlice'] = $dataSlice;
@@ -193,16 +268,84 @@ final class Connection implements Program
         return $this->client->call('getProgramAccounts', [$programIdBs58, $config]);
     }
 
+    /**
+     * Typed companion to {@see getProgramAccounts()}. Returns a list of
+     * {@see ProgramAccount} DTOs (pubkey + decoded {@see AccountInfo})
+     * instead of the raw `mixed` shape. Server-side filtering is
+     * unchanged — pass `GpaFilter::memcmp(...)` / `GpaFilter::dataSize(...)`
+     * for type-safe filter construction.
+     *
+     * @param array<int, array<string, mixed>>|null $filters
+     * @param array<string, mixed> $extraConfig
+     * @param array<string, mixed>|null $dataSlice
+     *
+     * @return array<int, ProgramAccount>
+     */
+    public function programAccounts(
+        string|PublicKey $programId,
+        ?array $dataSlice = null,
+        ?array $filters = null,
+        Encoding|string $encoding = Encoding::BASE64,
+        array $extraConfig = [],
+    ): array {
+        $raw = $this->getProgramAccounts((string) $programId, $dataSlice, $filters, $encoding, $extraConfig);
+
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($raw as $row) {
+            if (is_array($row)) {
+                /** @var array<string, mixed> $row */
+                $rows[] = ProgramAccount::fromRow($row);
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Paginate a large `getProgramAccounts` scan by partitioning on
+     * `dataSize`. Solana RPC exposes no native cursor — most providers
+     * cap the result at 10–100k rows and time out beyond that. The
+     * recipe most production indexers use is "scan one dataSize bucket
+     * per round-trip"; this helper formalises that pattern.
+     *
+     * `$dataSizes` is the list of layout-specific account sizes to walk
+     * (e.g. `[165]` for SPL Token accounts, `[82, 165]` for mints +
+     * accounts). Additional shared filters are appended to each bucket.
+     *
+     * @param array<int> $dataSizes
+     * @param array<int, array<string, mixed>> $extraFilters
+     *
+     * @return Generator<int, ProgramAccount>
+     */
+    public function programAccountsPaged(
+        string|PublicKey $programId,
+        array $dataSizes,
+        array $extraFilters = [],
+        Encoding|string $encoding = Encoding::BASE64,
+    ): Generator {
+        foreach ($dataSizes as $size) {
+            $filters = [['dataSize' => $size], ...$extraFilters];
+
+            foreach ($this->programAccounts($programId, null, $filters, $encoding) as $row) {
+                yield $row;
+            }
+        }
+    }
+
     public function getMinimumBalanceForRentExemption(int $space = 1024): int
     {
-        return (int) $this->client->call('getMinimumBalanceForRentExemption', [$space]);
+        return $this->asInt($this->client->call('getMinimumBalanceForRentExemption', [$space]));
     }
 
     public function getBlockHeight(?Commitment $commitment = null): int
     {
         $params = $commitment instanceof Commitment ? [['commitment' => (string) $commitment]] : [];
 
-        return (int) $this->client->call('getBlockHeight', $params);
+        return $this->asInt($this->client->call('getBlockHeight', $params));
     }
 
     /**
@@ -212,13 +355,13 @@ final class Connection implements Program
      * @param array<PublicKey|string> $publicKeys
      * @return array<array<string, mixed>|null>
      */
-    public function getMultipleAccounts(array $publicKeys, string $encoding = 'base64'): array
+    public function getMultipleAccounts(array $publicKeys, Encoding|string $encoding = Encoding::BASE64): array
     {
         $keys = array_map(static fn (PublicKey|string $key): string => (string) $key, $publicKeys);
 
         $response = $this->client->call('getMultipleAccounts', [
             $keys,
-            ['encoding' => $encoding],
+            ['encoding' => $this->encodingValue($encoding)],
         ]);
 
         if (! is_array($response)) {
@@ -294,7 +437,11 @@ final class Connection implements Program
             if ($status instanceof SignatureStatus) {
                 if ($status->err !== null) {
                     $err = is_string($status->err) ? $status->err : json_encode($status->err);
-                    throw new GenericException("Transaction {$signature} failed on-chain: {$err}");
+                    throw new TransactionFailedOnChainException(
+                        $signature,
+                        $status->err,
+                        "Transaction {$signature} failed on-chain: {$err}",
+                    );
                 }
 
                 if ($status->reachedAtLeast($commitment)) {
@@ -306,13 +453,20 @@ final class Connection implements Program
             // correctly trips expiry even when the caller is waiting for a
             // slower target commitment (e.g. `finalized`).
             if ($lastValidBlockHeight !== null && $this->getBlockHeight(Commitment::processed()) > $lastValidBlockHeight) {
-                throw new GenericException("Blockhash expired before transaction {$signature} confirmed.");
+                throw new BlockhashExpiredException(
+                    $signature,
+                    "Blockhash expired before transaction {$signature} confirmed.",
+                );
             }
 
             usleep($pollIntervalMs * 1000);
         }
 
-        throw new GenericException("Timeout waiting for transaction {$signature} confirmation after {$timeoutSeconds}s.");
+        throw new ConfirmationTimeoutException(
+            $signature,
+            $timeoutSeconds,
+            "Timeout waiting for transaction {$signature} confirmation after {$timeoutSeconds}s.",
+        );
     }
 
     // ---------------------------------------------------------------------
@@ -321,17 +475,17 @@ final class Connection implements Program
 
     public function getSlot(?Commitment $commitment = null): int
     {
-        return (int) $this->client->call('getSlot', $this->commitmentParams($commitment));
+        return $this->asInt($this->client->call('getSlot', $this->commitmentParams($commitment)));
     }
 
     public function getTransactionCount(?Commitment $commitment = null): int
     {
-        return (int) $this->client->call('getTransactionCount', $this->commitmentParams($commitment));
+        return $this->asInt($this->client->call('getTransactionCount', $this->commitmentParams($commitment)));
     }
 
     public function getFirstAvailableBlock(): int
     {
-        return (int) $this->client->call('getFirstAvailableBlock', []);
+        return $this->asInt($this->client->call('getFirstAvailableBlock', []));
     }
 
     public function getGenesisHash(): string
@@ -536,7 +690,7 @@ final class Connection implements Program
      * @param array{mint?: string|PublicKey, programId?: string|PublicKey} $filter
      * @return array<int, array<string, mixed>>
      */
-    public function getTokenAccountsByOwner(string|PublicKey $owner, array $filter, string $encoding = 'jsonParsed'): array
+    public function getTokenAccountsByOwner(string|PublicKey $owner, array $filter, Encoding|string $encoding = Encoding::JSON_PARSED): array
     {
         $normalized = [];
         if (isset($filter['mint'])) {
@@ -550,7 +704,7 @@ final class Connection implements Program
         $response = $this->client->call('getTokenAccountsByOwner', [
             (string) $owner,
             $normalized,
-            ['encoding' => $encoding],
+            ['encoding' => $this->encodingValue($encoding)],
         ]);
 
         if (! is_array($response)) {
@@ -794,17 +948,17 @@ final class Connection implements Program
 
     public function minimumLedgerSlot(): int
     {
-        return (int) $this->client->call('minimumLedgerSlot', []);
+        return $this->asInt($this->client->call('minimumLedgerSlot', []));
     }
 
     public function getMaxRetransmitSlot(): int
     {
-        return (int) $this->client->call('getMaxRetransmitSlot', []);
+        return $this->asInt($this->client->call('getMaxRetransmitSlot', []));
     }
 
     public function getMaxShredInsertSlot(): int
     {
-        return (int) $this->client->call('getMaxShredInsertSlot', []);
+        return $this->asInt($this->client->call('getMaxShredInsertSlot', []));
     }
 
     public function getSlotLeader(?Commitment $commitment = null): string
@@ -831,7 +985,7 @@ final class Connection implements Program
      * @param array{mint?: string|PublicKey, programId?: string|PublicKey} $filter
      * @return array<int, array<string, mixed>>
      */
-    public function getTokenAccountsByDelegate(string|PublicKey $delegate, array $filter, string $encoding = 'jsonParsed'): array
+    public function getTokenAccountsByDelegate(string|PublicKey $delegate, array $filter, Encoding|string $encoding = Encoding::JSON_PARSED): array
     {
         $normalized = [];
         if (isset($filter['mint'])) {
@@ -845,7 +999,7 @@ final class Connection implements Program
         $response = $this->client->call('getTokenAccountsByDelegate', [
             (string) $delegate,
             $normalized,
-            ['encoding' => $encoding],
+            ['encoding' => $this->encodingValue($encoding)],
         ]);
 
         if (! is_array($response)) {
@@ -881,6 +1035,16 @@ final class Connection implements Program
     private function commitmentParams(?Commitment $commitment): array
     {
         return $commitment instanceof Commitment ? [['commitment' => (string) $commitment]] : [];
+    }
+
+    /**
+     * Narrow a `mixed` RPC payload to `int`, returning `0` when the response
+     * is not numeric. Used by `getSlot`/`getBlockHeight`/etc to satisfy strict
+     * casting from the `SolanaRpcClient::call()` `mixed` return.
+     */
+    private function asInt(mixed $value): int
+    {
+        return is_numeric($value) ? (int) $value : 0;
     }
 
     /**
@@ -938,7 +1102,11 @@ final class Connection implements Program
             $send_params[$k] = $v;
         }
 
-        $signature = $this->client->call('sendTransaction', [$hashString, $send_params]);
+        try {
+            $signature = $this->client->call('sendTransaction', [$hashString, $send_params]);
+        } catch (RpcException $rpcException) {
+            throw SendTransactionError::tryFromRpc($rpcException) ?? $rpcException;
+        }
 
         return is_string($signature) ? $signature : '';
     }
@@ -951,5 +1119,83 @@ final class Connection implements Program
     public function sendVersionedTransaction(VersionedTransaction $transaction, array $params = []): string
     {
         return $this->sendRawTransaction($transaction->serialize(), $params);
+    }
+
+    /**
+     * Send a legacy transaction and block until it reaches the requested
+     * commitment, using the blockhash-expiry strategy. Pairs `sendTransaction`
+     * with `confirmTransaction`; the blockhash and its expiry height are
+     * fetched together (single RPC) so the two phases agree.
+     *
+     * @param array<Keypair|Signer> $signers
+     * @param array<string, mixed> $params Forwarded to `sendTransaction`.
+     */
+    public function sendAndConfirmTransaction(
+        Transaction $transaction,
+        array $signers,
+        array $params = [],
+        ?Commitment $commitment = null,
+        int $timeoutSeconds = 60,
+        int $pollIntervalMs = 500,
+    ): SignatureStatus {
+        $blockhashInfo = $this->getLatestBlockhash();
+        $blockhash = $blockhashInfo['blockhash'] ?? null;
+        $lastValid = $blockhashInfo['lastValidBlockHeight'] ?? null;
+
+        if (! is_string($blockhash) || $blockhash === '') {
+            throw new GenericException('Unable to fetch a recent blockhash before sending the transaction.');
+        }
+
+        $transaction->recentBlockhash = $blockhash;
+
+        $signature = $this->sendTransaction($transaction, $signers, $params);
+
+        if (! is_string($signature) || $signature === '') {
+            throw new GenericException('sendTransaction did not return a signature.');
+        }
+
+        return $this->confirmTransaction(
+            $signature,
+            $commitment,
+            is_int($lastValid) ? $lastValid : null,
+            $timeoutSeconds,
+            $pollIntervalMs,
+        );
+    }
+
+    private function encodingValue(Encoding|string $encoding): string
+    {
+        return $encoding instanceof Encoding ? $encoding->value : $encoding;
+    }
+
+    /**
+     * Versioned-transaction counterpart of {@see sendAndConfirmTransaction}.
+     * The caller is responsible for signing and (where applicable) selecting
+     * the lifetime blockhash; passing `$lastValidBlockHeight` enables the
+     * blockhash-expiry guard.
+     *
+     * @param array<string, mixed> $params
+     */
+    public function sendAndConfirmVersionedTransaction(
+        VersionedTransaction $transaction,
+        array $params = [],
+        ?int $lastValidBlockHeight = null,
+        ?Commitment $commitment = null,
+        int $timeoutSeconds = 60,
+        int $pollIntervalMs = 500,
+    ): SignatureStatus {
+        $signature = $this->sendVersionedTransaction($transaction, $params);
+
+        if ($signature === '') {
+            throw new GenericException('sendTransaction did not return a signature.');
+        }
+
+        return $this->confirmTransaction(
+            $signature,
+            $commitment,
+            $lastValidBlockHeight,
+            $timeoutSeconds,
+            $pollIntervalMs,
+        );
     }
 }

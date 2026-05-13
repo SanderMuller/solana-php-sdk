@@ -1,15 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Tests\Feature;
+namespace SanderMuller\SolanaPhpSdk\Tests\Feature;
 
-use Collectiq\SolanaPhpSdk\Connection;
-use Collectiq\SolanaPhpSdk\Keypair;
-use Collectiq\SolanaPhpSdk\Programs\SystemProgram;
-use Collectiq\SolanaPhpSdk\PublicKey;
-use Collectiq\SolanaPhpSdk\Tests\TestCase;
-use Collectiq\SolanaPhpSdk\Transaction;
-use Collectiq\SolanaPhpSdk\Util\Commitment;
 use PHPUnit\Framework\Attributes\Test;
+use SanderMuller\SolanaPhpSdk\Connection;
+use SanderMuller\SolanaPhpSdk\Keypair;
+use SanderMuller\SolanaPhpSdk\Programs\SystemProgram;
+use SanderMuller\SolanaPhpSdk\PublicKey;
+use SanderMuller\SolanaPhpSdk\Tests\TestCase;
+use SanderMuller\SolanaPhpSdk\Transaction;
+use SanderMuller\SolanaPhpSdk\Util\Commitment;
 
 final class ConnectionFeatureTest extends TestCase
 {
@@ -71,7 +71,7 @@ final class ConnectionFeatureTest extends TestCase
     public function simulate_transaction(): void
     {
         $connection = $this->container->get(Connection::class);
-        $recentBlockhash = $connection->getLatestBlockhash(Commitment::finalized())['blockhash'];
+        $recentBlockhash = $connection->latestBlockhash(Commitment::finalized())->blockhash;
 
         $account1 = Keypair::generate();
         $account2 = Keypair::generate();
@@ -96,7 +96,9 @@ final class ConnectionFeatureTest extends TestCase
             signers: [$account1, $account2],
         );
 
-        self::assertEquals('AccountNotFound', $response['value']['err']);
+        $value = $response['value'] ?? [];
+        self::assertIsArray($value);
+        self::assertEquals('AccountNotFound', $value['err']);
     }
 
     #[Test]

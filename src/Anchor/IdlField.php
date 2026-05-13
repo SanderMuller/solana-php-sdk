@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Collectiq\SolanaPhpSdk\Anchor;
+namespace SanderMuller\SolanaPhpSdk\Anchor;
 
-use Collectiq\SolanaPhpSdk\Exceptions\InputValidationException;
+use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
 
 /**
  * Single Borsh-encoded arg on an IDL instruction. `$type` is the raw IDL
