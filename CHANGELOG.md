@@ -4,9 +4,124 @@ All notable changes to `solana-php-sdk` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.0 - 2026-05-13
+
+### What you get
+
+| Layer | Class |
+|---|---|
+| Keys, signatures, Ed25519 verify | `Keypair`, `PublicKey`, `SecretKey` |
+| Raw JSON-RPC + typed `Connection` (~90 % HTTP-RPC coverage) | `Services\SolanaRpcClient`, `Connection` |
+| WebSocket PubSub (account / signature / slot / logs / program / vote / block) | `Services\SolanaPubSubClient` |
+| Legacy + V0 transactions, Address Lookup Tables | `Transaction`, `VersionedTransaction`, `MessageV0` |
+| Programs: System, SPL Token, **Token-2022** (incl. extension instructions), ComputeBudget, AddressLookupTable, Stake, Vote, Memo, Metaplex, DID-Sol, SNS | `Programs\*` |
+| Borsh (de)serialiser | `Borsh\*` |
+| Anchor IDL runtime instruction builder | `Anchor\AnchorIdl` |
+
+### Highlights
+
+#### Pluggable RPC transports
+
+`Rpc\RpcTransport` contract with `HttpTransport`, `FallbackTransport`
+(advance on transient failure), `RoundRobinTransport` (cycle endpoints
+with built-in failover), and `RetryTransport` (exponential backoff +
+full jitter). Configure a Helius primary + Triton backup + public
+fallback in `config/solana-php-sdk.php`:
+
+```php
+'transport' => [
+    'mode'    => 'fallback',
+    'urls'    => ['https://mainnet.helius-rpc.com/?api-key=…', 'https://api.mainnet-beta.solana.com'],
+    'retry'   => ['max_attempts' => 3, 'base_delay_ms' => 100, 'max_delay_ms' => 2_000],
+],
+
+```
+#### Structured `sendTransaction` errors
+
+`Exceptions\SendTransactionError` wraps the RPC failure with a decoded
+`TransactionError` / `InstructionError` tree (`Custom(6000)`,
+`BorshIoError("unexpected length of input")`, `DuplicateInstruction(2)`,
+`InsufficientFundsForRent { account_index: 1 }`, …), plus the full
+program logs and `unitsConsumed`. No more raw RPC strings.
+
+#### Auto compute-budget + priority-fee strategy
+
+`TransactionBuilder::withAutoComputeBudget($connection, $strategy)`
+simulates the transaction, scales `unitsConsumed` by a safety buffer,
+and prepends both `setComputeUnitLimit` + `setComputeUnitPrice` before
+signing. `Fees\PriorityFeeStrategy` ships with `Fixed` and
+`Percentile` implementations; hosts plug in vendor-specific sources
+(Helius, Triton) by implementing the contract. Honours
+`MessageSigner` placeholders so the simulation works for KMS / HSM /
+hardware-wallet flows.
+
+#### Laravel-native async story
+
+`Queue\ConfirmTransactionJob::dispatch($sig, $lastValidBlockHeight)`
+hands the long-tail confirmation phase to a worker, polling
+`getSignatureStatuses` until commitment lands, blockhash expires, or
+timeout elapses — then fires `Events\TransactionConfirmed` or
+`Events\TransactionExpired` (with a backed
+`TransactionExpiredReason` discriminator). Inherits retries + DLQ
+from your queue backend.
+
+#### `Solana::fake()` + Pest macros
+
+The `Facades\Solana` facade resolves to `Connection`.
+`Solana::fake()` swaps the bound RPC client for an `InMemoryRpcStub`
+so unit tests never reach the network. Pest expectations
+`toBeConfirmed`, `toHaveCustomCode`, `toBeInstructionError` ship in
+`Testing\PestExpectations` — opt in by calling
+`PestExpectations::register()` from your `tests/Pest.php`.
+
+#### Sanitize-safe `TransactionBuilder`
+
+Catches duplicate-account flag conflicts, missing signers, and
+orphaned `isSigner` flags locally before the RPC round-trip — so you
+never see `"Transaction failed to sanitize accounts offsets correctly"`, the single most reported cross-SDK error.
+
+#### One-line PDA + ATA derivation
+
+`Util\Pda::find($programId, $seeds)` returns `[address, bump]`.
+`Util\Ata::derive($owner, $mint)` defaults to legacy SPL Token; pass
+`tokenProgram: Token2022Program::TOKEN_PROGRAM_ID` or use the
+`Ata::derive2022()` shortcut for Token-2022 mints.
+
+### Compared to other Solana SDKs
+
+| Capability | this SDK | `@solana/kit` | `@solana/web3.js` | `solana-py` + `solders` | `solana-go` | `solana-sdk` + `anchor-client` |
+|---|---|---|---|---|---|---|
+| Pluggable RPC transports | ✅ | ✅ | ❌ | ❌ | ❌ | partial |
+| Structured `SendTransactionError` | ✅ | ✅ | partial | ❌ | partial | ✅ |
+| Auto compute-unit limit + priority-fee on build | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Sanitize-safe transaction builder | ✅ | ✅ (type-level) | ❌ | ❌ | ❌ | ✅ |
+| KMS / HSM / hardware-wallet signer abstraction | ✅ | ✅ | community | ❌ | community | ✅ |
+| Queue-based confirmation + lifecycle events | ✅ (Laravel) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| In-process test fakes + assertion helpers | ✅ (Pest + facade) | partial | ❌ | partial | ❌ | partial |
+| Token-2022 extensions | ✅ | partial | partial | partial | partial | ✅ |
+
+### Install
+
+```bash
+composer require sandermuller/solana-php-sdk
+
+```
+Auto-registers the service provider via Laravel's package discovery.
+Standalone PHP uses `Bootstrap::createContainer($configPath)`.
+
+### Acknowledgements
+
+Built on the ports + research of the prior PHP Solana ecosystem
+(`tighten/solana-php-sdk`, `attestto/solana-php-sdk`,
+`michaelhly/solana-py`, `kevinheavey/solders`,
+`gagliardetto/solana-go`) — each shaped one piece of the design.
+
+**Full Changelog**: https://github.com/SanderMuller/solana-php-sdk/commits/0.1.0
+
 ## [Unreleased]
 
 ### Changed
+
 - **Namespace + package rename: `Collectiq\SolanaPhpSdk` → `SanderMuller\SolanaPhpSdk`.**
   Composer name moves from `collectiq/solana-php-sdk` to
   `sandermuller/solana-php-sdk`. See `UPGRADING.md` for the migration steps.
@@ -14,6 +129,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `composer.json`, and `README.md` updated accordingly.
 
 ### Added
+
 - `Programs\MemoProgram` — SPL Memo v2 / v1 instruction builder.
 - `Programs\AddressLookupTableProgram` — `createLookupTable` /
   `extendLookupTable` / `freezeLookupTable` / `deactivateLookupTable` /
@@ -55,6 +171,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   subscription. `maxRetries: 0` retries forever.
 
 ### Added
+
 - `PublicKey::verify()` for Ed25519 signature verification.
 - Laravel 13 support.
 - PHP 8.3 support (was 8.4-only). `IsProgram` trait rewritten without
@@ -91,6 +208,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `getLargestAccounts`).
 
 ### Fixed
+
 - `VersionedTransaction::sign()` no longer skips `Util\Signer` inputs — both
   `Keypair` and `Signer` are signed through, preventing zero-filled placeholder
   signatures that would be rejected on-chain.
@@ -106,6 +224,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   in a context expecting the typed `SecretKey` return.
 
 ### Changed
+
 - Tooling skeleton aligned with sibling packages (PHPStan max + bleeding edge,
   Rector with code-quality/dead-code/type-declarations, Pint, PHPUnit 11,
   GitHub Actions for phpstan / pint / rector / tests, Dependabot).
