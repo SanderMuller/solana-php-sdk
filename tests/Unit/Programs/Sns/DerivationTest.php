@@ -33,7 +33,7 @@ final class DerivationTest extends TestCase
     #[Test]
     public function get_hashed_name_sync(): void
     {
-        $hashedName = new SnsProgram()->getHashedNameSync('bonfida');
+        $hashedName = (new SnsProgram())->getHashedNameSync('bonfida');
         $bs58HashedName = $hashedName->toBase58String();
         self::assertSame('AcmVjPtaDyNboWGSKjYHxea1QDgN648T4Je3HUpkHecf', $bs58HashedName);
     }

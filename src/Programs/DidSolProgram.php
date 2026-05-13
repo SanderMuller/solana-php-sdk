@@ -54,7 +54,7 @@ final class DidSolProgram implements Program
     {
         $seeds = [
             self::DIDSOL_DEFAULT_SEED,
-            new Base58()->decode($base58SubjectPk),
+            (new Base58())->decode($base58SubjectPk),
         ];
 
         $pId = PublicKey::from(self::DIDSOL_PROGRAM_ID);
@@ -86,7 +86,7 @@ final class DidSolProgram implements Program
             return $didData;
         }
 
-        $didData->keyData = new Base58()->encode(pack('C*', ...$keyData));
+        $didData->keyData = (new Base58())->encode(pack('C*', ...$keyData));
 
         return $didData;
     }

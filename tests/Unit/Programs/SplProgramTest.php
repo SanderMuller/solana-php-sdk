@@ -20,11 +20,11 @@ final class SplProgramTest extends TestCase
     {
         $mint = PublicKey::from('So11111111111111111111111111111111111111112');
         $owner = PublicKey::from('ABCexcAcjLuEsZUbaudqATgUp4MUL5STNAjr3goRLk6Y');
-        $result = new SplTokenProgram()->getAssociatedTokenAddressSync($mint, $owner, false);
+        $result = (new SplTokenProgram())->getAssociatedTokenAddressSync($mint, $owner, false);
         self::assertSame('8mFzQabNJVPstQHUFn7wqgvZyrxey3Qn7g2axD6roJCT', $result->toBase58());
 
         $owner2 = PublicKey::from('Atts2CLVXirnDsai6tCttdnAAyFwLqxqUd8zYbobgWCf');
-        $result2 = new SplTokenProgram()->getAssociatedTokenAddressSync($mint, $owner2, true);
+        $result2 = (new SplTokenProgram())->getAssociatedTokenAddressSync($mint, $owner2, true);
         self::assertSame('AmDBTASE8BPvtAqgAPKeihZPgLqGMSWcStMbYbvZBmhk', $result2->toBase58());
     }
 
@@ -49,7 +49,7 @@ final class SplProgramTest extends TestCase
     #[Test]
     public function create_sync_native_instruction(): void
     {
-        $syncNativeIx = new SplTokenProgram()->createSyncNativeInstruction(
+        $syncNativeIx = (new SplTokenProgram())->createSyncNativeInstruction(
             owner: PublicKey::from('ABCexcAcjLuEsZUbaudqATgUp4MUL5STNAjr3goRLk6Y')
         );
         // SyncNative is just the discriminator byte (17). The previous test
@@ -64,7 +64,7 @@ final class SplProgramTest extends TestCase
         $tokenProgramId = PublicKey::from(SplTokenProgram::TOKEN_PROGRAM_ID);
         $ataProgramId = PublicKey::from(SplTokenProgram::ASSOCIATED_TOKEN_PROGRAM_ID);
 
-        $ix = new SplTokenProgram()->createAssociatedTokenAccountInstruction(
+        $ix = (new SplTokenProgram())->createAssociatedTokenAccountInstruction(
             payer: PublicKey::from('ABCexcAcjLuEsZUbaudqATgUp4MUL5STNAjr3goRLk6Y'),
             associatedToken: PublicKey::from('DiRmKFukTVSAAGPmCFeH4ZEV6BtUcshZuACUF6Wp2ifL'),
             owner: PublicKey::from('ABCRVMBm2LBCVTxVuuxzwYiMqX8NTp6zzH9Tr6V2ZaJg'),

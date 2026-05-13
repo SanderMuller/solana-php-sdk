@@ -84,6 +84,6 @@ trait IsBorshDeserializable
 
     private function reflectionPropertyFor(string $name): ReflectionProperty
     {
-        return new ReflectionClass(static::class)->getProperty($name);
+        return (new ReflectionClass(static::class))->getProperty($name);
     }
 }

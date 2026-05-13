@@ -20,6 +20,6 @@ final class SolanaTest extends TestCase
     #[Test]
     public function config(): void
     {
-        self::assertSame('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', new SystemProgram()->config('TOKEN_PROGRAM_ID'));
+        self::assertSame('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', (new SystemProgram())->config('TOKEN_PROGRAM_ID'));
     }
 }

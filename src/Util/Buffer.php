@@ -210,7 +210,7 @@ class Buffer implements Arrayable, Countable, Stringable
     final public static function fromBase58(string $value, ?BufferType $datatype = null, ?bool $isSignedValue = null): static
     {
         return self::fromString(
-            value: new Base58()->decode($value),
+            value: (new Base58())->decode($value),
             datatype: $datatype,
             isSignedValue: $isSignedValue,
         );
@@ -302,7 +302,7 @@ class Buffer implements Arrayable, Countable, Stringable
         $value = $this->toBinaryString();
 
         if (static::$defaultsToBase58) {
-            return new Base58()->encode($value);
+            return (new Base58())->encode($value);
         }
 
         return $value;
@@ -315,7 +315,7 @@ class Buffer implements Arrayable, Countable, Stringable
 
     final public function toBase58String(): string
     {
-        return new Base58()->encode($this->toString());
+        return (new Base58())->encode($this->toString());
     }
 
     final public function length(): int

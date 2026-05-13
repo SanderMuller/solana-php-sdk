@@ -93,4 +93,4 @@ return RectorConfig::configure()
     ->withImportNames()
     ->withFluentCallNewLine()
     ->withMemoryLimit('3G')
-    ->withPhpSets(php84: true);
+    ->withPhpSets(php83: true);

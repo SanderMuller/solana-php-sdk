@@ -12,7 +12,7 @@ final class AccountTest extends TestCase
     #[Test]
     public function generate_new_account(): void
     {
-        self::assertCount(64, new Account()->getSecretKey());
+        self::assertCount(64, (new Account())->getSecretKey());
     }
 
     #[Test]
