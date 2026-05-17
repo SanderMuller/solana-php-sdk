@@ -1,0 +1,45 @@
+{
+    "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "metadata": {
+        "name": "user_types",
+        "version": "0.1.0",
+        "spec": "0.1.0"
+    },
+    "instructions": [
+        {
+            "name": "submit",
+            "discriminator": [10, 20, 30, 40, 50, 60, 70, 80],
+            "accounts": [
+                { "name": "state", "writable": true, "signer": false }
+            ],
+            "args": [
+                { "name": "profile", "type": { "defined": { "name": "Profile" } } },
+                { "name": "status", "type": { "defined": { "name": "Status" } } }
+            ]
+        }
+    ],
+    "accounts": [],
+    "types": [
+        {
+            "name": "Profile",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    { "name": "age", "type": "u8" },
+                    { "name": "tag", "type": "string" }
+                ]
+            }
+        },
+        {
+            "name": "Status",
+            "type": {
+                "kind": "enum",
+                "variants": [
+                    { "name": "Pending" },
+                    { "name": "Active", "fields": [ { "name": "since", "type": "u32" } ] },
+                    { "name": "Rejected", "fields": [ "string" ] }
+                ]
+            }
+        }
+    ]
+}

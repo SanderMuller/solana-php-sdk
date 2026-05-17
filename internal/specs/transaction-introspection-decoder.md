@@ -344,17 +344,17 @@ automatically.
 
 ### Phase 1: DTOs + LogDecoder (Priority: HIGH)
 
-- [ ] Create `src/Tx/Decoded/DecodedTransaction.php`, `DecodedInstruction.php`, `DecodedAccountRef.php`, `DecodedLogEvent.php` per §1.
-- [ ] Create `src/Tx/Decoded/LogDecoder.php` — pure function `decode(list<string> $logs): list<DecodedLogEvent>`. Regex-based; reject malformed lines silently.
-- [ ] Create `src/Tx/Decoded/IdlRegistry.php` — in-memory map.
-- [ ] Tests — every `DecodedLogEvent::$kind` covered with a fixture log line. Edge cases: truncated logs, nested `invoke`/`success` interleavings, multiple `Program return:` events.
+- [x] Create `src/Tx/Decoded/DecodedTransaction.php`, `DecodedInstruction.php`, `DecodedAccountRef.php`, `DecodedLogEvent.php` per §1.
+- [x] Create `src/Tx/Decoded/LogDecoder.php` — pure function `decode(list<string> $logs): list<DecodedLogEvent>`. Regex-based; reject malformed lines silently.
+- [x] Create `src/Tx/Decoded/IdlRegistry.php` — in-memory map.
+- [x] Tests — every `DecodedLogEvent::$kind` covered with a fixture log line. Edge cases: truncated logs, nested `invoke`/`success` interleavings, multiple `Program return:` events.
 
 ### Phase 2: Instruction decoder without IDL (Priority: HIGH)
 
-- [ ] Create `src/Tx/Decoded/InstructionDecoder.php` covering bytes + accounts only (no IDL resolution yet).
-- [ ] Create `src/Tx/Decoded/TransactionDecoder.php` with `::fromRpcResponse()` — handles legacy + V0, **including ALT address expansion via `meta.loadedAddresses` in `static + writable + readonly` order**, inner-instruction grouping, signers / writable extraction.
-- [ ] Wire `Connection::decodeTransaction($sig, ?IdlRegistry)` — null registry → empty registry default. Pass `maxSupportedTransactionVersion: 0`.
-- [ ] Tests — golden-fixture `getTransaction` payloads:
+- [x] Create `src/Tx/Decoded/InstructionDecoder.php` covering bytes + accounts only (no IDL resolution yet).
+- [x] Create `src/Tx/Decoded/TransactionDecoder.php` with `::fromRpcResponse()` — handles legacy + V0, **including ALT address expansion via `meta.loadedAddresses` in `static + writable + readonly` order**, inner-instruction grouping, signers / writable extraction.
+- [x] Wire `Connection::decodeTransaction($sig, ?IdlRegistry)` — null registry → empty registry default. Pass `maxSupportedTransactionVersion: 0`.
+- [x] Tests — golden-fixture `getTransaction` payloads:
     - legacy SOL transfer,
     - token transfer with inner CPIs,
     - V0 with ALTs where an instruction touches a loaded writable address AND a loaded readonly address,
@@ -363,11 +363,11 @@ automatically.
 
 ### Phase 3: IDL arg decoding (Priority: HIGH)
 
-- [ ] Create `src/Anchor/AnchorProgramDecoder.php` implementing `ProgramDecoder` — reads the first 8 bytes as discriminator, matches against `AnchorIdl::instructions[*]->discriminator`, decodes args via the new `IdlEncoder::decode()`.
-- [ ] Extend `src/Anchor/IdlEncoder.php` with `decode(IdlInstruction, BinaryReader): array`.
-- [ ] Create `src/Anchor/IdlTypeDecoder.php` — recursively handles `{defined: ...}` references, nested structs, tagged-union enums, options.
-- [ ] Wire registry lookup into `InstructionDecoder` — `IdlRegistry::forProgram($programId)?->decode(...)` → `DecodedInstruction::$idlArgs` / `$idlName` / per-account `$idlName`.
-- [ ] Tests — decode an **Anchor**-program transaction shipped as a fixture under `tests/fixtures/` (a small Anchor counter is fine). Assert arg names + values, plus the no-IDL-registered fallback (raw bytes only). **Do NOT use SPL Memo as a fixture** — it has no Anchor discriminator and is explicitly out of scope until non-Anchor decoders ship.
+- [x] Create `src/Anchor/AnchorProgramDecoder.php` implementing `ProgramDecoder` — reads the first 8 bytes as discriminator, matches against `AnchorIdl::instructions[*]->discriminator`, decodes args via the new `IdlEncoder::decode()`.
+- [x] Extend `src/Anchor/IdlEncoder.php` with `decode(IdlInstruction, BinaryReader): array`.
+- [x] Create `src/Anchor/IdlTypeDecoder.php` — recursively handles `{defined: ...}` references, nested structs, tagged-union enums, options.
+- [x] Wire registry lookup into `InstructionDecoder` — `IdlRegistry::forProgram($programId)?->decode(...)` → `DecodedInstruction::$idlArgs` / `$idlName` / per-account `$idlName`.
+- [x] Tests — decode an **Anchor**-program transaction shipped as a fixture under `tests/fixtures/` (a small Anchor counter is fine). Assert arg names + values, plus the no-IDL-registered fallback (raw bytes only). **Do NOT use SPL Memo as a fixture** — it has no Anchor discriminator and is explicitly out of scope until non-Anchor decoders ship.
 
 ### Phase 4: Pest assertions + docs (Priority: MEDIUM)
 
@@ -399,9 +399,41 @@ automatically.
 
 ---
 
-<!-- ## Resolved Questions
--->
+## Resolved Questions
+
+5. **Borsh enum representation in `idlArgs`?** **Decision:** mirror Anchor / JS / Rust — `{variantName: payload}` for variants with fields, `{variantName: true}` for unit variants. **Rationale:** matches what downstream consumers already expect from cross-language tooling; lets PHP callers use `array_key_first($enum)` to discriminate without sniffing a `kind` tag. Tuple-payload variants emit a positional list; struct-payload variants emit a name-keyed map.
 
 ## Findings
 
-<!-- Notes added during implementation. Do not remove this section. -->
+### Phase 1
+
+- **`DecodedLogEvent` gained `KIND_TRUNCATED` and `KIND_UNKNOWN` variants** beyond the seven listed in §1. The spec deliberately notes "fail-open" parsing under "Failure modes" but doesn't enumerate the fallback `kind`; the implementation needed an explicit tag so consumers can filter unknown lines without reparsing the raw string. `KIND_TRUNCATED` matches `^Log truncated` (validator's clip marker) and is also the spec's prescribed synthetic event for that case.
+- **`LogDecoder` tracks an `invoke`/`success` program-id stack** so `Program log:` and `Program data:` lines attribute to the most recent active frame. Spec §1 lists `programId` as a field on those variants without saying how to derive it; the stack is the natural source. Lines that arrive before any `invoke` (orphan logs) leave `programId` null — tested.
+- **`IdlRegistry::registerAnchor()` ships a stub for Phase 3.** The method exists today and `register()` works for hand-written `ProgramDecoder`s; calling `registerAnchor()` before Phase 3's `AnchorProgramDecoder` ships throws a `LogicException` with a precise pointer. This lets hosts wire registration calls now and have them light up automatically when Phase 3 lands.
+- **Test fixed**: an early test built `Program <pid> return: <pid> <b64>` lines, which is not the on-chain format. Solana emits `Program return: <pid> <b64>`. The regex is correct; the test was wrong and now uses the real shape.
+
+### Phase 2
+
+- **Role computation is centralised** in `TransactionDecoder::buildAccountRoleMap()`. Spec §2 lists the merge order (static + loaded writable + loaded readonly) but leaves the per-index `isSigner` / `isWritable` derivation implicit. The implementation uses the standard Solana header arithmetic:
+  - Signed writable: `[0, numRequiredSignatures - numReadonlySigned)`
+  - Signed readonly: `[numRequiredSignatures - numReadonlySigned, numRequiredSignatures)`
+  - Unsigned writable: `[numRequiredSignatures, staticCount - numReadonlyUnsigned)`
+  - Unsigned readonly: `[staticCount - numReadonlyUnsigned, staticCount)`
+  - All loaded-writable entries are writable/non-signer; all loaded-readonly entries are readonly/non-signer.
+- **Inner instructions stay one level deep in v1.** The RPC's `innerInstructions[].instructions[]` is already a flat list (with `stackHeight` annotating depth). The spec's `"2.1.0"` example was speculative; v1 emits `"<top>.<n>"` paths and surfaces nested CPI via `stackHeight`. Re-grouping into a true nested tree is deferred — no consumer needs it yet, and a non-recursive structure preserves the RPC's authoritative ordering.
+- **`Connection::decodeTransaction` always passes `maxSupportedTransactionVersion: 0`** so V0 transactions decode through the same path. Older RPCs that don't recognise the param will refuse the request — that's documented as a Phase 2 requirement and we don't apologise for it.
+- **`InstructionDecoder` is `@internal`.** The class lives under `src/Tx/Decoded/` but `TransactionDecoder` is the public entry point. Hosts implementing custom transaction shapes (out of scope) would consume the same DTOs but call `InstructionDecoder::decode` directly.
+- **Upstream deprecation in `stephenhill/base58`** triggers on PHP 8.5: implicitly nullable parameter without `?` prefix. The base58 library's call site is in vendor code; we cannot fix it here. Tests run green with the deprecation noted by PHPUnit but not failing.
+
+### Phase 3
+
+- **`IdlEncoder` gained `decode(IdlInstruction, BinaryReader, ?AnchorIdl): array` + `decodeType(string|array, BinaryReader, ?IdlTypeDecoder): mixed`.** The `decodeType` split exists so a caller without an `AnchorIdl` in hand can still decode primitives + composites — defined references require an IDL and throw a clear error pointing the caller at `IdlEncoder::decode()`.
+- **`IdlTypeDecoder` is the recursive walker** for `{defined: ...}` references, user-defined structs, and tagged-union enums. Anchor encodes variant tags as `u8`; `IdlTypeDecoder::decodeEnum` reads the tag, looks up the variant by position in `variants[]`, and emits `{variantName => payload}` matching the JS / Rust ecosystem convention (Open Question Q5 resolved as proposed). Variants with no fields decode to `{variantName => true}` so callers can `array_key_first()` regardless of payload.
+- **Anchor enum tuple-vs-struct variants both supported.** A variant's `fields` array can be heterogeneous: positional (each entry a type string or shape) or named (each entry `{name, type}`). The decoder peeks at the first field — if it's a bare type string or a non-`name`-keyed array, the variant is treated as a tuple and emits a positional payload list; otherwise it's a struct with name-keyed payload.
+- **Failure-mode contract honoured.** `AnchorProgramDecoder::decode()` returns `null` when:
+  - the data is shorter than the 8-byte discriminator,
+  - the discriminator doesn't match any instruction in the IDL,
+  - or the Borsh decode throws mid-stream.
+  In all three cases the caller (`InstructionDecoder`) falls back to raw `data` / `dataBase58` and continues — one malformed instruction never poisons a batch decode (spec §"Failure modes").
+- **Per-account IDL name attachment** flows through `decode()`'s `accountNames` field. `InstructionDecoder` rebuilds the `DecodedAccountRef` list with the resolved IDL names. The IDL's account positional order is canonical — extra on-chain accounts beyond what the IDL declares stay un-named (idlName === null).
+- **`IdlRegistry::registerAnchor()` lit up automatically.** Phase 1's deferred stub is gone; the method now directly wraps the IDL in an `AnchorProgramDecoder`.

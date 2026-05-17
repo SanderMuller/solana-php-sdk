@@ -37,5 +37,5 @@ _ide_helper_models.php
 /.zed
 
 # Local overrides
-phpunit.xml
 phpstan.neon
+/internal/

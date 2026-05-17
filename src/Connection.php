@@ -18,6 +18,9 @@ use SanderMuller\SolanaPhpSdk\Exceptions\SendTransactionError;
 use SanderMuller\SolanaPhpSdk\Exceptions\TransactionFailedOnChainException;
 use SanderMuller\SolanaPhpSdk\Programs\IsProgram;
 use SanderMuller\SolanaPhpSdk\Programs\Program;
+use SanderMuller\SolanaPhpSdk\Tx\Decoded\DecodedTransaction;
+use SanderMuller\SolanaPhpSdk\Tx\Decoded\IdlRegistry;
+use SanderMuller\SolanaPhpSdk\Tx\Decoded\TransactionDecoder;
 use SanderMuller\SolanaPhpSdk\Util\Commitment;
 use SanderMuller\SolanaPhpSdk\Util\Signer;
 
@@ -119,6 +122,41 @@ final class Connection implements Program
 
         /** @var array<string, mixed> $response */
         return TransactionStatement::fromResponse($response);
+    }
+
+    /**
+     * Fetch a transaction by signature and return the fully-decoded
+     * tree (per-instruction program id + role-tagged accounts + data
+     * + inner-instruction CPIs + parsed logs). Pass an
+     * {@see IdlRegistry} to attach IDL-resolved instruction names +
+     * arg maps (Phase 3 of the spec).
+     *
+     * Calls the RPC with `encoding: 'json'` +
+     * `maxSupportedTransactionVersion: 0` so legacy and V0
+     * transactions decode through the same path. Returns null when
+     * the signature has no on-chain record.
+     */
+    public function decodeTransaction(
+        string $transactionSignature,
+        ?IdlRegistry $registry = null,
+        ?Commitment $commitment = null,
+    ): ?DecodedTransaction {
+        $params = [
+            'encoding' => 'json',
+            'maxSupportedTransactionVersion' => 0,
+        ];
+        if ($commitment instanceof Commitment) {
+            $params['commitment'] = $commitment->commitmentLevel;
+        }
+
+        $response = $this->client->call('getTransaction', [$transactionSignature, $params]);
+
+        if (! is_array($response)) {
+            return null;
+        }
+
+        /** @var array<string, mixed> $response */
+        return TransactionDecoder::fromRpcResponse($response, $registry ?? new IdlRegistry());
     }
 
     /**

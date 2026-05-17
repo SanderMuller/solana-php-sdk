@@ -2,6 +2,7 @@
 
 namespace SanderMuller\SolanaPhpSdk\Anchor;
 
+use SanderMuller\SolanaPhpSdk\Borsh\BinaryReader;
 use SanderMuller\SolanaPhpSdk\Borsh\BinaryWriter;
 use SanderMuller\SolanaPhpSdk\Exceptions\InputValidationException;
 use SanderMuller\SolanaPhpSdk\PublicKey;
@@ -21,6 +22,113 @@ use SanderMuller\SolanaPhpSdk\PublicKey;
  */
 final class IdlEncoder
 {
+    /**
+     * Decode the args of an {@see IdlInstruction} from a Borsh-encoded
+     * reader (positioned past the 8-byte discriminator), returning a
+     * name-keyed map. Falls back to {@see IdlTypeDecoder} for
+     * user-defined types referenced via `{defined: {name: ...}}`.
+     *
+     * @return array<string, mixed>
+     */
+    public static function decode(IdlInstruction $ix, BinaryReader $reader, ?AnchorIdl $idl = null): array
+    {
+        $typeDecoder = $idl === null ? null : new IdlTypeDecoder($idl);
+
+        $out = [];
+        foreach ($ix->args as $field) {
+            $out[$field->name] = self::decodeType($field->type, $reader, $typeDecoder);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Single-value decode counterpart to {@see encode()}.
+     *
+     * @param string|array<string, mixed> $type
+     */
+    public static function decodeType(string|array $type, BinaryReader $reader, ?IdlTypeDecoder $typeDecoder = null): mixed
+    {
+        if (is_array($type) && isset($type['defined'])) {
+            if ($typeDecoder === null) {
+                $defined = $type['defined'];
+                $name = is_array($defined) ? ($defined['name'] ?? null) : $defined;
+                $rendered = is_string($name) ? $name : '<unknown>';
+                throw new InputValidationException(
+                    "Defined IDL type `{$rendered}` requires an AnchorIdl context — pass the IDL to IdlEncoder::decode().",
+                );
+            }
+
+            return $typeDecoder->decode($type, $reader);
+        }
+
+        if ($typeDecoder !== null) {
+            return $typeDecoder->decode($type, $reader);
+        }
+
+        // No IDL context — decode primitives + composites directly via a transient decoder
+        // that will explode if it encounters a `defined` reference (handled above).
+        return self::decodePrimitiveOrComposite($type, $reader);
+    }
+
+    /**
+     * @param string|array<string, mixed> $type
+     */
+    private static function decodePrimitiveOrComposite(string|array $type, BinaryReader $reader): mixed
+    {
+        if (is_string($type)) {
+            return match ($type) {
+                'u8' => $reader->readU8(),
+                'u16' => $reader->readU16(),
+                'u32' => $reader->readU32(),
+                'u64' => $reader->readU64(),
+                'i8' => $reader->readI8(),
+                'i16' => $reader->readI16(),
+                'i32' => $reader->readI32(),
+                'i64' => $reader->readI64(),
+                'f32' => $reader->readF32(),
+                'f64' => $reader->readF64(),
+                'bool' => $reader->readU8() === 1,
+                'string' => $reader->readString(),
+                'bytes' => $reader->readFixedArray($reader->readU32()),
+                'pubkey', 'publicKey' => $reader->readPubKeyAsString(),
+                'u128', 'i128' => throw new InputValidationException("IDL type `{$type}` is not yet supported by IdlEncoder::decode()."),
+                default => throw new InputValidationException("Unknown IDL primitive `{$type}`."),
+            };
+        }
+
+        if (isset($type['vec'])) {
+            $length = $reader->readU32();
+            $out = [];
+            for ($i = 0; $i < $length; $i++) {
+                $out[] = self::decodePrimitiveOrComposite(self::narrowInner($type['vec']), $reader);
+            }
+
+            return $out;
+        }
+
+        if (isset($type['array']) && is_array($type['array']) && count($type['array']) === 2) {
+            $length = $type['array'][1];
+            if (! is_int($length)) {
+                throw new InputValidationException('IDL `array` length must be an integer.');
+            }
+            $out = [];
+            for ($i = 0; $i < $length; $i++) {
+                $out[] = self::decodePrimitiveOrComposite(self::narrowInner($type['array'][0]), $reader);
+            }
+
+            return $out;
+        }
+
+        if (isset($type['option'])) {
+            $tag = $reader->readU8();
+
+            return $tag === 0 ? null : self::decodePrimitiveOrComposite(self::narrowInner($type['option']), $reader);
+        }
+
+        throw new InputValidationException('Unsupported IDL type shape: ' . json_encode($type));
+    }
+
     /**
      * @param string|array<string, mixed> $type
      */
