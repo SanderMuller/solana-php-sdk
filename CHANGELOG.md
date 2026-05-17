@@ -120,6 +120,22 @@ Built on the ports + research of the prior PHP Solana ecosystem
 
 ## [Unreleased]
 
+### Removed (BREAKING)
+
+- **`SanderMuller\SolanaPhpSdk\Facades\Solana`** — superseded by the
+  more-complete `SanderMuller\LaravelSolanaSdk\Facades\Solana` (62
+  method declarations vs 4). Migration: switch your `use` to the
+  wrapper's namespace if you have the wrapper installed; otherwise
+  install `sandermuller/laravel-solana-sdk`.
+- **`SanderMuller\SolanaPhpSdk\Queue\ConfirmTransactionJob`** moved
+  to `SanderMuller\LaravelSolanaSdk\Queue\ConfirmTransactionJob`.
+  Migration: update `use` statements; ensure
+  `sandermuller/laravel-solana-sdk` is in your require.
+
+`Bootstrap` and the SDK's own `ServiceProvider` are intentionally
+KEPT in this package — they support standalone use of the SDK in
+Laravel without the wrapper.
+
 ### Changed
 
 - **Namespace + package rename: `Collectiq\SolanaPhpSdk` → `SanderMuller\SolanaPhpSdk`.**

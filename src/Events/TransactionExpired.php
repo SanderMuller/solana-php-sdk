@@ -2,11 +2,12 @@
 
 namespace SanderMuller\SolanaPhpSdk\Events;
 
-use SanderMuller\SolanaPhpSdk\Queue\ConfirmTransactionJob;
-
 /**
- * Fired by {@see ConfirmTransactionJob} when the blockhash expires or
- * the confirmation timeout elapses before the signature lands.
+ * Fired by `SanderMuller\LaravelSolanaSdk\Queue\ConfirmTransactionJob`
+ * (shipped in the `sandermuller/laravel-solana-sdk` wrapper) when the
+ * blockhash expires or the confirmation timeout elapses before the
+ * signature lands. The wrapper is an optional dependency, so this
+ * package does not import the class directly.
  */
 final readonly class TransactionExpired
 {
