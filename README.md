@@ -23,8 +23,8 @@ Anchor program — all from PHP.
 | Pluggable RPC transports | Multi-endpoint fallback / round-robin / exponential-backoff retry | `Rpc\FallbackTransport`, `Rpc\RoundRobinTransport`, `Rpc\RetryTransport` |
 | Structured `sendTransaction` errors | Decoded `TransactionError` + `InstructionError` enums, program logs, units consumed | `Exceptions\SendTransactionError`, `Errors\TransactionErrorDecoder` |
 | Auto compute-budget + priority fee | Simulate → derive CU limit → inject `setComputeUnitLimit` + `setComputeUnitPrice` on build | `Fees\AutoComputeBudget`, `Fees\PriorityFeeStrategy`, `TransactionBuilder::withAutoComputeBudget` |
-| Laravel facade + Pest harness | `Solana::fake()` rebinds the RPC client; `toBeConfirmed` / `toHaveCustomCode` / `toBeInstructionError` macros | `Facades\Solana`, `Testing\PestExpectations` |
-| Queue-based confirmation | `ConfirmTransactionJob` polls + fires `TransactionConfirmed` / `TransactionExpired` events | `Queue\ConfirmTransactionJob`, `Events\*` |
+| In-memory RPC stub + Pest macros | `InMemoryRpcStub::script([...])` swaps the RPC client; `toBeConfirmed` / `toHaveCustomCode` / `toBeInstructionError` expectations — works in any test runner, Laravel not required | `Testing\InMemoryRpcStub`, `Testing\PestExpectations` |
+| Laravel facade + queue job + artisan commands | Lives in the sister wrapper [`sandermuller/laravel-solana-sdk`](https://github.com/SanderMuller/laravel-solana-sdk): `Solana::fake()`, `ConfirmTransactionJob::dispatch($sig, $lvbh)`, env-driven config, 7 artisan commands (balance, account, transaction, …) | (wrapper) |
 | PDA / ATA helpers | One-line `Pda::find` + `Ata::derive` (Token-2022 aware via `Ata::derive2022`) | `Util\Pda`, `Util\Ata` |
 | Anchor | Parse any Anchor IDL at runtime → typed `TransactionInstruction` builders | `Anchor\AnchorIdl` |
 
@@ -49,6 +49,15 @@ Standalone PHP doesn't need anything extra — see
 
 Requirements: PHP 8.3+ with `ext-sodium` enabled (every mainstream PHP distro
 ships it). Composer pulls in `paragonie/sodium_compat` as a polyfill backup.
+
+> **Building a Laravel app?** Install the sister wrapper instead — it adds the
+> `Solana` facade, `ConfirmTransactionJob`, env-driven config, and 7 artisan
+> commands (balance, account, transaction, fees, health, …) on top of this SDK:
+> ```bash
+> composer require sandermuller/laravel-solana-sdk
+> ```
+> Repo: <https://github.com/SanderMuller/laravel-solana-sdk>. You get this SDK
+> as a transitive dep — no need to require both.
 
 ---
 
@@ -547,6 +556,30 @@ validation error so you pre-encode them.
 
 ---
 
+## Using with Laravel
+
+This SDK works inside a Laravel app out of the box via auto-discovery —
+`Connection` resolves straight from the container. For the full
+Laravel-flavoured experience (facade, queue job, env-driven config, artisan
+commands), install the wrapper instead:
+
+```bash
+composer require sandermuller/laravel-solana-sdk
+```
+
+| What the wrapper adds | Why it's separate from this SDK |
+|---|---|
+| `Solana` facade with 62 typed `@method` declarations | Laravel-only contract; framework-agnostic SDK shouldn't ship Facade subclasses |
+| `ConfirmTransactionJob` (Queueable, Dispatchable) | Laravel Queue contracts; events (`TransactionConfirmed` / `TransactionExpired`) stay here in the SDK |
+| Env-driven config + `php artisan vendor:publish` | Laravel config publishing |
+| 7 artisan commands: `solana:balance`, `solana:account`, `solana:transaction`, `solana:fees`, `solana:health`, `solana:airdrop`, `solana:tokens` | Laravel Console contracts |
+| Pre-wired `Solana::fake()` for tests | One-liner over this SDK's `InMemoryRpcStub` |
+
+Repo: <https://github.com/SanderMuller/laravel-solana-sdk>. The wrapper requires
+this SDK as a transitive dep — install just the wrapper, not both.
+
+---
+
 ## Outside Laravel
 
 The SDK doesn't require a Laravel app. Use the bootstrap helper:
@@ -684,8 +717,8 @@ version; see the rationale beneath it.
 | Auto compute-unit limit + priority-fee injection on build | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Sanitize-safe transaction builder | ✅ | ✅ (type-level) | ❌ | ❌ | ❌ | ✅ |
 | KMS / HSM / hardware-wallet signer abstraction | ✅ | ✅ | community | ❌ | community | ✅ |
-| Queue-based confirmation + lifecycle events | ✅ (Laravel) | ❌ | ❌ | ❌ | ❌ | ❌ |
-| In-process test fakes + assertion helpers | ✅ (Pest + facade) | partial | ❌ | partial | ❌ | partial |
+| Queue-based confirmation + lifecycle events | ✅ ([via wrapper](https://github.com/SanderMuller/laravel-solana-sdk)) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| In-process test fakes + assertion helpers | ✅ (Pest macros in SDK; `Solana::fake()` in wrapper) | partial | ❌ | partial | ❌ | partial |
 | Token-2022 extensions | ✅ | partial | partial | partial | partial | ✅ |
 
 #### What we built against
@@ -710,14 +743,17 @@ version; see the rationale beneath it.
   `setComputeUnitLimit` + `setComputeUnitPrice` before signing. No
   other SDK ships this by default — every other ecosystem leaves it
   as a Helius / Quicknode blog-post recipe.
-- **Laravel-native async story.** `ConfirmTransactionJob::dispatch($sig, $lvbh)`
-  hands the long-tail confirmation phase to a queue worker, then fires
-  `TransactionConfirmed` / `TransactionExpired` events. Inherits
-  retries + DLQ from your queue backend — Kit's async-iterator API
-  cannot match this on PHP-FPM.
-- **`Solana::fake()` for tests.** One line swaps the RPC client for an
-  in-memory stub. Pest expectations (`toBeConfirmed`,
-  `toHaveCustomCode`, `toBeInstructionError`) ship out of the box.
+- **Laravel-native async story** (in [`sandermuller/laravel-solana-sdk`](https://github.com/SanderMuller/laravel-solana-sdk)).
+  `ConfirmTransactionJob::dispatch($sig, $lvbh)` hands the long-tail
+  confirmation phase to a queue worker, then fires `TransactionConfirmed` /
+  `TransactionExpired` events (defined here in the SDK). Inherits retries +
+  DLQ from your queue backend — Kit's async-iterator API cannot match this
+  on PHP-FPM.
+- **`InMemoryRpcStub` + Pest expectations.** `InMemoryRpcStub::script([...])`
+  feeds a deterministic RPC reply queue. Pest macros
+  (`toBeConfirmed`, `toHaveCustomCode`, `toBeInstructionError`) ship in this
+  SDK — usable from any test runner. The wrapper adds `Solana::fake()` as
+  a Laravel-flavoured one-liner over the same stub.
   Other SDKs stand up a local validator just to write a unit test.
 - **Sanitize-safe builder.** Catches duplicate-account flag conflicts,
   missing signers, and orphaned `isSigner` flags locally before the
