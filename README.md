@@ -1,5 +1,10 @@
 # solana-php-sdk
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/sandermuller/solana-php-sdk.svg?style=flat-square)](https://packagist.org/packages/sandermuller/solana-php-sdk)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/sandermuller/solana-php-sdk/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/sandermuller/solana-php-sdk/actions/workflows/run-tests.yml)
+[![Total Downloads](https://img.shields.io/packagist/dt/sandermuller/solana-php-sdk.svg?style=flat-square)](https://packagist.org/packages/sandermuller/solana-php-sdk)
+[![License](https://img.shields.io/packagist/l/sandermuller/solana-php-sdk.svg?style=flat-square)](LICENSE)
+
 A PHP SDK for the [Solana](https://solana.com) blockchain. Read accounts,
 sign and submit transactions, watch the chain over WebSockets, and call any
 Anchor program — all from PHP.
