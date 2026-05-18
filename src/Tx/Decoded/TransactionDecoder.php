@@ -25,8 +25,11 @@ final class TransactionDecoder
      */
     public static function fromRpcResponse(array $rpc, ?IdlRegistry $registry = null): DecodedTransaction
     {
+        /** @var array<string, mixed> $transaction */
         $transaction = is_array($rpc['transaction'] ?? null) ? $rpc['transaction'] : [];
+        /** @var array<string, mixed> $message */
         $message = is_array($transaction['message'] ?? null) ? $transaction['message'] : [];
+        /** @var array<string, mixed>|null $meta */
         $meta = is_array($rpc['meta'] ?? null) ? $rpc['meta'] : null;
 
         $signature = self::firstSignature($transaction);
@@ -133,6 +136,7 @@ final class TransactionDecoder
     }
 
     /**
+     * @param array<string, mixed>|null $meta
      * @return array{0: list<string>, 1: list<string>}
      */
     private static function loadedAddresses(?array $meta): array
@@ -184,6 +188,7 @@ final class TransactionDecoder
     }
 
     /**
+     * @param array<string, mixed>|null $meta
      * @return array<int, list<array<string, mixed>>>
      */
     private static function indexInnerInstructions(?array $meta): array

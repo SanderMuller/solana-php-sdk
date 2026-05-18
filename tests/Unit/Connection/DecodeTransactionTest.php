@@ -84,7 +84,7 @@ final class DecodeTransactionTest extends TestCase
         $connection->decodeTransaction('sig');
 
         self::assertNotNull($capturedBody);
-        /** @var array{params: list<mixed>} $capturedBody */
+        /** @var array{params: array{0: string, 1: array{encoding: string, maxSupportedTransactionVersion: int}}} $capturedBody */
         self::assertSame('sig', $capturedBody['params'][0]);
         self::assertSame('json', $capturedBody['params'][1]['encoding']);
         self::assertSame(0, $capturedBody['params'][1]['maxSupportedTransactionVersion']);

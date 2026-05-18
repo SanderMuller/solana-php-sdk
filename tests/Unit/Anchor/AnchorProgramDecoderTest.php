@@ -32,6 +32,7 @@ final class AnchorProgramDecoderTest extends TestCase
         self::assertNotNull($decoded);
         self::assertSame('increment', $decoded['name']);
         self::assertSame(['amount' => 1_234_567], $decoded['args']);
+        self::assertArrayHasKey('accountNames', $decoded);
         self::assertSame(['counter', 'user'], $decoded['accountNames']);
     }
 
@@ -185,6 +186,8 @@ final class AnchorProgramDecoderTest extends TestCase
 
         $decoded = $decoder->decode(self::bytesToString($writer->toArray()), $accounts);
 
+        self::assertNotNull($decoded);
+        self::assertArrayHasKey('accountNames', $decoded);
         self::assertSame(['counter', 'user'], $decoded['accountNames']);
         unset($accounts); // exercised through the decode result, not mutated by the decoder
     }
@@ -196,7 +199,7 @@ final class AnchorProgramDecoderTest extends TestCase
     {
         $s = '';
         foreach ($bytes as $b) {
-            $s .= chr($b);
+            $s .= chr($b & 0xFF);
         }
 
         return $s;

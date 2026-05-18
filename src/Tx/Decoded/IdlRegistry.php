@@ -47,6 +47,6 @@ final class IdlRegistry
      */
     public function known(): array
     {
-        return array_values(array_keys($this->decoders));
+        return array_keys($this->decoders);
     }
 }

@@ -86,7 +86,7 @@ final class AnchorProgramDecoder implements ProgramDecoder
     {
         $binary = '';
         foreach ($bytes as $byte) {
-            $binary .= chr($byte);
+            $binary .= chr($byte & 0xFF);
         }
 
         return bin2hex($binary);

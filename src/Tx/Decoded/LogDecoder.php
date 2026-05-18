@@ -37,10 +37,7 @@ final class LogDecoder
                 continue;
             }
 
-            $event = self::parseLine($line, $stack);
-            if ($event !== null) {
-                $out[] = $event;
-            }
+            $out[] = self::parseLine($line, $stack);
         }
 
         return $out;
@@ -49,7 +46,7 @@ final class LogDecoder
     /**
      * @param list<string> $stack
      */
-    private static function parseLine(string $line, array &$stack): ?DecodedLogEvent
+    private static function parseLine(string $line, array &$stack): DecodedLogEvent
     {
         if (preg_match('/^Program (\S+) invoke \[(\d+)\]$/', $line, $m) === 1) {
             $stack[] = $m[1];
