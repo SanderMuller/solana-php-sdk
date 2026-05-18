@@ -16,7 +16,7 @@ final class AnchorProgramDecoderTest extends TestCase
     #[Test]
     public function decodes_an_instruction_with_a_u64_arg(): void
     {
-        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/fixtures/anchor_idl_minimal.json');
+        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/Fixtures/anchor_idl_minimal.json');
         $decoder = new AnchorProgramDecoder($idl);
 
         // Build the instruction bytes the same way IdlInstruction::build() would.
@@ -39,7 +39,7 @@ final class AnchorProgramDecoderTest extends TestCase
     #[Test]
     public function decodes_complex_args_string_vec_array_option_pubkey_bool(): void
     {
-        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/fixtures/anchor_idl_minimal.json');
+        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/Fixtures/anchor_idl_minimal.json');
         $decoder = new AnchorProgramDecoder($idl);
 
         $owner = PublicKey::from('11111111111111111111111111111111');
@@ -82,7 +82,7 @@ final class AnchorProgramDecoderTest extends TestCase
     #[Test]
     public function returns_null_when_discriminator_does_not_match(): void
     {
-        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/fixtures/anchor_idl_minimal.json');
+        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/Fixtures/anchor_idl_minimal.json');
         $decoder = new AnchorProgramDecoder($idl);
 
         $unknownDiscriminator = str_repeat("\xff", 8);
@@ -93,7 +93,7 @@ final class AnchorProgramDecoderTest extends TestCase
     #[Test]
     public function returns_null_when_payload_is_shorter_than_discriminator(): void
     {
-        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/fixtures/anchor_idl_minimal.json');
+        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/Fixtures/anchor_idl_minimal.json');
         $decoder = new AnchorProgramDecoder($idl);
 
         self::assertNull($decoder->decode("\x01\x02", []));
@@ -102,7 +102,7 @@ final class AnchorProgramDecoderTest extends TestCase
     #[Test]
     public function decodes_user_defined_struct(): void
     {
-        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/fixtures/anchor_idl_user_types.json');
+        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/Fixtures/anchor_idl_user_types.json');
         $decoder = new AnchorProgramDecoder($idl);
 
         $writer = new BinaryWriter();
@@ -125,7 +125,7 @@ final class AnchorProgramDecoderTest extends TestCase
     #[Test]
     public function decodes_enum_with_struct_payload(): void
     {
-        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/fixtures/anchor_idl_user_types.json');
+        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/Fixtures/anchor_idl_user_types.json');
         $decoder = new AnchorProgramDecoder($idl);
 
         $writer = new BinaryWriter();
@@ -148,7 +148,7 @@ final class AnchorProgramDecoderTest extends TestCase
     #[Test]
     public function decodes_enum_with_tuple_payload(): void
     {
-        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/fixtures/anchor_idl_user_types.json');
+        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/Fixtures/anchor_idl_user_types.json');
         $decoder = new AnchorProgramDecoder($idl);
 
         $writer = new BinaryWriter();
@@ -170,7 +170,7 @@ final class AnchorProgramDecoderTest extends TestCase
     #[Test]
     public function attaches_idl_account_names_to_accounts(): void
     {
-        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/fixtures/anchor_idl_minimal.json');
+        $idl = AnchorIdl::fromFile(dirname(__DIR__, 2) . '/Fixtures/anchor_idl_minimal.json');
         $decoder = new AnchorProgramDecoder($idl);
 
         $writer = new BinaryWriter();
