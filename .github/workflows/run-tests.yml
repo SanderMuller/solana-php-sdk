@@ -31,10 +31,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # L11 dropped: require-dev laravel/pao ^1.0 hard-conflicts with laravel/framework <12.0.
           # Floor + ceiling on both PHP versions catches version-only regressions.
-          - { php: '8.3', laravel: '11.*', testbench: '9.*',  stability: prefer-lowest }
+          - { php: '8.3', laravel: '12.*', testbench: '10.*', stability: prefer-lowest }
           - { php: '8.3', laravel: '13.*', testbench: '11.*', stability: prefer-stable }
-          - { php: '8.4', laravel: '11.*', testbench: '9.*',  stability: prefer-lowest }
           - { php: '8.4', laravel: '12.*', testbench: '10.*', stability: prefer-stable }
           - { php: '8.4', laravel: '13.*', testbench: '11.*', stability: prefer-stable }
           # `prefer-lowest @ ceiling` — catches floor/ceiling-resolve-fine-but-conflict-in-the-middle bugs.
