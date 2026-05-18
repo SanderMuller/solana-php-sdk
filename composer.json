@@ -77,7 +77,7 @@
         "post-install-cmd": [
             "@sync-ai"
         ],
-        "sync-ai": "vendor/bin/testbench package-boost:sync",
+        "sync-ai": "vendor/bin/boost sync",
         "phpstan": "vendor/bin/phpstan analyse --memory-limit=2G",
         "phpstan-simplified": "vendor/bin/phpstan analyse --memory-limit=2G --error-format symplify",
         "phpstan-clear-cache": "vendor/bin/phpstan clear-result-cache",
